@@ -2,9 +2,9 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FloatingLabelInputWrapper } from "@/components/global/FloatingLabelInputWrapper";
+import { FloatingLabelInputWrapper } from "@/components/global/Form/FloatingLabelInputWrapper";
 import { SignupSchema, type SignupFormData } from "../validation/signup";
-import { FloatingLabelSelectWrapper } from "@/components/global/FloatingLabelSelectWrapper";
+import { FloatingLabelSelectWrapper } from "@/components/global/Form/FloatingLabelSelectWrapper";
 import { Button } from "@/components/ui/button";
 import {
   Card,

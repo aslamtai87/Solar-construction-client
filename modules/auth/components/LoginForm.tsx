@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useLogin } from "@/hooks/useAuth";
 import { LoginSchema, type LoginFormData } from "../validation/login";
-import { FloatingLabelInputWrapper } from "@/components/global/FloatingLabelInputWrapper";
+import { FloatingLabelInputWrapper } from "@/components/global/Form/FloatingLabelInputWrapper";
 import {
   Card,
   CardContent,
