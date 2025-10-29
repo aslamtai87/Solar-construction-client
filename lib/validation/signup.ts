@@ -4,7 +4,7 @@ import { CompanyType } from "@/lib/types/user";
 const SignupSchema = z
   .object({
     fullName: z
-      .string()
+      .string("Full name must be a string")
       .min(1, "Full name is required")
       .max(100, "Full name must not exceed 100 characters"),
     companyType: z.enum(
@@ -13,8 +13,8 @@ const SignupSchema = z
         message: "Please select a company type",
       }
     ),
-    companyName: z
-      .string()
+    organizationName: z
+      .string("Company name must be a string")
       .min(1, "Company name is required")
       .max(100, "Company name must not exceed 100 characters"),
     email: z

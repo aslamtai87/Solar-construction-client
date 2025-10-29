@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSidebar } from "@/hooks/useSidebar";
 // import { NewProjectDialog } from "./NewProjectDialog";
+import {toast} from "sonner"
 
 export const DashboardHeader = () => {
   const [notifications] = useState(3);
@@ -35,6 +36,7 @@ export const DashboardHeader = () => {
     // 2. Update dashboard with new project
     // 3. Initialize modules with project data
     // 4. Show success toast
+    toast.success("Project created successfully!");
   };
 
   return (
@@ -66,7 +68,9 @@ export const DashboardHeader = () => {
             <div className="flex items-center space-x-3 md:ml-6 justify-between">
               {/* New Project Button */}
               <Button
-                onClick={() => setIsNewProjectOpen(true)}
+                onClick={() => 
+                  toast.info("New Project creation is coming soon!")
+                }
                 className="flex items-center gap-2 bg-[#1a1d29] hover:bg-[#1a1d29]/90"
               >
                 <Plus className="h-4 w-4" />

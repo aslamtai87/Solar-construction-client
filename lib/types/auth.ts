@@ -22,7 +22,6 @@ export interface UserProfile {
   status: string | null;
   companyName: string | null;
   companyType: CompanyType;
-  role: Role;
   updatedAt: string;
   createdAt: string;
 }
@@ -31,4 +30,13 @@ export interface UserProfile {
 export interface LoginFormData {
   email: string;
   password: string;
+}
+
+
+export interface SignupFormData {
+  email: string;
+  fullName: string;
+  password: string;
+  companyType: string;
+  organizationName: string;
 }

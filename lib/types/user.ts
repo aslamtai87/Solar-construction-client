@@ -1,5 +1,5 @@
 export enum CompanyType {
-    DEVELOPER = 'developer',
-    CONTRACTOR = 'contractor',
-    EPC = 'epc',
+    DEVELOPER = 'DEVELOPER',
+    CONTRACTOR = 'CONTRACTOR',
+    EPC = 'EPC',
 }

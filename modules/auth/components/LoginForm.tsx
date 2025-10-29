@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { useLogin } from "@/hooks/useAuth";
+import { useLogin } from "@/hooks/ReactQuery/useAuth";
 import { LoginSchema, type LoginFormData } from "../../../lib/validation/login";
 import { FloatingLabelInputWrapper } from "@/components/global/Form/FloatingLabelInputWrapper";
 import {
@@ -16,12 +16,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 
 const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const loginMutation = useLogin();
-  
+  const router = useRouter();
+
   const form = useForm<LoginFormData>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -51,6 +53,7 @@ const Login = () => {
       } else {
         localStorage.removeItem("rememberedEmail");
       }
+      router.push("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
     }

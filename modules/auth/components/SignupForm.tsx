@@ -14,6 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { CompanyType } from "@/lib/types/user";
+import { useSignup } from "@/hooks/ReactQuery/useAuth";
 
 const SignupForm = () => {
   const form = useForm<SignupFormData>({
@@ -22,12 +25,29 @@ const SignupForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      fullName: "",
+      organizationName: "",
+      companyType: "" as CompanyType,
     },
     mode: "onSubmit",
   });
+  const router = useRouter();
+  const signupMutation = useSignup();
 
   const onSubmit = async (data: SignupFormData) => {
-    // Handle signup logic here
+    try{
+      await signupMutation.mutateAsync({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        organizationName: data.organizationName,
+        companyType: data.companyType,
+      });
+      sessionStorage.setItem("signupEmail", data.email)
+      router.push("/verify-otp")
+    }catch(error){
+      console.error("Signup error:", error);
+    }
   };
 
   return (
@@ -57,7 +77,7 @@ const SignupForm = () => {
                 placeholder="Enter your email"
               />
               <FloatingLabelInputWrapper
-                name="companyName"
+                name="organizationName"
                 control={form.control}
                 label="Company Name"
                 type="text"
