@@ -1,0 +1,210 @@
+"use client";
+import Image from "next/image";
+import {
+  X,
+  LogOut,
+  UserIcon,
+  MoreVertical,
+  Users,
+  Sun,
+} from "lucide-react";
+import { useUserStore } from "@/store/authStore";
+import { usePathname } from "next/navigation";
+import { useMemo, useEffect } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuPortal,
+} from "@/components/ui/dropdown-menu";
+// import { useLogout } from "@/hooks/useAuth";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/useSidebar";
+import { SidebarItem } from "./SidebarItems";
+import { useRouter } from "next/navigation";
+// import { usePermissions } from "@/hooks/usePermissions";
+// import PERMISSIONS from "@/lib/constants/permissions";
+import House from "@/components/icons/House";
+// import Users from "@/components/icons/Users";
+// import { DollarIcon } from "../icons/DollorIcon";
+// import MegaphoneIcon from "../icons/MegaPhone";
+// import Building from "../icons/Building";
+// import Credit from "../icons/Credit";
+// import Package from "../icons/Package";
+// import Percent from "../icons/Percent";
+// import Report from "../icons/Report";
+// import RefundIcon from "../icons/Refund";
+// import { useSidebar } from "@/hooks/useSidebar";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+
+// import Testimonials from "@/components/icons/Testimonials";
+
+interface MenuItem {
+  title: string;
+  icon: any;
+  url: string;
+  perms?: string[];
+  anyPerms?: string[];
+  role?: string;
+}
+
+const menuItems: Record<string, MenuItem[]> = {
+  items: [
+    { title: "Dashboard", icon: House, url: "/dashboard" },
+    {
+      title: "User Management",
+      icon: Users,
+      url: "/user-management",
+    },
+  ],
+};
+
+export const RoleBasedSidebar = () => {
+  const { userProfile } = useUserStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isOpen, close, toggle } = useSidebar();
+  const currentUser = userProfile;
+  const isItemActive = (url: string) => {
+    return pathname === url || pathname.startsWith(url + "/");
+  };
+  const getRoleDisplayName = (role: string) => {
+    return role
+      ? `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`
+      : "Dashboard";
+  };
+
+  useEffect(() => {
+    close();
+  }, [pathname, close]);
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1080) {
+        close();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [close]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  const SidebarComponent = (
+    <Sidebar className="border-r h-full">
+      {/* Logo Section */}
+      <SidebarHeader className="border-b px-4 py-[26.5px]">
+        <div className="flex items-center gap-2">
+          <div className="bg-orange-500 rounded-lg p-1.5">
+            <Sun className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-base font-bold text-foreground leading-tight">
+              SunTrakker
+            </h1>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Enterprise Solar Management
+            </p>
+          </div>
+        </div>
+      </SidebarHeader>
+      
+      <SidebarContent className="p-3">
+        <SidebarMenu className="space-y-3.5">
+          {menuItems.items.map((item, index) => (
+            <SidebarItem
+              key={index}
+              title={item.title}
+              icon={item.icon}
+              url={item.url}
+              isActive={isItemActive(item.url)}
+            />
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
+    </Sidebar>
+  );
+
+  // Mobile-only sidebar content (without Sidebar wrapper)
+  const MobileSidebarContent = (
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+      {/* Logo Section for Mobile */}
+      <div className="border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="bg-orange-500 rounded-lg p-1.5">
+            <Sun className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-base font-bold text-foreground leading-tight">
+              SunTrakker
+            </h1>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Enterprise Solar Management
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content */}
+      <div className="flex-1 p-3 overflow-y-auto">
+        <div className="space-y-3.5 list-none">
+          {menuItems.items.map((item, index) => (
+            <SidebarItem
+              key={index}
+              title={item.title}
+              icon={item.icon}
+              url={item.url}
+              isActive={isItemActive(item.url)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">{SidebarComponent}</div>
+
+      {/* Mobile Sidebar */}
+      <div className="lg:hidden">
+        {/* Backdrop */}
+        {isOpen && (
+          <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={close} />
+        )}
+
+        {/* Mobile Sidebar */}
+        <div
+          className={`fixed left-0 top-0 h-full w-64 z-[9999] transform transition-transform duration-300 ease-in-out shadow-lg ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {MobileSidebarContent}
+        </div>
+      </div>
+    </>
+  );
+};
