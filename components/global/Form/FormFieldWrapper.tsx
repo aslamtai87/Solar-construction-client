@@ -61,7 +61,7 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
                 autoComplete={autoComplete}
                 aria-invalid={fieldState.invalid}
                 className={cn(
-                  "min-h-14",
+                  "min-h-10",
                   isPasswordField && "pr-10",
                   inputClassName
                 )}

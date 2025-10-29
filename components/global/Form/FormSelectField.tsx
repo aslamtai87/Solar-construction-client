@@ -67,11 +67,11 @@ export function FormSelectField<TFieldValues extends FieldValues>({
               <SelectTrigger
                 id={field.name}
                 aria-invalid={fieldState.invalid}
-                className={cn("min-h-14")}
+                className={cn("min-h-10 w-full")}
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
-              <SelectContent position="item-aligned">
+              <SelectContent>
                 {options.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}

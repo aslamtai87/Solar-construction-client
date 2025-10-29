@@ -80,11 +80,7 @@ export function GenericTable<T extends { id: string }>({
 }: GenericTableProps<T>) {
   return (
     <div>
-      <div
-        className={`space-y-4 rounded-2xl ${
-          layout2 ? "bg-[#F7F9FB] shadow-new" : ""
-        } p-5`}
-      >
+      <div className="space-y-4 rounded-2xl py-4">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold">{tableName}</h2>
           <span className="text-text-light text-sm">{tableDescription}</span>
@@ -106,82 +102,71 @@ export function GenericTable<T extends { id: string }>({
           </DataTableHeader>
         )}
         <div className="w-full overflow-x-auto">
-        <div className="min-w-[1200px]">
-          <Table
-            className={` ${
-              layout2 ? "border-separate border-spacing-y-4" : ""
-            }`}
-          >
-            <TableHeader>
-              <TableRow
-                className={` ${
-                  layout2
-                    ? "bg-bg-text hover:bg-bg-text"
-                    : "bg-table-header hover:bg-table-header"
-                } border-none`}
-              >
-                {columns.map((column, index) => (
-                  <TableHead
-                    key={column.key}
-                    className={`font-medium p-4  ${
-                      index === 0
-                        ? "first:rounded-tl-xl first:rounded-bl-xl"
-                        : index === columns.length - 1
-                        ? "last:rounded-tr-xl last:rounded-br-xl"
-                        : ""
-                    } ${column.className || ""}`}
-                  >
-                    {column.header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.length > 0 ? (
-                data.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    className={`border-0 ${
-                      layout2
-                        ? "bg-bg-text hover:bg-bg-text"
-                        : index % 2 === 0
-                        ? "bg-bg-text hover:bg-bg-text"
-                        : "bg-table-row hover:bg-table-row"
-                    }`}
-                  >
-                    {columns.map((column, colIndex) => (
-                      <TableCell
-                        key={column.key}
-                        className={`p-0  ${
-                          colIndex === 0
-                            ? "first:rounded-tl-xl first:rounded-bl-xl"
-                            : colIndex === columns.length - 1
-                            ? "last:rounded-tr-xl last:rounded-br-xl"
-                            : ""
-                        }`}
-                      >
-                        {column.render(item, index)}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="text-center text-gray-500 p-8"
-                  >
-                    {isLoading
-                      ? "Loading..."
-                      : isError
-                      ? "Error loading data"
-                      : emptyMessage}
-                  </TableCell>
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-border bg-muted/50 hover:bg-muted/50">
+                  {columns.map((column) => (
+                    <TableHead
+                      key={column.key}
+                      className="px-6 py-4 text-left text-sm font-semibold text-foreground"
+                    >
+                      {column.header}
+                    </TableHead>
+                  ))}
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {data.length > 0 ? (
+                  data.map((item, index) => (
+                    <TableRow
+                      key={item.id}
+                      className="border-b border-border transition-colors hover:bg-muted/30"
+                    >
+                      {columns.map((column) => (
+                        <TableCell
+                          key={column.key}
+                          className="p-0 text-foreground"
+                        >
+                          {column.render(item, index)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="py-12 text-center text-muted-foreground"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <svg
+                          className="h-12 w-12 opacity-40"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                          />
+                        </svg>
+                        <p className="text-sm font-medium">
+                          {isLoading
+                            ? "Loading data..."
+                            : isError
+                            ? "Error loading data"
+                            : emptyMessage}
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         {pagination && (
