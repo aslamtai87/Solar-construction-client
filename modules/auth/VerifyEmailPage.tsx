@@ -1,9 +1,28 @@
+"use client";
+
 import AuthHeader from "./components/AuthHeader";
 import VerifyOTPForm from "./components/VerifyOtp";
 import { Card } from "@/components/ui/card";
 import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const VerifyEmailPage = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const paramEmail = searchParams.get("email");
+  const email = paramEmail || sessionStorage.getItem("signupEmail") || "";
+
+  useEffect(() => {
+    if (!email) {
+      router.push("/signup");
+    }
+  }, [email, router]);
+
+  if (!email) {
+    return null;
+  }
+
   return (
     <>
       <AuthHeader />
@@ -19,7 +38,7 @@ const VerifyEmailPage = () => {
             </p>
           </div>
           <Suspense fallback={<div>Loading...</div>}>
-            <VerifyOTPForm />
+            <VerifyOTPForm emailValue={email} />
           </Suspense>
         </Card>
       </main>

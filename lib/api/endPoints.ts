@@ -8,6 +8,8 @@ export const API_ENDPOINTS = {
   RESEND_OTP: '/auth/resend-otp',
   LOGOUT: '/auth/account/logout',
   REFRESH_TOKEN: '/auth/refresh',
+  FORGOT_PASSWORD: '/auth/initiate-forget-password',
+  RESET_PASSWORD: '/auth/forget-password',
 };
 
 

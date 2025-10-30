@@ -77,3 +77,27 @@ export const logoutUser = async (): Promise<APISuccessResponse> => {
     throw error;
   }
 };
+
+export const forgotPassword = async (
+  email: string
+): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.post(API_ENDPOINTS.FORGOT_PASSWORD, { email });
+    return response.data;
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    throw error;
+  }
+}
+export const resetPassword = async (
+  token: string,
+  newPassword: string
+): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.post(API_ENDPOINTS.RESET_PASSWORD, { token, newPassword });
+    return response.data;
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    throw error;
+  }
+}

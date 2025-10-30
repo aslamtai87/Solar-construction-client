@@ -11,7 +11,7 @@ const UserManagement = () => {
 
   return (
     <div className="w-full p-6 space-y-3">
-      <div className="w-full">
+      <div className="w-1/2">
         <TabNavigation
           tabs={[
             { id: "users", label: "User Management", icon: Users },

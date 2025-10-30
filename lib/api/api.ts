@@ -3,7 +3,6 @@ import { API_ENDPOINTS } from "./endPoints";
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003/api/v1",
-    timeout:15000, // 15 seconds timeout
     headers: {
         "Content-Type": "application/json",
     },
@@ -12,7 +11,6 @@ const api = axios.create({
 
 export const apiPublic = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003/api/v1",
-    timeout:15000, // 15 seconds timeout
     headers: {
         "Content-Type": "application/json",
     },

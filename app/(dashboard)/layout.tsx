@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/global/Sidebar";
@@ -9,22 +9,27 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import LoadingState from "@/components/global/LoadingState";
 
-
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: userProfile } = useGetUserProfile();
+  const { data: userProfile, isLoading } = useGetUserProfile();
   const router = useRouter();
   useEffect(() => {
-    if (!userProfile) {
-      router.push('/signin');
+    if (!userProfile && !isLoading) {
+      router.push("/signin");
+    }else if (userProfile && !isLoading) {
+      router.push("/dashboard");
     }
-  }, [userProfile]);
+  }, [userProfile, router, isLoading]);
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
 
   if (!userProfile) {
-    return <LoadingState />;
+    return null;
   }
   return (
     <div className="flex h-screen overflow-hidden">

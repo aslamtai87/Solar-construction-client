@@ -129,7 +129,7 @@ const Login = () => {
                     disabled={loginMutation.isPending}
                     onClick={() => {
                       form.reset();
-                      window.location.href = "/forgotPassword";
+                      window.location.href = "/forgot-password";
                     }}
                   >
                     Forgot Password?

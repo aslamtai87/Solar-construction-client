@@ -33,7 +33,7 @@ export const DashboardHeader = () => {
   const handleLogout = () => {
     try {
       logout.mutate();
-      router.push("/signin");
+      window.location.href = "/signin";
     } catch (error) {
       console.error("Logout failed:", error);
     }

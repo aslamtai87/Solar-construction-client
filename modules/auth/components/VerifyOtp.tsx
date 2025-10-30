@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVerifyOtp, useResendOtp } from "@/hooks/ReactQuery/useAuth";
 
-export default function VerifyOTPForm() {
+export default function VerifyOTPForm({ emailValue }: { emailValue: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(true);
   const [success, setSuccess] = useState(false);
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
@@ -21,15 +22,10 @@ export default function VerifyOTPForm() {
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
   const tokenParams = searchParams.get("token");
-  const [isCheckingEmail, setIsCheckingEmail] = useState(true);
 
   useEffect(() => {
-    const storedEmail = sessionStorage.getItem("signupEmail");
-    const paramEmail = searchParams.get("email");
-    const emailValue = storedEmail || paramEmail || "";
     setEmail(emailValue);
     setIsCheckingEmail(false);
-
     if (tokenParams && tokenParams.length === 6 && emailValue) {
       setOtp(tokenParams);
       submitOtp(tokenParams);
@@ -42,12 +38,6 @@ export default function VerifyOTPForm() {
       return () => clearTimeout(timer);
     }
   }, [resendTimer]);
-
-  useEffect(() => {
-    if (!isCheckingEmail && !email) {
-      router.push("/signup");
-    }
-  }, [isCheckingEmail, email, router]);
 
   const submitOtp = async (otpValue: string) => {
     setError("");
@@ -132,6 +122,10 @@ export default function VerifyOTPForm() {
         </div>
       </div>
     );
+  }
+
+  if (!email) {
+    return null;
   }
 
   return (
