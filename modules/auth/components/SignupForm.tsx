@@ -44,7 +44,7 @@ const SignupForm = () => {
         companyType: data.companyType,
       });
       sessionStorage.setItem("signupEmail", data.email)
-      router.push("/verify-otp")
+      router.push("/verify-email")
     }catch(error){
       console.error("Signup error:", error);
     }

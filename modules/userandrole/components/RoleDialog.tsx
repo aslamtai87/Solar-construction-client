@@ -64,7 +64,6 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
     // TODO: Implement save logic
     onClose();
   };

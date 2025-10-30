@@ -67,3 +67,13 @@ export const resendOtp = async (
     throw error;
   }
 }
+
+export const logoutUser = async (): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.post(API_ENDPOINTS.LOGOUT);
+    return response.data;
+  } catch (error) {
+    console.error("Logout Error:", error);
+    throw error;
+  }
+};

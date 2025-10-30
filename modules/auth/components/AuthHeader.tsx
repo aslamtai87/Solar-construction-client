@@ -1,12 +1,15 @@
+"use client";
+
 import { Sun } from "lucide-react";
-import React from "react";
+import {useRouter} from "next/navigation";
 
 const AuthHeader = () => {
+  const router = useRouter();
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push('/')}>
             <Sun className="h-8 w-8 text-orange-500" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">SunTrakker</h1>

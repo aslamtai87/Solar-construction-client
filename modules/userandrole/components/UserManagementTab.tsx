@@ -71,7 +71,6 @@ const UserManagementTab = () => {
   );
 
   const handleDelete = (id: string) => {
-    console.log("Delete user:", id);
     // TODO: Implement delete logic
   };
 

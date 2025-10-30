@@ -52,8 +52,6 @@ export default function Pagination({
     };
 
     const pageNumbers = getPageNumbers();
-
-    console.log("Pagination component rendered with currentPage:", currentPage, "totalPages:", totalPages);
     
     return (
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">

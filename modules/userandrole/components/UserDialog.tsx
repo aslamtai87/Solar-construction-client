@@ -72,7 +72,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
   }, [mode, userData, open]);
 
   const onSubmit = (data: CreateUser) => {
-    console.log('Form submitted:', data);
   };
 
   const handleChange = (field: keyof CreateUser, value: string) => {

@@ -20,16 +20,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSidebar } from "@/hooks/useSidebar";
-// import { NewProjectDialog } from "./NewProjectDialog";
+import { useLogout } from "@/hooks/ReactQuery/useAuth";
 import {toast} from "sonner"
+import { useRouter } from "next/navigation";
 
 export const DashboardHeader = () => {
   const [notifications] = useState(3);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const { toggle } = useSidebar();
+  const router = useRouter();
+  const logout = useLogout();
+  const handleLogout = () => {
+    try {
+      logout.mutate();
+      router.push("/signin");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const handleNewProject = (data: any) => {
-    console.log("New project created:", data);
     // TODO: Integrate with project management system
     // This would typically:
     // 1. Save project to database
@@ -69,7 +79,7 @@ export const DashboardHeader = () => {
               {/* New Project Button */}
               <Button
                 onClick={() => 
-                  toast.info("New Project creation is coming soon!")
+                  toast.error("New Project creation is coming soon!")
                 }
                 className="flex items-center gap-2 bg-[#1a1d29] hover:bg-[#1a1d29]/90"
               >
@@ -143,7 +153,9 @@ export const DashboardHeader = () => {
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                   <DropdownMenuItem>Settings</DropdownMenuItem>
                   <DropdownMenuItem>Help & Support</DropdownMenuItem>
-                  <DropdownMenuItem>Sign Out</DropdownMenuItem>
+                  <DropdownMenuItem className="hover:cursor-pointer" onClick={()=>{
+                    handleLogout();
+                  }}>Sign Out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               </div>

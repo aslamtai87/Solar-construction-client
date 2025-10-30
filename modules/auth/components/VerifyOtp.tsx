@@ -1,97 +1,137 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useVerifyOtp,useResendOtp } from "@/hooks/ReactQuery/useAuth"
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useVerifyOtp, useResendOtp } from "@/hooks/ReactQuery/useAuth";
 
 export default function VerifyOTPForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [otp, setOtp] = useState("")
-  const [email, setEmail] = useState("")
-  const [resendTimer, setResendTimer] = useState(0)
-  const verifyOtpMutation = useVerifyOtp()
-  const resendOtpMutation = useResendOtp()
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
+  const verifyOtpMutation = useVerifyOtp();
+  const resendOtpMutation = useResendOtp();
+  const tokenParams = searchParams.get("token");
+  const [isCheckingEmail, setIsCheckingEmail] = useState(true);
 
   useEffect(() => {
-    const storedEmail = sessionStorage.getItem("signupEmail")
-    const paramEmail = searchParams.get("email")
-    setEmail(storedEmail || paramEmail || "")
-  }, [searchParams])
+    const storedEmail = sessionStorage.getItem("signupEmail");
+    const paramEmail = searchParams.get("email");
+    const emailValue = storedEmail || paramEmail || "";
+    setEmail(emailValue);
+    setIsCheckingEmail(false);
+
+    if (tokenParams && tokenParams.length === 6 && emailValue) {
+      setOtp(tokenParams);
+      submitOtp(tokenParams);
+    }
+  }, [searchParams, tokenParams]);
 
   useEffect(() => {
     if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [resendTimer])
+  }, [resendTimer]);
+
+  useEffect(() => {
+    if (!isCheckingEmail && !email) {
+      router.push("/signup");
+    }
+  }, [isCheckingEmail, email, router]);
+
+  const submitOtp = async (otpValue: string) => {
+    setError("");
+    setLoading(true);
+    if (!otpValue || otpValue.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      setLoading(false);
+      return;
+    }
+    try {
+      await verifyOtpMutation.mutateAsync(otpValue);
+      setSuccess(true);
+      sessionStorage.removeItem("signupEmail");
+      setTimeout(() => {
+        router.push("/signin");
+      }, 2000);
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
+  };
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-    setOtp(value)
-  }
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP")
-      setLoading(false)
-      return
-    }
-
-    try {
-      verifyOtpMutation.mutateAsync(otp);
-      setSuccess(true)
-      sessionStorage.removeItem("signupEmail")
-      setTimeout(() => {
-        router.push("/signin")
-      }, 2000)
-    } catch (err) {
-      setError("An error occurred. Please try again.")
-      setLoading(false)
-    }
-  }
+    e.preventDefault();
+    await submitOtp(otp);
+  };
 
   const handleResendOtp = async () => {
-    setError("")
-    setLoading(true)
-
+    setError("");
+    setLoading(true);
     try {
       await resendOtpMutation.mutateAsync(email);
-      setResendTimer(60)
-      setOtp("")
+      setResendTimer(60);
+      setOtp("");
     } catch (err) {
-      setError("Failed to resend OTP. Please try again.")
+      const error = err as { response?: { data?: { message?: string } } };
+      if (error.response?.data?.message === "User is already verified") {
+        setSuccess(true);
+        sessionStorage.removeItem("signupEmail");
+        setTimeout(() => {
+          router.push("/signin");
+        }, 2000);
+      } else {
+        setError("Failed to resend OTP. Please try again.");
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
+  // Move conditional renders AFTER all hooks
   if (success) {
     return (
       <div className="space-y-4 text-center">
         <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <svg
+            className="w-6 h-6 text-orange-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Email Verified!</h2>
-          <p className="text-sm text-muted-foreground">Redirecting to Login...</p>
+          <h2 className="text-lg font-semibold text-foreground">
+            Email Verified!
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Redirecting to Login...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -115,12 +155,16 @@ export default function VerifyOTPForm() {
           className="text-center text-2xl tracking-widest font-mono"
           required
         />
-        <p className="text-xs text-muted-foreground text-center">Enter the 6-digit code sent to your email</p>
+        <p className="text-xs text-muted-foreground text-center">
+          Enter the 6-digit code sent to your email
+        </p>
       </div>
 
-      {error && <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md">{error}</div>}
-
-      <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={loading || otp.length !== 6}
+      >
         {loading ? "Verifying..." : "Verify Email"}
       </Button>
 
@@ -138,5 +182,5 @@ export default function VerifyOTPForm() {
         </p>
       </div>
     </form>
-  )
+  );
 }

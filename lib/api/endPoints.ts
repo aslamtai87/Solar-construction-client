@@ -6,6 +6,8 @@ export const API_ENDPOINTS = {
   VERIFY_OTP: '/auth/verify-otp-token',
   USER_PROFILE: '/auth/account/me',
   RESEND_OTP: '/auth/resend-otp',
+  LOGOUT: '/auth/account/logout',
+  REFRESH_TOKEN: '/auth/refresh',
 };
 
 

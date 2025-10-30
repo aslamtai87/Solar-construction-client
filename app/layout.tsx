@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { DM_Sans } from "next/font/google";
 import QueryProvider from "@/providers/QueryProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={dmSans.variable}>
         <QueryProvider>{children}</QueryProvider>
+        <Toaster position="top-right" duration={3000} />
       </body>
     </html>
   );

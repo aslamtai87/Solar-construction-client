@@ -62,7 +62,6 @@ const RoleManagementTab = () => {
   );
 
   const handleDelete = (id: string) => {
-    console.log('Delete role:', id);
     // TODO: Implement delete logic
   };
 
