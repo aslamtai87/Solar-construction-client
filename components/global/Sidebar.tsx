@@ -70,11 +70,8 @@ const menuItems: Record<string, MenuItem[]> = {
 };
 
 export const RoleBasedSidebar = () => {
-  const { userProfile } = useUserStore();
-  const router = useRouter();
   const pathname = usePathname();
-  const { isOpen, close, toggle } = useSidebar();
-  const currentUser = userProfile;
+  const { isOpen, close } = useSidebar();
   const isItemActive = (url: string) => {
     return pathname === url || pathname.startsWith(url + "/");
   };

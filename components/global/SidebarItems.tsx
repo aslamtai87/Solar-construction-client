@@ -22,7 +22,7 @@ export function SidebarItem({ title, icon: Icon, url, isActive }: SidebarItemPro
           className={cn(
             "flex items-center gap-3 py-2.5 px-3 transition-colors",
             isActive
-              ? "!bg-black !text-background"
+              ? "!bg-[#1a1d29] hover:bg-[#1a1d29]/90 !text-background"
               : "hover:bg-accent hover:text-accent-foreground"
           )}
         >

@@ -10,6 +10,10 @@ export const API_ENDPOINTS = {
   REFRESH_TOKEN: '/auth/refresh',
   FORGOT_PASSWORD: '/auth/initiate-forget-password',
   RESET_PASSWORD: '/auth/forget-password',
+
+  // file upload
+  UPLOAD_FILE: '/upload',
+  DELETE_FILE: '/upload',
 };
 
 

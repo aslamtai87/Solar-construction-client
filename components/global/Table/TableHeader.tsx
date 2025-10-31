@@ -52,7 +52,7 @@ export const DataTableHeader = ({
                     <DateRangePicker onDateRangeChange={onDateRangeChange || (() => {})} />
                 )}
                 {onAdd && (
-                    <Button className="flex items-center gap-2 cursor-pointer" onClick={onAdd} variant={addButtonOutline ? "outline" : "default"}>
+                    <Button className="flex items-center gap-2 cursor-pointer bg-[#1a1d29] hover:bg-[#1a1d29]/90" onClick={onAdd} variant={addButtonOutline ? "outline" : "default"}>
                         {addButtonIcon ? addButtonIcon : <Plus className="h-4 w-4" />}
                         {addButtonText}
                     </Button>

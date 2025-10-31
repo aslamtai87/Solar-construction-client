@@ -2,13 +2,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Bell,
   Search,
   User,
-  Settings,
-  Sun,
   ChevronDown,
   Plus,
   Menu,
@@ -23,12 +20,12 @@ import { useSidebar } from "@/hooks/useSidebar";
 import { useLogout } from "@/hooks/ReactQuery/useAuth";
 import {toast} from "sonner"
 import { useRouter } from "next/navigation";
+import CreateProject from "@/modules/project/components/CreateProject";
+import { useDialog } from "@/hooks/useDialog";
 
 export const DashboardHeader = () => {
   const [notifications] = useState(3);
-  const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const { toggle } = useSidebar();
-  const router = useRouter();
   const logout = useLogout();
   const handleLogout = () => {
     try {
@@ -39,16 +36,7 @@ export const DashboardHeader = () => {
     }
   };
 
-  const handleNewProject = (data: any) => {
-    // TODO: Integrate with project management system
-    // This would typically:
-    // 1. Save project to database
-    // 2. Update dashboard with new project
-    // 3. Initialize modules with project data
-    // 4. Show success toast
-    toast.success("Project created successfully!");
-  };
-
+  const {dialog:projectDialog, openCreateDialog: openProjectDialog, closeDialog: closeProjectDialog} = useDialog();
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -78,9 +66,7 @@ export const DashboardHeader = () => {
             <div className="flex items-center space-x-3 md:ml-6 justify-between">
               {/* New Project Button */}
               <Button
-                onClick={() => 
-                  toast.error("New Project creation is coming soon!")
-                }
+                onClick={openProjectDialog}
                 className="flex items-center gap-2 bg-[#1a1d29] hover:bg-[#1a1d29]/90"
               >
                 <Plus className="h-4 w-4" />
@@ -169,6 +155,10 @@ export const DashboardHeader = () => {
         onOpenChange={setIsNewProjectOpen}
         onSubmit={handleNewProject}
       /> */}
+      <CreateProject
+        open={projectDialog.open}
+        onClose={closeProjectDialog}
+      />
     </>
   );
 };
