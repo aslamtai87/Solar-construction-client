@@ -115,19 +115,6 @@ const CreateProject = ({
                 type="text"
                 placeholder="e.g. Green Energy Corp"
               />
-              {/* <Controller
-                name="projectLocation"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <LocationAutocomplete
-                    value={field.value}
-                    onChange={field.onChange}
-                    error={fieldState.error}
-                    label="Project Location"
-                    placeholder="e.g. Austin, TX"
-                  />
-                )}
-              /> */}
               <FormSelectField
                 label="Project Type"
                 name="projectType"
