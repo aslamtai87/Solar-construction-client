@@ -29,7 +29,6 @@ import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { FormSelectField } from "@/components/global/Form/FormSelectField";
 import FileUpload from "@/components/global/Form/FileUpload";
-import LocationAutocomplete from "@/components/global/LocationAutocomplete";
 
 const CreateProject = ({
   open,
@@ -44,7 +43,12 @@ const CreateProject = ({
       projectNumber: "",
       projectName: "",
       clientName: "",
-      projectLocation: "",
+      projectLocation: {
+        country: "",
+        state: "",
+        city: "",
+        address: "",
+      },
       projectSize: 0,
       projectSizeUnit: projectSizeUnits.kW,
       projectType: projectTypes.Rooftop,
@@ -70,7 +74,7 @@ const CreateProject = ({
     }
   }, [open, form]);
 
-  console.log(form.watch('projectSize'));
+  console.log(form.watch("projectSize"));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -111,7 +115,7 @@ const CreateProject = ({
                 type="text"
                 placeholder="e.g. Green Energy Corp"
               />
-              <Controller
+              {/* <Controller
                 name="projectLocation"
                 control={form.control}
                 render={({ field, fieldState }) => (
@@ -123,27 +127,7 @@ const CreateProject = ({
                     placeholder="e.g. Austin, TX"
                   />
                 )}
-              />
-              <div className="flex items-center gap-2">
-                <FormFieldWrapper
-                  label="Project Size"
-                  name="projectSize"
-                  control={form.control}
-                  type="number"
-                  placeholder="e.g. 1500"
-                  valueAsNumber={true}
-                />
-                <FormSelectField
-                  label=""
-                  name="projectSizeUnit"
-                  control={form.control}
-                  options={Object.values(projectSizeUnits).map((unit) => ({
-                    label: unit,
-                    value: unit,
-                  }))}
-                  className="mt-4 w-20"
-                />
-              </div>
+              /> */}
               <FormSelectField
                 label="Project Type"
                 name="projectType"
@@ -152,6 +136,76 @@ const CreateProject = ({
                   label: type,
                   value: type,
                 }))}
+              />
+              <div className="flex items-start gap-2">
+                <div >
+                  <FormFieldWrapper
+                    label="Project Size"
+                    name="projectSize"
+                    control={form.control}
+                    type="number"
+                    placeholder="e.g. 1500"
+                    valueAsNumber={true}
+                  />
+                </div>
+                <div >
+                  <FormSelectField
+                    label="Unit"
+                    name="projectSizeUnit"
+                    control={form.control}
+                    options={Object.values(projectSizeUnits).map((unit) => ({
+                      label: unit,
+                      value: unit,
+                    }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-col gap-0">
+              <CardTitle className="text-2xl">Project Location</CardTitle>
+              <CardDescription>
+                Specify the geographical location of the project.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <FormSelectField
+                label="Country"
+                name="projectLocation.country"
+                control={form.control}
+                options={[
+                  { label: "USA", value: "USA" },
+                  { label: "Canada", value: "Canada" },
+                  { label: "Mexico", value: "Mexico" },
+                ]}
+              />
+              <FormSelectField
+                label="State"
+                name="projectLocation.state"
+                control={form.control}
+                options={[
+                  { label: "Texas", value: "Texas" },
+                  { label: "California", value: "California" },
+                  { label: "Florida", value: "Florida" },
+                ]}
+              />
+              <FormSelectField
+                label="City"
+                name="projectLocation.city"
+                control={form.control}
+                options={[
+                  { label: "Austin, TX", value: "Austin, TX" },
+                  { label: "Dallas, TX", value: "Dallas, TX" },
+                  { label: "Houston, TX", value: "Houston, TX" },
+                ]}
+              />
+              <FormFieldWrapper
+                label="Address"
+                name="projectLocation.address"
+                control={form.control}
+                type="text"
+                placeholder="e.g. 123 Solar St."
               />
             </CardContent>
           </Card>
