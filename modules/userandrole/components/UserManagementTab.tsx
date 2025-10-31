@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/global/StatusBadge";
 import UserDialog from "./UserDialog";
+import DeleteDialog from "@/components/global/DeleteDialog";
 
 interface User {
   id: string;
@@ -62,6 +63,8 @@ const UserManagementTab = () => {
   const { dialog, openCreateDialog, openEditDialog, closeDialog } =
     useDialog<User>();
 
+  const { dialog: deleteDialog, openEditDialog: openDeleteDialog, closeDialog: closeDeleteDialog } = useDialog();
+
   // Filter users based on search
   const filteredUsers = staticUsers.filter(
     (user) =>
@@ -71,7 +74,8 @@ const UserManagementTab = () => {
   );
 
   const handleDelete = (id: string) => {
-    // TODO: Implement delete logic
+    alert(`Delete user with id: ${id}`);
+    closeDeleteDialog();
   };
 
   const handleEdit = (user: User) => {
@@ -129,7 +133,7 @@ const UserManagementTab = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleDelete(user.id)}
+            onClick={() => openDeleteDialog(user.id)}
             className="border-red-300 text-red-600 hover:bg-red-50 hover:cursor-pointer"
           >
             <Trash2 className="h-4 w-4 mr-1" />
@@ -165,6 +169,16 @@ const UserManagementTab = () => {
         onClose={closeDialog}
         mode={dialog.mode}
         userData={dialog.data}
+      />
+      <DeleteDialog 
+        open={deleteDialog.open}
+        onClose={closeDeleteDialog}
+        onConfirm={() => {
+          if (deleteDialog.data && deleteDialog.data.id) {
+            handleDelete(deleteDialog.data.id);
+          }
+        }}
+        data={deleteDialog.data ? { id: deleteDialog.data as string } : null}
       />
     </div>
   );
