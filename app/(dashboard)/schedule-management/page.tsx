@@ -1,4 +1,4 @@
-import ScheduleManagementPage from "@/modules/scheduleManagement/scheduleManagementPage"
+import ScheduleManagementPage from "@/modules/scheduleManagement/ScheduleManagementPage"
 
 const page = () => {
   return (

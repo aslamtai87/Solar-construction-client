@@ -1,32 +1,17 @@
 "use client";
 import Image from "next/image";
 import {
-  X,
-  LogOut,
-  UserIcon,
-  MoreVertical,
+  Calendar,
   Users,
   Sun,
 } from "lucide-react";
-import { useUserStore } from "@/store/authStore";
 import { usePathname } from "next/navigation";
-import { useMemo, useEffect } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
-// import { useLogout } from "@/hooks/useAuth";
+import {  useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSidebar } from "@/hooks/useSidebar";
 import { SidebarItem } from "./SidebarItems";
@@ -34,20 +19,7 @@ import { useRouter } from "next/navigation";
 // import { usePermissions } from "@/hooks/usePermissions";
 // import PERMISSIONS from "@/lib/constants/permissions";
 import House from "@/components/icons/House";
-// import Users from "@/components/icons/Users";
-// import { DollarIcon } from "../icons/DollorIcon";
-// import MegaphoneIcon from "../icons/MegaPhone";
-// import Building from "../icons/Building";
-// import Credit from "../icons/Credit";
-// import Package from "../icons/Package";
-// import Percent from "../icons/Percent";
-// import Report from "../icons/Report";
-// import RefundIcon from "../icons/Refund";
-// import { useSidebar } from "@/hooks/useSidebar";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
-
-// import Testimonials from "@/components/icons/Testimonials";
 
 interface MenuItem {
   title: string;
@@ -66,6 +38,7 @@ const menuItems: Record<string, MenuItem[]> = {
       icon: Users,
       url: "/user-management",
     },
+    { title: "Schedule Management", icon: Calendar, url: "/schedule-management" },
   ],
 };
 
