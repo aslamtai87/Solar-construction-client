@@ -5,7 +5,7 @@ import { useTableState } from '@/hooks/useTableState';
 import { useDialog } from '@/hooks/useDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import RoleDialog from './RoleDialog';
+import RoleDialog from './RoleCreation';
 
 interface Role {
   id: string;
@@ -51,8 +51,6 @@ const RoleManagementTab = () => {
     handleSearchChange,
   } = useTableState();
 
-  const { dialog, openCreateDialog, openEditDialog, closeDialog } = useDialog<Role>();
-
   // Filter roles based on search
   const filteredRoles = staticRoles.filter(
     (role) =>
@@ -65,9 +63,7 @@ const RoleManagementTab = () => {
     // TODO: Implement delete logic
   };
 
-  const handleEdit = (role: Role) => {
-    openEditDialog(role);
-  };
+
 
   const columns = [
     {
@@ -103,7 +99,6 @@ const RoleManagementTab = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleEdit(role)}
             className="border-gray-300 hover:bg-gray-100"
           >
             <Pencil className="h-4 w-4 mr-1" />
@@ -121,6 +116,10 @@ const RoleManagementTab = () => {
     },
   ];
 
+  const handleAddRole = () => {
+    window.location.href = '/user-management/role/create';
+  };
+
   return (
     <div>
       <GenericTable
@@ -133,7 +132,7 @@ const RoleManagementTab = () => {
         previousPage={false}
         searchValue={searchText}
         onSearchChange={handleSearchChange}
-        onAdd={openCreateDialog}
+        onAdd={handleAddRole}
         addButtonText="Add Role"
         addButtonIcon={<Plus className="h-4 w-4 mr-1" />}
         searchPlaceholder="Search roles..."
@@ -141,13 +140,6 @@ const RoleManagementTab = () => {
         tableDescription="Manage system roles and permissions"
         layout2={true}
         pagination={false}
-      />
-      
-      <RoleDialog
-        open={dialog.open}
-        onClose={closeDialog}
-        mode={dialog.mode}
-        roleData={dialog.data}
       />
     </div>
   );

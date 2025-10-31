@@ -1,0 +1,16 @@
+export const PERMISSIONS = {
+  USER: {
+    BROWSE: "USER.BROWSE",
+    CREATE: "USER.CREATE",
+    UPDATE: "USER.UPDATE",
+    DELETE: "USER.DELETE",
+  },
+  ROLE: {
+    BROWSE: "ROLE.BROWSE",
+    CREATE: "ROLE.CREATE",
+    UPDATE: "ROLE.UPDATE",
+    DELETE: "ROLE.DELETE",
+  },
+}
+
+export default PERMISSIONS
