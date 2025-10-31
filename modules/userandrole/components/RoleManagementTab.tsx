@@ -5,7 +5,7 @@ import { useTableState } from '@/hooks/useTableState';
 import { useDialog } from '@/hooks/useDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import RoleDialog from './RoleCreation';
+import DeleteDialog from '@/components/global/DeleteDialog';
 
 interface Role {
   id: string;
@@ -60,10 +60,11 @@ const RoleManagementTab = () => {
   );
 
   const handleDelete = (id: string) => {
-    // TODO: Implement delete logic
+    console.log(`Deleting role with id: ${id}`);
+    closeDeleteDialog();
   };
 
-
+  const { dialog:deleteDialog, openEditDialog:openDeleteDialog, closeDialog:closeDeleteDialog } = useDialog();
 
   const columns = [
     {
@@ -106,7 +107,7 @@ const RoleManagementTab = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleDelete(role.id)}
+            onClick={() => openDeleteDialog(role)}
             className="border-red-300 text-red-600 hover:bg-red-50"
           >
             <Trash2 className="h-4 w-4 mr-1" />
@@ -140,6 +141,14 @@ const RoleManagementTab = () => {
         tableDescription="Manage system roles and permissions"
         layout2={true}
         pagination={false}
+      />
+      <DeleteDialog
+        open={deleteDialog.open}
+        onClose={closeDeleteDialog}
+        onConfirm={() => {
+          handleDelete(deleteDialog.data.id);
+        }}
+        data={deleteDialog.data ? deleteDialog.data : null}
       />
     </div>
   );
