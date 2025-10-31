@@ -95,10 +95,10 @@ export default function RoleCreation() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-row-reverse gap-3 pt-4 border-t border-gray-200">
           <Button
             type="submit"
-            className="bg-[#1a1d29] hover:bg-[#1a1d29]/90 text-white cursor-pointer"
+            className="bg-[#1a1d29] hover:bg-[#1a1d29]/90 text-white"
           >
             Create Role
           </Button>
@@ -106,7 +106,6 @@ export default function RoleCreation() {
             type="button"
             variant="outline"
             onClick={() => form.reset()}
-            className="cursor-pointer"
           >
             Reset
           </Button>
