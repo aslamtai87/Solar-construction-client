@@ -26,6 +26,7 @@ interface FormFieldWrapperProps<TFieldValues extends FieldValues> {
   className?: string;
   inputClassName?: string;
   orientation?: "vertical" | "horizontal" | "responsive";
+  valueAsNumber?: boolean;
 }
 
 export function FormFieldWrapper<TFieldValues extends FieldValues>({
@@ -55,7 +56,7 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
           data-invalid={fieldState.invalid}
           className={className}
         >
-          {(type === "text" || type === "number") ? (
+          {type === "text" || type === "number" ? (
             <FieldContent>
               <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
 
@@ -74,6 +75,26 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
                     inputClassName,
                     "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                   )}
+                  style={
+                    type === "number"
+                      ? {
+                          MozAppearance: "textfield",
+                        }
+                      : {}
+                  }
+                  onChange={(e) => {
+                    if (type === "number") {
+                      const value = e.target.value;
+                      if (value === "") {
+                        field.onChange("");
+                      } else {
+                        const numValue = parseFloat(value);
+                        field.onChange(isNaN(numValue) ? value : numValue);
+                      }
+                    } else {
+                      field.onChange(e.target.value);
+                    }
+                  }}
                 />
 
                 {isPasswordField && !disabled && (

@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { FormSelectField } from "@/components/global/Form/FormSelectField";
 import FileUpload from "@/components/global/Form/FileUpload";
+import LocationAutocomplete from "@/components/global/LocationAutocomplete";
 
 const CreateProject = ({
   open,
@@ -69,6 +70,8 @@ const CreateProject = ({
     }
   }, [open, form]);
 
+  console.log(form.watch('projectSize'));
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="flex flex-col gap-4 max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -108,12 +111,18 @@ const CreateProject = ({
                 type="text"
                 placeholder="e.g. Green Energy Corp"
               />
-              <FormFieldWrapper
-                label="Project Location"
+              <Controller
                 name="projectLocation"
                 control={form.control}
-                type="text"
-                placeholder="e.g. Austin, TX"
+                render={({ field, fieldState }) => (
+                  <LocationAutocomplete
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={fieldState.error}
+                    label="Project Location"
+                    placeholder="e.g. Austin, TX"
+                  />
+                )}
               />
               <div className="flex items-center gap-2">
                 <FormFieldWrapper
@@ -122,6 +131,7 @@ const CreateProject = ({
                   control={form.control}
                   type="number"
                   placeholder="e.g. 1500"
+                  valueAsNumber={true}
                 />
                 <FormSelectField
                   label=""
