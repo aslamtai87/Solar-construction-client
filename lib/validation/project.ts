@@ -35,7 +35,7 @@ export const ProjectValidationSchema = z.object({
         message: "At least one scope must be selected",
     }),
     // Document URLs after upload
-    documents: z.array(z.string().url("Invalid file URL")).optional(),
+    documents: z.array(z.url("Invalid file URL")).optional(),
 });
 
 export type ProjectValidationType = z.infer<typeof ProjectValidationSchema>;
