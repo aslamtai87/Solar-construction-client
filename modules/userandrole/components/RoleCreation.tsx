@@ -12,6 +12,7 @@ import {
   useGetRoles,
   useCreateRole,
   useGetRolesById,
+  useUpateRole
 } from "@/hooks/ReactQuery/useAuth";
 import { GroupedPermissionsResponse } from "@/lib/types/auth";
 import { useParams } from "next/navigation";
@@ -27,8 +28,10 @@ export default function RoleCreation() {
     resolver: zodResolver(RoleSchema),
     mode: "onSubmit",
   });
-  const { mutate: createRole } = useCreateRole();
+  
   const { id } = useParams();
+  const { mutate: createRole } = useCreateRole();
+  const { mutate: updateRole } = useUpateRole(id as string);
 
   const {
     data: groupedPermissionsDataApi,
@@ -76,6 +79,8 @@ export default function RoleCreation() {
   // first i have to create normal role permissions to grouped permissions then edit role with grouped permissions
 
   const selectedPermissions = form.watch("permissions");
+  const isEditMode = !!id;
+  
   const handlePermissionChange = (permissionKey: string, value: boolean) => {
     const currentPermissions = form.getValues("permissions");
     if (value) {
@@ -105,26 +110,27 @@ export default function RoleCreation() {
       });
       return;
     }
-    createRole(
-      {
-        name: data.role,
-        description: data.description,
-        permissionIds: data.permissions,
+    
+    const rolePayload = {
+      name: data.role,
+      description: data.description,
+      permissionIds: data.permissions,
+    };
+    
+    const mutation = isEditMode ? updateRole : createRole;
+    
+    mutation(rolePayload, {
+      onSuccess: () => {
+        form.reset();
+        window.location.href = "/user-management?tab=roles";
       },
-      {
-        onSuccess: () => {
-          form.reset();
-          window.location.href = "/user-management?tab=roles";
-        },
-        onError: (error) => {
-          console.error("Error creating/updating role:", error);
-        },
-      }
-    );
+      onError: (error) => {
+        console.error(`Error ${isEditMode ? 'updating' : 'creating'} role:`, error);
+      },
+    });
   };
 
   const groupedPermissionsData = groupedPermissionsDataApi || [];
-  const isEditMode = !!id;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">

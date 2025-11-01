@@ -9,6 +9,7 @@ import {
   createRole,
   getRoles,
   getRolesById,
+  updateRole,
 } from "@/lib/api/auth";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
 import { CreateRole, GroupedPermissionsResponse, LoginFormData, Roles, RoleByIdResponse } from "@/lib/types/auth";
@@ -133,4 +134,19 @@ export const useGetRolesById = (id: string) => {
     queryFn: () => getRolesById(id),
     enabled: !!id,
   });
+}
+
+export const useUpateRole = (id: string) => {
+  return useMutation<APISuccessResponse, ApiError, CreateRole>(
+    {
+      mutationFn: (data) => updateRole(id, data),
+      onSuccess: (data) => {
+        toast.success(data.message || "Role updated successfully");
+      },
+      onError: (error: ApiError) => {
+        const errorMessage = error.response?.data.message || "Update role failed";
+        toast.error(errorMessage);
+      },
+    }
+  );
 }
