@@ -10,6 +10,7 @@ import {
   getRoles,
   getRolesById,
   updateRole,
+  deleteRole,
 } from "@/lib/api/auth";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
 import { CreateRole, GroupedPermissionsResponse, LoginFormData, Roles, RoleByIdResponse } from "@/lib/types/auth";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { getUserProfile } from "@/lib/api/auth";
 import { PaginationResponse } from "@/lib/types/pagination";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 export const useLogin = () => {
@@ -149,4 +151,19 @@ export const useUpateRole = (id: string) => {
       },
     }
   );
+}
+
+export const useDeleteRole = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, string>({
+    mutationFn: (id: string) => deleteRole(id),
+    onSuccess: (data) => {
+      toast.success(data.message || "Role deleted successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROLE] });
+    },
+    onError: (error: ApiError) => {
+      const errorMessage = error.response?.data.message || "Delete role failed";
+      toast.error(errorMessage);
+    },
+  });
 }

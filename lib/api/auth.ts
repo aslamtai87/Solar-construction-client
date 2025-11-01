@@ -124,6 +124,16 @@ export const createRole = async (data: CreateRole): Promise<APISuccessResponse> 
   }
 };
 
+export const updateRole = async (id: string, data: CreateRole): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.patch(`${API_ENDPOINTS.UPDATE_ROLE}/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Update Role Error:", error);
+    throw error;
+  }
+};
+
 export const getRoles = async (cursor?: string | null, limit: number = 10): Promise<PaginationResponse<Roles>> => {
   try {
     const params = new URLSearchParams();
@@ -146,6 +156,16 @@ export const getRolesById = async (id: string): Promise<RoleByIdResponse> => {
     return response.data;
   } catch (error) {
     console.error("Get Role By ID Error:", error);
+    throw error;
+  }
+}
+
+export const deleteRole = async (id: string): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.delete(`${API_ENDPOINTS.CREATE_ROLE}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Delete Role Error:", error);
     throw error;
   }
 }
