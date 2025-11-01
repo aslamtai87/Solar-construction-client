@@ -12,10 +12,16 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: '/auth/forget-password',
   GROUPED_PERMISSIONS: '/permissions/grouped',
   CREATE_ROLE: '/roles',
+  UPDATE_ROLE: '/roles',
 
   // file upload
   UPLOAD_FILE: '/upload',
   DELETE_FILE: '/upload',
+
+  // user and staff management
+  CREATE_STAFF_USER: '/staff',
+  STAFF_USERS: '/staff',
+  DELETE_STAFF_USER: '/staff',
 };
 
 
@@ -25,4 +31,8 @@ export const QUERY_KEYS = {
   VERIFY_OTP: ['user', 'verify-otp'],
   GROUPED_PERMISSIONS: ['permissions', 'grouped'],
   ROLE: ['roles'],
+  UPDATE_ROLE: ['roles', 'update'],
+
+  // user and staff management
+  STAFF_USERS: ['users', 'staff'],
 };

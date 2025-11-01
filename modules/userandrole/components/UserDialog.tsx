@@ -18,24 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {useForm} from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { CreateUserSchema, CreateUser } from '@/lib/validation/userAndRole';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormFieldWrapper } from '@/components/global/Form/FormFieldWrapper';
 import { FormSelectField } from '@/components/global/Form/FormSelectField';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { useCreateStaff, useUpdateStaff } from '@/hooks/ReactQuery/useStaffs';
+import { useGetRoles } from '@/hooks/ReactQuery/useAuth';
+import { StaffUser } from '@/lib/types/user';
 
 interface UserDialogProps {
   open: boolean;
   onClose: () => void;
   mode: 'create' | 'edit';
-  userData?: User | null;
+  userData?: StaffUser | null;
+  onSuccess?: () => void;
 }
 
 const UserDialog: React.FC<UserDialogProps> = ({
@@ -43,14 +40,19 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   mode,
   userData,
+  onSuccess,
 }) => {
+  const { mutate: createStaff } = useCreateStaff();
+  const { mutate: updateStaff } = useUpdateStaff(userData?.id || '');
+  const { data: rolesData } = useGetRoles(null, 100); // Get all roles
 
   const form = useForm<CreateUser>({
     resolver: zodResolver(CreateUserSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      role: '',
+      roleId: '',
     },
     mode: 'onSubmit',
   });
@@ -58,24 +60,42 @@ const UserDialog: React.FC<UserDialogProps> = ({
   useEffect(() => {
     if (mode === 'edit' && userData) {
       form.reset({
-        name: userData.name,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         email: userData.email,
-        role: userData.role,
+        roleId: userData.userRoles?.[0]?.role?.id || '',
       });
     } else {
       form.reset({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
-        role: '',
+        roleId: '',
       });
     }
-  }, [mode, userData, open]);
+  }, [mode, userData, open, form]);
 
   const onSubmit = (data: CreateUser) => {
-  };
-
-  const handleChange = (field: keyof CreateUser, value: string) => {
-    form.setValue(field, value);
+    if (mode === 'create') {
+      createStaff(data, {
+        onSuccess: () => {
+          form.reset();
+          onClose();
+          onSuccess?.();
+        }
+      });
+    } else if (mode === 'edit' && userData) {
+      updateStaff({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        roleId: data.roleId,
+      }, {
+        onSuccess: () => {
+          onClose();
+          onSuccess?.();
+        }
+      });
+    }
   };
 
   return (
@@ -93,17 +113,18 @@ const UserDialog: React.FC<UserDialogProps> = ({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="space-y-4 py-4">
-            <FormFieldWrapper name='name' control={form.control} label='Full Name' />
-            <FormFieldWrapper name='email' control={form.control} label='Email' />
+            <FormFieldWrapper name='firstName' control={form.control} label='First Name' placeholder="Enter first name" />
+            <FormFieldWrapper name='lastName' control={form.control} label='Last Name' placeholder="Enter last name" />
+            <FormFieldWrapper name='email' control={form.control} label='Email' placeholder="Enter email address" disabled={mode === 'edit'} />
             <FormSelectField
-              name='role'
+              name='roleId'
               control={form.control}
               label='Role'
-              options={[
-                { value: 'Admin', label: 'Admin' },
-                { value: 'Editor', label: 'Editor' },
-                { value: 'Viewer', label: 'Viewer' },
-              ]}
+              options={rolesData?.data?.result?.map((role) => ({
+                value: role.id,
+                label: role.name,
+              })) || []}
+              placeholder="Select a role"
             />
           </div>
           <DialogFooter className="gap-2">

@@ -8,7 +8,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTableHeader } from "./TableHeader";
-import Pagination from "./Pagination";
 import CursorPagination from "./CursorPagination";
 
 interface Column<T> {
@@ -18,38 +17,36 @@ interface Column<T> {
   className?: string;
 }
 
+interface PaginationData {
+  nextCursor: string | null;
+  total: number;
+  noOfOutput: number;
+}
+
 interface GenericTableProps<T> {
   data: T[];
   columns: Column<T>[];
   pagination?: boolean;
-  paginationType?: 'offset' | 'cursor';
-  // Offset-based pagination props
-  currentPage?: number;
-  setCurrentPage?: (page: number) => void;
-  totalPages?: number;
-  nextPage?: boolean;
-  previousPage?: boolean;
-  // Cursor-based pagination props
+  paginationData?: PaginationData;
+  currentPageIndex?: number;
   onNextPage?: () => void;
   onPreviousPage?: () => void;
   onFirstPage?: () => void;
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
-  currentPageNumber?: number;
-  totalItems?: number;
-  currentItems?: number;
-  // Common props
   showSearch?: boolean;
-  searchValue: string;
-  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  searchText?: string;
+  onSearchChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd?: () => void;
   addButtonText?: string;
+  searchPlaceholder?: string;
   isLoading?: boolean;
+  totalItems?: number;
+  currentItems?: number;
   isError?: boolean;
   emptyMessage?: string;
   showDatePicker?: boolean;
   onDateRangeChange?: (range: { from: Date; to: Date } | null) => void;
-  searchPlaceholder?: string;
   filterComponents?: React.ReactNode;
   showHeader?: boolean;
   loadingMessage?: string;
@@ -65,20 +62,14 @@ interface GenericTableProps<T> {
 export function GenericTable<T extends { id: string }>({
   data,
   columns,
-  currentPage = 1,
-  setCurrentPage = () => {},
-  totalPages = 1,
-  nextPage = false,
-  previousPage = false,
+  paginationData,
+  currentPageIndex = 0,
   onNextPage,
   onPreviousPage,
   onFirstPage,
   hasNextPage = false,
   hasPreviousPage = false,
-  currentPageNumber = 1,
-  totalItems,
-  currentItems,
-  searchValue,
+  searchText,
   onSearchChange,
   onAdd,
   addButtonText = "Add New",
@@ -96,9 +87,10 @@ export function GenericTable<T extends { id: string }>({
   addButtonIcon = null,
   addButtonOutline = false,
   pagination = true,
-  paginationType = 'offset',
   showSearch = true,
   layout2 = false,
+  totalItems,
+  currentItems,
 }: GenericTableProps<T>) {
   return (
     <div>
@@ -110,7 +102,7 @@ export function GenericTable<T extends { id: string }>({
         {showHeader && (
           <DataTableHeader
             showSearch={showSearch}
-            searchValue={searchValue}
+            searchValue={searchText}
             onSearchChange={onSearchChange}
             onAdd={onAdd}
             addButtonText={addButtonText}
@@ -191,26 +183,16 @@ export function GenericTable<T extends { id: string }>({
           </div>
         </div>
 
-        {pagination && paginationType === 'offset' && (
-          <Pagination
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            totalPages={totalPages}
-            nextPage={nextPage}
-            previousPage={previousPage}
-          />
-        )}
-        
-        {pagination && paginationType === 'cursor' && onNextPage && onPreviousPage && (
+        {pagination && onNextPage && onPreviousPage && (
           <CursorPagination
             onNext={onNextPage}
             onPrevious={onPreviousPage}
             onFirst={onFirstPage}
             hasNextPage={hasNextPage}
             hasPreviousPage={hasPreviousPage}
-            currentPage={currentPageNumber}
-            totalItems={totalItems}
-            currentItems={currentItems}
+            currentPage={currentPageIndex + 1}
+            totalItems={totalItems || paginationData?.total}
+            currentItems={currentItems || paginationData?.noOfOutput}
           />
         )}
       </div>

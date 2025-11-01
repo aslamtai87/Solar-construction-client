@@ -54,7 +54,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
   inactive: {
     label: "inactive",
-    className: "bg-table-row text-gray-800 hover:bg-table-row ",
+    className: "bg-gray-200 text-gray-800 hover:bg-table-row ",
   },
   running: {
     label: "Running",
