@@ -1,46 +1,13 @@
 'use client';
-import React from 'react';
 import { GenericTable } from '@/components/global/Table/GenericTable';
 import { useTableState } from '@/hooks/useTableState';
 import { useDialog } from '@/hooks/useDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import DeleteDialog from '@/components/global/DeleteDialog';
+import { useGetRoles } from '@/hooks/ReactQuery/useAuth';
+import { Roles } from '@/lib/types/auth';
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string;
-}
-
-// Static data for now
-const staticRoles: Role[] = [
-  { 
-    id: '1', 
-    name: 'Admin', 
-    description: 'Full system access',
-    permissions: 'All Permissions'
-  },
-  { 
-    id: '2', 
-    name: 'Manager', 
-    description: 'Manage team and projects',
-    permissions: 'Read, Write, Update'
-  },
-  { 
-    id: '3', 
-    name: 'User', 
-    description: 'Basic user access',
-    permissions: 'Read Only'
-  },
-  { 
-    id: '4', 
-    name: 'Viewer', 
-    description: 'View-only access',
-    permissions: 'Read Only'
-  },
-];
 
 const RoleManagementTab = () => {
   const {
@@ -51,16 +18,8 @@ const RoleManagementTab = () => {
     handleSearchChange,
   } = useTableState();
 
-  // Filter roles based on search
-  const filteredRoles = staticRoles.filter(
-    (role) =>
-      role.name.toLowerCase().includes(debouncedSearchText.toLowerCase()) ||
-      role.description.toLowerCase().includes(debouncedSearchText.toLowerCase()) ||
-      role.permissions.toLowerCase().includes(debouncedSearchText.toLowerCase())
-  );
-
+  const { data: rolesData } = useGetRoles();
   const handleDelete = (id: string) => {
-    console.log(`Deleting role with id: ${id}`);
     closeDeleteDialog();
   };
 
@@ -70,24 +29,24 @@ const RoleManagementTab = () => {
     {
       key: 'name',
       header: 'Role Name',
-      render: (role: Role) => (
+      render: (role: Roles) => (
         <div className="p-4 font-medium text-black">{role.name}</div>
       ),
     },
     {
       key: 'description',
       header: 'Description',
-      render: (role: Role) => (
+      render: (role: Roles) => (
         <div className="p-4 text-gray-600">{role.description}</div>
       ),
     },
     {
       key: 'permissions',
       header: 'Permissions',
-      render: (role: Role) => (
+      render: (role: Roles) => (
         <div className="p-4">
           <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-600">
-            {role.permissions}
+            {role.rolePermission?.length || 0} permissions
           </span>
         </div>
       ),
@@ -95,12 +54,13 @@ const RoleManagementTab = () => {
     {
       key: 'actions',
       header: 'Actions',
-      render: (role: Role) => (
+      render: (role: Roles) => (
         <div className="p-4 flex gap-2">
           <Button
             variant="ghost"
             size="sm"
             className="border-gray-300 hover:bg-gray-100"
+            onClick={() => window.location.href = `/user-management/role/edit/${role.id}`}
           >
             <Pencil className="h-4 w-4 mr-1" />
           </Button>
@@ -124,7 +84,9 @@ const RoleManagementTab = () => {
   return (
     <div>
       <GenericTable
-        data={filteredRoles}
+        data={
+          rolesData?.data?.result || []
+        }
         columns={columns}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
@@ -146,9 +108,11 @@ const RoleManagementTab = () => {
         open={deleteDialog.open}
         onClose={closeDeleteDialog}
         onConfirm={() => {
-          handleDelete(deleteDialog.data.id);
+          if (deleteDialog.data?.id) {
+            handleDelete(deleteDialog.data.id);
+          }
         }}
-        data={deleteDialog.data ? deleteDialog.data : null}
+        data={deleteDialog.data ?? null}
       />
     </div>
   );

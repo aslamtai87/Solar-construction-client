@@ -5,13 +5,18 @@ import {
   signupUser,
   verifyOtpToken,
   logoutUser,
+  getGroupedPermissions,
+  createRole,
+  getRoles,
+  getRolesById,
 } from "@/lib/api/auth";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
-import { LoginFormData } from "@/lib/types/auth";
+import { CreateRole, GroupedPermissionsResponse, LoginFormData, Roles, RoleByIdResponse } from "@/lib/types/auth";
 import { SignupFormData } from "@/lib/types/auth";
 import { toast } from "sonner";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { getUserProfile } from "@/lib/api/auth";
+import { PaginationResponse } from "@/lib/types/pagination";
 
 
 export const useLogin = () => {
@@ -90,5 +95,42 @@ export const useGetUserProfile = () => {
   return useQuery({
     queryKey: [QUERY_KEYS.USER_PROFILE],
     queryFn: () => getUserProfile(),
+  });
+}
+
+export const useGetGroupedPermissions = () => {
+  return useQuery<GroupedPermissionsResponse[]>({
+    queryKey: [QUERY_KEYS.GROUPED_PERMISSIONS],
+    queryFn: () => getGroupedPermissions(),
+  });
+}
+
+export const useCreateRole = () => {
+  return useMutation<APISuccessResponse, ApiError, CreateRole>(
+    {
+      mutationFn: (data) => createRole(data),
+      onSuccess: (data) => {
+        toast.success(data.message || "Role created successfully");
+      },
+      onError: (error: ApiError) => {
+        const errorMessage = error.response?.data.message || "Create role failed";
+        toast.error(errorMessage);
+      },
+    }
+  );
+}
+
+export const useGetRoles = () => {
+  return useQuery<PaginationResponse<Roles>>({
+    queryKey: [QUERY_KEYS.ROLE],
+    queryFn: () => getRoles(),
+  });
+}
+
+export const useGetRolesById = (id: string) => {
+  return useQuery<RoleByIdResponse>({
+    queryKey: [QUERY_KEYS.ROLE, id],
+    queryFn: () => getRolesById(id),
+    enabled: !!id,
   });
 }

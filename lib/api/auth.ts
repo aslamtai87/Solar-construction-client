@@ -1,7 +1,8 @@
 import api from "./api";
 import { API_ENDPOINTS } from "./endPoints";
 import { APISuccessResponse } from "../types/api";
-import { SignupFormData, UserProfile } from "../types/auth";
+import { SignupFormData, UserProfile, GroupedPermissionsResponse, CreateRole, Roles, RoleByIdResponse } from "../types/auth";
+import { PaginationResponse } from "../types/pagination";
 
 export const loginUser = async (
   email: string,
@@ -98,6 +99,47 @@ export const resetPassword = async (
     return response.data;
   } catch (error) {
     console.error("Reset Password Error:", error);
+    throw error;
+  }
+}
+
+
+export const getGroupedPermissions = async (): Promise<GroupedPermissionsResponse[]> => {
+  try {
+    const response = await api.get<{ data: GroupedPermissionsResponse[] }>(API_ENDPOINTS.GROUPED_PERMISSIONS);
+    return response.data.data;
+  } catch (error) {
+    console.error("Get Grouped Permissions Error:", error);
+    throw error;
+  }
+};
+
+export const createRole = async (data: CreateRole): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.post(API_ENDPOINTS.CREATE_ROLE, data);
+    return response.data;
+  } catch (error) {
+    console.error("Create Role Error:", error);
+    throw error;
+  }
+};
+
+export const getRoles = async (): Promise<PaginationResponse<Roles>> => {
+  try {
+    const response = await api.get<PaginationResponse<Roles>>('/roles');
+    return response.data;
+  } catch (error) {
+    console.error("Get Roles Error:", error);
+    throw error;
+  }
+}
+
+export const getRolesById = async (id: string): Promise<RoleByIdResponse> => {
+  try {
+    const response = await api.get<RoleByIdResponse>(`/roles/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Get Role By ID Error:", error);
     throw error;
   }
 }

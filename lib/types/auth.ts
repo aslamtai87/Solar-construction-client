@@ -1,20 +1,5 @@
 import { CompanyType } from "./user";
 
-export interface Role {
-  id: string;
-  name: string;
-  slug: string;
-  parent: {
-    slug: string;
-  };
-  permissions: string[];
-  createdAt: string | null;
-  createdBy: string | null;
-  _count: {
-    User: number;
-  } | null;
-}
-
 export interface UserProfile {
   id: string;
   fullName: string;
@@ -39,4 +24,66 @@ export interface SignupFormData {
   password: string;
   companyType: string;
   organizationName: string;
+}
+
+export interface GroupedPermissionsResponse {
+  module: string;
+  permissions: Permission[];
+  count: number;
+}
+
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  module: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRole {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  permissionIds: string[];
+}
+
+export interface Roles {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: Creator;
+  rolePermission: RolePermission[];
+  _count: Count;
+  permissions?: Permission[];
+  userCount?: number;
+}
+
+export interface RoleByIdResponse {
+  data: Roles;
+}
+
+interface Count {
+  userRole: number;
+}
+
+interface RolePermission {
+  id: string;
+  roleId: string;
+  permissionId: string;
+  createdAt: string;
+  updatedAt: string;
+  permission: Permission;
+}
+
+interface Creator {
+  id: string;
+  email: string;
+  fullName: null;
+  firstName: string;
+  lastName: string;
 }

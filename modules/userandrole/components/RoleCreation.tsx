@@ -2,23 +2,78 @@
 
 import { Button } from "@/components/ui/button";
 import PermissionSection from "./PermissionSection";
-import PERMISSIONS from "@/lib/constants/Permissions";
 import * as z from "zod";
 import { RoleSchema } from "@/lib/validation/userAndRole";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
+import {
+  useGetGroupedPermissions,
+  useGetRoles,
+  useCreateRole,
+  useGetRolesById,
+} from "@/hooks/ReactQuery/useAuth";
+import { GroupedPermissionsResponse } from "@/lib/types/auth";
+import { useParams } from "next/navigation";
+import { useEffect } from "react";
 
 export default function RoleCreation() {
   const form = useForm({
     defaultValues: {
       role: "",
+      description: "",
       permissions: [] as string[],
     },
     resolver: zodResolver(RoleSchema),
     mode: "onSubmit",
   });
+  const { mutate: createRole } = useCreateRole();
+  const { id } = useParams();
 
+  const {
+    data: groupedPermissionsDataApi,
+    isLoading: isLoadingGroupedPermissions,
+    isError: isErrorGroupedPermissions,
+  } = useGetGroupedPermissions();
+
+  const {
+    data: roleData,
+    isLoading: isLoadingRoleData,
+    isError: isErrorRoleData,
+  } = useGetRolesById(id as string);
+
+  // Populate form when role data is loaded
+  useEffect(() => {
+    console.log("Fetched Role Data:", roleData);
+    if (roleData?.data) {
+      const role = roleData.data;
+      
+      // Set role name and description
+      form.setValue("role", role.name);
+      if (role.description) {
+        form.setValue("description", role.description);
+      }
+      
+      // Set permissions - use the flattened permissions array from API
+      if (role.permissions && role.permissions.length > 0) {
+        const permissionIds = role.permissions.map((permission: { id: string }) => permission.id);
+        form.setValue("permissions", permissionIds);
+        console.log("Loaded permissions:", permissionIds);
+      }
+    }
+  }, [roleData, form]);
+
+
+  if (id && isLoadingRoleData) {
+    return <div className="p-4 text-gray-500">Loading role data...</div>;
+  }
+
+  if (id && isErrorRoleData) {
+    return <div className="p-4 text-red-500">Error loading role data.</div>;
+  }
+  console.log("Grouped Permissions Data:", roleData);
+
+  // first i have to create normal role permissions to grouped permissions then edit role with grouped permissions
 
   const selectedPermissions = form.watch("permissions");
   const handlePermissionChange = (permissionKey: string, value: boolean) => {
@@ -43,21 +98,50 @@ export default function RoleCreation() {
   };
 
   const onSubmit = (data: z.infer<typeof RoleSchema>) => {
-    if(!data.permissions || data.permissions.length === 0) {
+    if (!data.permissions || data.permissions.length === 0) {
       form.setError("permissions", {
         type: "manual",
         message: "At least one permission must be selected",
       });
       return;
     }
+    createRole(
+      {
+        name: data.role,
+        description: data.description,
+        permissionIds: data.permissions,
+      },
+      {
+        onSuccess: () => {
+          form.reset();
+          window.location.href = "/user-management?tab=roles";
+        },
+        onError: (error) => {
+          console.error("Error creating/updating role:", error);
+        },
+      }
+    );
   };
+
+  const groupedPermissionsData = groupedPermissionsDataApi || [];
+  const isEditMode = !!id;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
         {/* Role Name Field */}
-        <FormFieldWrapper label="Role Name" control={form.control} name="role" placeholder="e.g. Accountant, VP"/>
-
+        <FormFieldWrapper
+          label="Role Name"
+          control={form.control}
+          name="role"
+          placeholder="e.g. Accountant, VP"
+        />
+        <FormFieldWrapper
+          label="Role Description"
+          control={form.control}
+          name="description"
+          placeholder="e.g. Responsible for managing accounts"
+        />
         {/* Permissions Section */}
         <div className="space-y-3">
           <div>
@@ -69,15 +153,17 @@ export default function RoleCreation() {
           </div>
 
           <div className="max-h-[500px] overflow-y-auto border border-gray-200 p-4 rounded-md bg-gray-50">
-            {Object.entries(PERMISSIONS).map(([sectionTitle, permissions]) => (
-              <PermissionSection
-                key={sectionTitle}
-                title={sectionTitle}
-                permissions={permissions}
-                selectedPermissions={selectedPermissions}
-                onPermissionChange={handlePermissionChange}
-              />
-            ))}
+            {groupedPermissionsData?.map(
+              (moduleGroup: GroupedPermissionsResponse) => (
+                <PermissionSection
+                  key={moduleGroup.module}
+                  title={moduleGroup.module}
+                  permissions={moduleGroup.permissions}
+                  selectedPermissions={selectedPermissions}
+                  onPermissionChange={handlePermissionChange}
+                />
+              )
+            )}
           </div>
           {form.formState.errors.permissions && (
             <p className="text-red-500 text-sm">
@@ -100,17 +186,19 @@ export default function RoleCreation() {
             type="submit"
             className="bg-[#1a1d29] hover:bg-[#1a1d29]/90 text-white"
           >
-            Create Role
+            {isEditMode ? "Update Role" : "Create Role"}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => form.reset()}
-          >
+          <Button type="button" variant="outline" onClick={() => form.reset()}>
             Reset
           </Button>
         </div>
       </form>
+      {isLoadingGroupedPermissions && (
+        <div className="p-4 text-gray-500">Loading permissions...</div>
+      )}
+      {isErrorGroupedPermissions && (
+        <div className="p-4 text-red-500">Error loading permissions.</div>
+      )}
     </div>
   );
 }

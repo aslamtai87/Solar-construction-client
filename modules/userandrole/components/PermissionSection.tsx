@@ -2,27 +2,20 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { FormCheckboxField } from "@/components/global/Form/FormCheckboxField";
+import { Permission } from "@/lib/types/auth";
 
 // Permission labels for display
 const permissionLabels: Record<string, string> = {
-  BROWSE: "View",
-  CREATE: "Create",
+  BROWSE: "Browse",
+  ADD: "Create",
   UPDATE: "Edit",
   DELETE: "Delete",
-};
-
-// Permission descriptions
-const permissionDescriptions: Record<string, string> = {
-  BROWSE: "View and list records",
-  CREATE: "Create new records",
-  UPDATE: "Modify existing records",
-  DELETE: "Remove records",
+  READ: "View",
 };
 
 interface PermissionSectionProps {
   title: string;
-  permissions: Record<string, string>;
+  permissions: Permission[];
   selectedPermissions: string[];
   onPermissionChange: (permissionKey: string, value: boolean) => void;
 }
@@ -33,17 +26,16 @@ const PermissionSection = ({
   selectedPermissions,
   onPermissionChange,
 }: PermissionSectionProps) => {
-  const permissionValues = Object.values(permissions);
-  const isAllSelected = permissionValues.every((permission) =>
-    selectedPermissions.includes(permission)
+  const isAllSelected = permissions.every((permission) =>
+    selectedPermissions.includes(permission.id)
   );
 
   const handleSelectAll = (checked: boolean) => {
-    permissionValues.forEach((permission) => {
-      if (checked && !selectedPermissions.includes(permission)) {
-        onPermissionChange(permission, true);
-      } else if (!checked && selectedPermissions.includes(permission)) {
-        onPermissionChange(permission, false);
+    permissions.forEach((permission) => {
+      if (checked && !selectedPermissions.includes(permission.id)) {
+        onPermissionChange(permission.id, true);
+      } else if (!checked && selectedPermissions.includes(permission.id)) {
+        onPermissionChange(permission.id, false);
       }
     });
   };
@@ -84,9 +76,9 @@ const PermissionSection = ({
             >
               <Checkbox
                 id={`${title}-${permissionKey}`}
-                checked={selectedPermissions.includes(permissionValue)}
+                checked={selectedPermissions.includes(permissionValue.id)}
                 onCheckedChange={(checked) =>
-                  onPermissionChange(permissionValue, checked as boolean)
+                  onPermissionChange(permissionValue.id, checked as boolean)
                 }
                 className="mt-1"
               />
@@ -95,10 +87,10 @@ const PermissionSection = ({
                   htmlFor={`${title}-${permissionKey}`}
                   className="cursor-pointer text-sm font-medium text-gray-700 leading-tight block"
                 >
-                  {permissionLabels[permissionKey] || permissionKey}
+                  {permissionLabels[permissionValue.name.split(".")[1]] || permissionValue.name}
                 </Label>
                 <p className="text-xs text-gray-500 mt-1 leading-tight">
-                  {permissionDescriptions[permissionKey] || "Permission access"}
+                  {permissionValue.description}
                 </p>
               </div>
             </div>

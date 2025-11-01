@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
   REFRESH_TOKEN: '/auth/refresh',
   FORGOT_PASSWORD: '/auth/initiate-forget-password',
   RESET_PASSWORD: '/auth/forget-password',
+  GROUPED_PERMISSIONS: '/permissions/grouped',
+  CREATE_ROLE: '/roles',
 
   // file upload
   UPLOAD_FILE: '/upload',
@@ -21,4 +23,6 @@ export const QUERY_KEYS = {
   //auth  
   USER_PROFILE: ['user', 'profile'],
   VERIFY_OTP: ['user', 'verify-otp'],
+  GROUPED_PERMISSIONS: ['permissions', 'grouped'],
+  ROLE: ['roles'],
 };
