@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { DataTableHeader } from "./TableHeader";
 import Pagination from "./Pagination";
+import CursorPagination from "./CursorPagination";
 
 interface Column<T> {
   key: string;
@@ -21,11 +22,23 @@ interface GenericTableProps<T> {
   data: T[];
   columns: Column<T>[];
   pagination?: boolean;
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
-  totalPages: number;
-  nextPage: boolean;
-  previousPage: boolean;
+  paginationType?: 'offset' | 'cursor';
+  // Offset-based pagination props
+  currentPage?: number;
+  setCurrentPage?: (page: number) => void;
+  totalPages?: number;
+  nextPage?: boolean;
+  previousPage?: boolean;
+  // Cursor-based pagination props
+  onNextPage?: () => void;
+  onPreviousPage?: () => void;
+  onFirstPage?: () => void;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+  currentPageNumber?: number;
+  totalItems?: number;
+  currentItems?: number;
+  // Common props
   showSearch?: boolean;
   searchValue: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -46,17 +59,25 @@ interface GenericTableProps<T> {
   addButtonOutline?: boolean;
   headerText?: string;
   headerDescription?: string;
-  layout2?: boolean; // Optional prop for new table design variation
+  layout2?: boolean;
 }
 
 export function GenericTable<T extends { id: string }>({
   data,
   columns,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-  nextPage,
-  previousPage,
+  currentPage = 1,
+  setCurrentPage = () => {},
+  totalPages = 1,
+  nextPage = false,
+  previousPage = false,
+  onNextPage,
+  onPreviousPage,
+  onFirstPage,
+  hasNextPage = false,
+  hasPreviousPage = false,
+  currentPageNumber = 1,
+  totalItems,
+  currentItems,
   searchValue,
   onSearchChange,
   onAdd,
@@ -75,6 +96,7 @@ export function GenericTable<T extends { id: string }>({
   addButtonIcon = null,
   addButtonOutline = false,
   pagination = true,
+  paginationType = 'offset',
   showSearch = true,
   layout2 = false,
 }: GenericTableProps<T>) {
@@ -169,13 +191,26 @@ export function GenericTable<T extends { id: string }>({
           </div>
         </div>
 
-        {pagination && (
+        {pagination && paginationType === 'offset' && (
           <Pagination
             currentPage={currentPage}
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
             nextPage={nextPage}
             previousPage={previousPage}
+          />
+        )}
+        
+        {pagination && paginationType === 'cursor' && onNextPage && onPreviousPage && (
+          <CursorPagination
+            onNext={onNextPage}
+            onPrevious={onPreviousPage}
+            onFirst={onFirstPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            currentPage={currentPageNumber}
+            totalItems={totalItems}
+            currentItems={currentItems}
           />
         )}
       </div>

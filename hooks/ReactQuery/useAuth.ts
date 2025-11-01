@@ -120,10 +120,10 @@ export const useCreateRole = () => {
   );
 }
 
-export const useGetRoles = () => {
+export const useGetRoles = (cursor?: string | null, limit: number = 10) => {
   return useQuery<PaginationResponse<Roles>>({
-    queryKey: [QUERY_KEYS.ROLE],
-    queryFn: () => getRoles(),
+    queryKey: [QUERY_KEYS.ROLE, cursor, limit],
+    queryFn: () => getRoles(cursor, limit),
   });
 }
 

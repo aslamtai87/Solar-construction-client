@@ -124,9 +124,15 @@ export const createRole = async (data: CreateRole): Promise<APISuccessResponse> 
   }
 };
 
-export const getRoles = async (): Promise<PaginationResponse<Roles>> => {
+export const getRoles = async (cursor?: string | null, limit: number = 10): Promise<PaginationResponse<Roles>> => {
   try {
-    const response = await api.get<PaginationResponse<Roles>>('/roles');
+    const params = new URLSearchParams();
+    if (cursor) {
+      params.append('cursor', cursor);
+    }
+    params.append('limit', limit.toString());
+    
+    const response = await api.get<PaginationResponse<Roles>>(`/roles?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error("Get Roles Error:", error);

@@ -7,23 +7,60 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import DeleteDialog from '@/components/global/DeleteDialog';
 import { useGetRoles } from '@/hooks/ReactQuery/useAuth';
 import { Roles } from '@/lib/types/auth';
+import { useState } from 'react';
 
 
 const RoleManagementTab = () => {
   const {
-    currentPage,
-    setCurrentPage,
     searchText,
-    debouncedSearchText,
     handleSearchChange,
   } = useTableState();
 
-  const { data: rolesData } = useGetRoles();
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [pageHistory, setPageHistory] = useState<(string | null)[]>([null]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const itemsPerPage = 10;
+
+  const { data: rolesData, isLoading } = useGetRoles(cursor, itemsPerPage);
+  
   const handleDelete = (id: string) => {
     closeDeleteDialog();
   };
 
   const { dialog:deleteDialog, openEditDialog:openDeleteDialog, closeDialog:closeDeleteDialog } = useDialog();
+
+  const handleNextPage = () => {
+    if (rolesData?.data?.pagination?.nextCursor) {
+      const nextCursor = rolesData.data.pagination.nextCursor;
+      setCursor(nextCursor);
+      
+      // Add to history if not already there
+      if (pageHistory[currentPageIndex + 1] !== nextCursor) {
+        const newHistory = [...pageHistory.slice(0, currentPageIndex + 1), nextCursor];
+        setPageHistory(newHistory);
+      }
+      setCurrentPageIndex(currentPageIndex + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPageIndex > 0) {
+      const prevCursor = pageHistory[currentPageIndex - 1];
+      setCursor(prevCursor);
+      setCurrentPageIndex(currentPageIndex - 1);
+    }
+  };
+
+  const handleFirstPage = () => {
+    setCursor(null);
+    setCurrentPageIndex(0);
+    setPageHistory([null]);
+  };
+
+  const hasNextPage = !!rolesData?.data?.pagination?.nextCursor;
+  const hasPreviousPage = currentPageIndex > 0;
+  const totalItems = rolesData?.data?.pagination?.total || 0;
+  const currentItems = rolesData?.data?.pagination?.noOfOutput || 0;
 
   const columns = [
     {
@@ -82,17 +119,10 @@ const RoleManagementTab = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-4">
       <GenericTable
-        data={
-          rolesData?.data?.result || []
-        }
+        data={rolesData?.data?.result || []}
         columns={columns}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        totalPages={1}
-        nextPage={false}
-        previousPage={false}
         searchValue={searchText}
         onSearchChange={handleSearchChange}
         onAdd={handleAddRole}
@@ -102,8 +132,19 @@ const RoleManagementTab = () => {
         tableName="Role Management"
         tableDescription="Manage system roles and permissions"
         layout2={true}
-        pagination={false}
+        pagination={true}
+        paginationType="cursor"
+        onNextPage={handleNextPage}
+        onPreviousPage={handlePreviousPage}
+        onFirstPage={handleFirstPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+        currentPageNumber={currentPageIndex + 1}
+        totalItems={totalItems}
+        currentItems={currentItems}
+        isLoading={isLoading}
       />
+      
       <DeleteDialog
         open={deleteDialog.open}
         onClose={closeDeleteDialog}
