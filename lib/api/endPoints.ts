@@ -30,7 +30,6 @@ export const API_ENDPOINTS = {
 
   //project
   PROJECTS: '/project',
-  PROJECT: '/project/{id}',
   CREATE_PROJECT: '/project',
   UPDATE_PROJECT: '/project/{id}',
   DELETE_PROJECT: '/project/{id}',
@@ -52,4 +51,7 @@ export const QUERY_KEYS = {
   COUNTRIES: ['location', 'countries'],
   STATES: ['location', 'states'],
   CITIES: ['location', 'cities'],
+
+  //project
+  PROJECTS: ['projects'],
 };

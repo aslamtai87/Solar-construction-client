@@ -45,8 +45,7 @@ interface Scope {
   civilScope: string | null;
   foundationalScope: string | null;
 }
-
-export interface ProjectListResponse {
+export interface ProjectResponse {
   id: string;
   projectName: string;
   projectNumber: string;
@@ -60,14 +59,6 @@ export interface ProjectListResponse {
 }
 
 interface ResponseLocation {
-  id: string;
-  projectId: string;
-  countryId: string;
-  stateId: string;
-  cityId: string;
-  address: string;
-  createdAt: string;
-  updatedAt: string;
   country: Country;
   state: Country;
   city: Country;
@@ -76,4 +67,29 @@ interface ResponseLocation {
 interface Country {
   id: string;
   name: string;
+}
+export interface ProjectByIdResponse {
+  id: string;
+  projectName: string;
+  projectNumber: string;
+  clientName: string;
+  projectSize: number;
+  projectUnit: string;
+  projectType: string;
+  projectState: string;
+  scope: Scope;
+  projectDocumentation: any[];
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: Creator;
+  location: ResponseLocation;
+}
+
+interface Creator {
+  id: string;
+  email: string;
+  fullName: string;
+  companyType: string;
+  organizationName: string;
 }

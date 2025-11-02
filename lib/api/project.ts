@@ -1,7 +1,7 @@
 import api from "./api";
 import { API_ENDPOINTS } from "./endPoints";
 import { APISuccessResponse } from "../types/api";
-import { ProjectDTO, ProjectListResponse } from "../types/project";
+import { ProjectByIdResponse, ProjectDTO, ProjectResponse } from "../types/project";
 
 export const createProject = async (
   data: ProjectDTO
@@ -15,12 +15,22 @@ export const createProject = async (
   }
 }
 
-export const getProjects = async (): Promise<ProjectListResponse> => {
+export const getProjects = async (): Promise<ProjectResponse[]> => {
   try {
-    const response = await api.get<{ data: ProjectListResponse }>(API_ENDPOINTS.PROJECTS);
+    const response = await api.get<{ data: ProjectResponse[] }>(API_ENDPOINTS.PROJECTS);
     return response.data.data;
   } catch (error) {
     console.error("Get Projects Error:", error);
+    throw error;
+  }
+}
+
+export const getProjectById = async (id: string): Promise<ProjectByIdResponse> => {
+  try {
+    const response = await api.get<{ data: ProjectByIdResponse }>(`${API_ENDPOINTS.PROJECTS}/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Get Project By ID Error:", error);
     throw error;
   }
 }

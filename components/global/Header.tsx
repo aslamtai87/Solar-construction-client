@@ -2,14 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Bell,
-  Search,
-  User,
-  ChevronDown,
-  Plus,
-  Menu,
-} from "lucide-react";
+import { Bell, Search, User, ChevronDown, Plus, Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,8 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useLogout } from "@/hooks/ReactQuery/useAuth";
-import {toast} from "sonner"
-import { useRouter } from "next/navigation";
+import { useGetProjects } from "@/hooks/ReactQuery/useProject";
 import CreateProject from "@/modules/project/components/CreateProject";
 import { useDialog } from "@/hooks/useDialog";
 
@@ -35,8 +27,14 @@ export const DashboardHeader = () => {
       console.error("Logout failed:", error);
     }
   };
+  const { data: projectsData } = useGetProjects();
 
-  const {dialog:projectDialog, openCreateDialog: openProjectDialog, closeDialog: closeProjectDialog} = useDialog();
+  const {
+    dialog: projectDialog,
+    openCreateDialog: openProjectDialog,
+    closeDialog: closeProjectDialog,
+  } = useDialog();
+
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -74,76 +72,93 @@ export const DashboardHeader = () => {
               </Button>
 
               {/* Project Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 h-10"
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium text-sm">
-                        Desert Bloom Phase 2
-                      </span>
-                      <span className="text-xs text-gray-500">250MW</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuItem>
-                    <div className="flex flex-col">
-                      <span className="font-medium">Desert Bloom Phase 2</span>
-                      <span className="text-sm text-gray-500">
-                        250MW • Arizona
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <div className="flex flex-col">
-                      <span className="font-medium">Riverside Solar Farm</span>
-                      <span className="text-sm text-gray-500">
-                        180MW • California
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <div className="flex flex-col">
-                      <span className="font-medium">Mountain View Project</span>
-                      <span className="text-sm text-gray-500">
-                        120MW • Nevada
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {projectsData && projectsData.length > 0 && (
+                <>
+                  {projectsData.map((project) => (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2 h-10"
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium text-sm">
+                              Desert Bloom Phase 2
+                            </span>
+                            <span className="text-xs text-gray-500">250MW</span>
+                          </div>
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuItem>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              Desert Bloom Phase 2
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              250MW • Arizona
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              Riverside Solar Farm
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              180MW • California
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              Mountain View Project
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              120MW • Nevada
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ))}
+                </>
+              )}
 
               <div className="flex items-center gap-2">
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications > 0 && (
-                  <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </Button>
+                {/* Notifications */}
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {notifications > 0 && (
+                    <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {notifications}
+                    </span>
+                  )}
+                </Button>
 
-              {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
-                  <DropdownMenuItem>Help & Support</DropdownMenuItem>
-                  <DropdownMenuItem className="hover:cursor-pointer" onClick={()=>{
-                    handleLogout();
-                  }}>Sign Out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuItem>Help & Support</DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="hover:cursor-pointer"
+                      onClick={() => {
+                        handleLogout();
+                      }}
+                    >
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -155,10 +170,7 @@ export const DashboardHeader = () => {
         onOpenChange={setIsNewProjectOpen}
         onSubmit={handleNewProject}
       /> */}
-      <CreateProject
-        open={projectDialog.open}
-        onClose={closeProjectDialog}
-      />
+      <CreateProject open={projectDialog.open} onClose={closeProjectDialog} />
     </>
   );
 };
