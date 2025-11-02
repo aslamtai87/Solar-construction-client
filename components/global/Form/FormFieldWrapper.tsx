@@ -27,6 +27,8 @@ interface FormFieldWrapperProps<TFieldValues extends FieldValues> {
   inputClassName?: string;
   orientation?: "vertical" | "horizontal" | "responsive";
   valueAsNumber?: boolean;
+  min?: string | number;
+  max?: string | number;
 }
 
 export function FormFieldWrapper<TFieldValues extends FieldValues>({
@@ -41,6 +43,8 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
   className,
   inputClassName,
   orientation = "vertical",
+  min,
+  max,
 }: FormFieldWrapperProps<TFieldValues>) {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === "password";
@@ -56,7 +60,7 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
           data-invalid={fieldState.invalid}
           className={className}
         >
-          {type === "text" || type === "number" ? (
+          {type === "text" || type === "number" || type === "date" || type === "datetime-local" || type === "time" ? (
             <FieldContent>
               <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
 
@@ -69,6 +73,8 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>({
                   disabled={disabled}
                   autoComplete={autoComplete}
                   aria-invalid={fieldState.invalid}
+                  min={min}
+                  max={max}
                   className={cn(
                     "min-h-10",
                     isPasswordField && "pr-10",
