@@ -29,6 +29,15 @@ import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { FormSelectField } from "@/components/global/Form/FormSelectField";
 import FileUpload from "@/components/global/Form/FileUpload";
+import {
+  useGetCountries,
+  useGetCities,
+  useGetStates,
+} from "@/hooks/ReactQuery/useLocation";
+import { SearchableSelect } from "@/components/global/SearchableSelect";
+import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field";
+import { useCreateProjects } from "@/hooks/ReactQuery/useProject";
 
 const CreateProject = ({
   open,
@@ -63,10 +72,21 @@ const CreateProject = ({
     },
   });
 
-  const onSubmit = (data: ProjectValidationType) => {
-    console.log("Form Data:", data);
-    console.log("Uploaded Files:", data.documents);
+  const countries = useGetCountries();
+  const getCountryName = (countryId: string) => {
+    return countries.data?.data.find((c) => c.id === countryId)?.name || "";
   };
+
+  const states = useGetStates(
+    getCountryName(form.watch("projectLocation.country"))
+  );
+  const getStateName = (stateId: string) => {
+    return states.data?.data.find((s) => s.id === stateId)?.name || "";
+  };
+  const cities = useGetCities(
+    getCountryName(form.watch("projectLocation.country")),
+    getStateName(form.watch("projectLocation.state"))
+  );
 
   useEffect(() => {
     if (!open) {
@@ -74,7 +94,34 @@ const CreateProject = ({
     }
   }, [open, form]);
 
-  console.log(form.watch("projectSize"));
+  const createProjectMutation = useCreateProjects();
+
+  const onSubmit = (data: ProjectValidationType) => {
+    console.log("Form Data:", data);
+    console.log("Uploaded Files:", data.documents);
+    createProjectMutation.mutate({
+      projectNumber: data.projectNumber,
+      projectName: data.projectName,
+      clientName: data.clientName,
+      location: {
+        countryId: data.projectLocation.country,
+        stateId: data.projectLocation.state,
+        cityId: data.projectLocation.city,
+        address: data.projectLocation.address || "",
+      },
+      projectSize: data.projectSize,
+      projectSizeUnit: data.projectSizeUnit,
+      projectType: data.projectType,
+      projectState: data.projectState,
+      scope: {
+        mechanicalScope: data.scope.mechanical || null,
+        electricalScope: data.scope.electrical || null,
+        foundationalScope: data.scope.foundational || null,
+        civilScope: data.scope.civil || null,
+      },
+      projectDocumentation: data.documents || [],
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -119,13 +166,13 @@ const CreateProject = ({
                 label="Project Type"
                 name="projectType"
                 control={form.control}
-                options={Object.values(projectTypes).map((type) => ({
-                  label: type,
-                  value: type,
+                options={Object.entries(projectTypes).map(([key, val]) => ({
+                  label: val,
+                  value: key,
                 }))}
               />
               <div className="flex items-start gap-2">
-                <div >
+                <div>
                   <FormFieldWrapper
                     label="Project Size"
                     name="projectSize"
@@ -135,7 +182,7 @@ const CreateProject = ({
                     valueAsNumber={true}
                   />
                 </div>
-                <div >
+                <div>
                   <FormSelectField
                     label="Unit"
                     name="projectSizeUnit"
@@ -157,35 +204,84 @@ const CreateProject = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-              <FormSelectField
-                label="Country"
+              <Controller
                 name="projectLocation.country"
                 control={form.control}
-                options={[
-                  { label: "USA", value: "USA" },
-                  { label: "Canada", value: "Canada" },
-                  { label: "Mexico", value: "Mexico" },
-                ]}
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-2">
+                    <Label className="mb-1">Country</Label>
+                    <SearchableSelect
+                      options={
+                        countries.data?.data.map((country) => ({
+                          label: country.name,
+                          value: country.id,
+                        })) || []
+                      }
+                      value={field.value}
+                      onChange={(val) => {
+                        field.onChange(val);
+                        form.setValue("projectLocation.state", "");
+                        form.setValue("projectLocation.city", "");
+                      }}
+                      placeholder="Select a country"
+                      disabled={countries.isLoading}
+                    />
+                    {fieldState.error && (
+                      <FieldError>{fieldState.error.message}</FieldError>
+                    )}
+                  </div>
+                )}
               />
-              <FormSelectField
-                label="State"
+              <Controller
                 name="projectLocation.state"
                 control={form.control}
-                options={[
-                  { label: "Texas", value: "Texas" },
-                  { label: "California", value: "California" },
-                  { label: "Florida", value: "Florida" },
-                ]}
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-2">
+                    <Label className="mb-1">State</Label>
+                    <SearchableSelect
+                      options={
+                        states.data?.data.map((state) => ({
+                          label: state.name,
+                          value: state.id,
+                        })) || []
+                      }
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select a state"
+                      onClear={() => field.onChange("")}
+                      disabled={states.isLoading}
+                    />
+                    {fieldState.error && (
+                      <FieldError>{fieldState.error.message}</FieldError>
+                    )}
+                  </div>
+                )}
               />
-              <FormSelectField
-                label="City"
+              <Controller
                 name="projectLocation.city"
                 control={form.control}
-                options={[
-                  { label: "Austin, TX", value: "Austin, TX" },
-                  { label: "Dallas, TX", value: "Dallas, TX" },
-                  { label: "Houston, TX", value: "Houston, TX" },
-                ]}
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-2">
+                    <Label className="mb-1">City</Label>
+                    <SearchableSelect
+                      options={
+                        cities.data?.data.map((city) => ({
+                          label: city.name,
+                          value: city.id,
+                        })) || []
+                      }
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select a city"
+                      onClear={() => field.onChange("")}
+                      allowCustomInput={true}
+                      customInputLabel="Use custom city"
+                    />
+                    {fieldState.error && (
+                      <FieldError>{fieldState.error.message}</FieldError>
+                    )}
+                  </div>
+                )}
               />
               <FormFieldWrapper
                 label="Address"

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useMemo, memo } from "react";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, Search, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ interface SearchableSelectProps {
   onSearchChange?: (query: string) => void;
   hasError?: boolean;
   searchQuery?: string;
+  allowCustomInput?: boolean; // New prop
+  customInputLabel?: string; // New prop for custom text
 }
 
 const SearchableSelectComponent = ({
@@ -36,6 +38,8 @@ const SearchableSelectComponent = ({
   onSearchChange,
   hasError = false,
   searchQuery: externalSearchQuery,
+  allowCustomInput = false,
+  customInputLabel = "Use",
 }: SearchableSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState("");
@@ -60,6 +64,9 @@ const SearchableSelectComponent = ({
     [options, value],
   );
 
+  // Check if current value is a custom input (not in options)
+  const isCustomValue = value && !selectedOption;
+
   const handleSearchChange = (query: string) => {
     if (externalSearchQuery === undefined) {
       setInternalSearchQuery(query);
@@ -74,6 +81,18 @@ const SearchableSelectComponent = ({
       setInternalSearchQuery("");
     } else {
       onSearchChange?.("");
+    }
+  };
+
+  const handleCustomInput = () => {
+    if (searchQuery.trim()) {
+      onChange(searchQuery.trim());
+      setIsOpen(false);
+      if (externalSearchQuery === undefined) {
+        setInternalSearchQuery("");
+      } else {
+        onSearchChange?.("");
+      }
     }
   };
 
@@ -123,8 +142,8 @@ const SearchableSelectComponent = ({
         type="button"
         variant="outline"
         className={cn(
-          " max-w-84 sm:w-full justify-between text-left font-normal bg-white",
-          !selectedOption && "text-muted-foreground",
+          " max-w-84 sm:w-full justify-between h-10 text-left font-normal bg-white",
+          !selectedOption && !isCustomValue && "text-muted-foreground",
           hasError && "border-red-500 focus:border-red-500 focus:ring-red-500",
           disabled && "cursor-not-allowed opacity-50",
         )}
@@ -132,15 +151,15 @@ const SearchableSelectComponent = ({
         disabled={disabled}
       >
         <span className="truncate">
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : isCustomValue ? value : placeholder}
         </span>
         <div className="flex items-center gap-1">
-          {value && selectedOption && (
+          {/* {value && (selectedOption || isCustomValue) && (
             <X
               className="h-4 w-4 opacity-50 hover:opacity-100 transition-opacity"
               onClick={handleClear}
             />
-          )}
+          )} */}
           <ChevronDown
             className={cn(
               "h-4 w-4 opacity-50 transition-transform",
@@ -162,7 +181,7 @@ const SearchableSelectComponent = ({
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-8 h-8 text-sm bg-white"
+                className="pl-8 h-10 text-sm bg-white"
               />
             </div>
           </div>
@@ -170,29 +189,63 @@ const SearchableSelectComponent = ({
           {/* Options List */}
           <div className="max-h-60 overflow-y-auto">
             {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                No options found
+              <div className="px-3 py-2">
+                {allowCustomInput && searchQuery.trim() ? (
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 border border-dashed border-gray-300 rounded bg-gray-50"
+                    onClick={handleCustomInput}
+                  >
+                    <Plus className="h-4 w-4 text-green-600" />
+                    <span className="text-gray-700">
+                      {customInputLabel} <span className="font-medium text-green-600">"{searchQuery}"</span>
+                    </span>
+                  </button>
+                ) : (
+                  <div className="text-sm text-gray-500 text-center">
+                    {allowCustomInput
+                      ? "Type to create a custom option"
+                      : "No options found"}
+                  </div>
+                )}
               </div>
             ) : (
-              filteredOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={cn(
-                    "w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2",
-                    value === option.value && "bg-green-50 text-green-600",
-                  )}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  <Check
+              <>
+                {filteredOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
                     className={cn(
-                      "h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0",
+                      "w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2",
+                      value === option.value && "bg-green-50 text-green-600",
                     )}
-                  />
-                  <span className="truncate">{option.label}</span>
-                </button>
-              ))
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                ))}
+                {/* Show custom input option at bottom if enabled and query doesn't match any option exactly */}
+                {allowCustomInput && 
+                 searchQuery.trim() && 
+                 !filteredOptions.some(opt => opt.label.toLowerCase() === searchQuery.toLowerCase()) && (
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
+                    onClick={handleCustomInput}
+                  >
+                    <Plus className="h-4 w-4 text-green-600" />
+                    <span className="text-gray-700">
+                      {customInputLabel} <span className="font-medium text-green-600">"{searchQuery}"</span>
+                    </span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

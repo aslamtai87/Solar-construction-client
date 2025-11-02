@@ -22,6 +22,18 @@ export const API_ENDPOINTS = {
   CREATE_STAFF_USER: '/staff',
   STAFF_USERS: '/staff',
   DELETE_STAFF_USER: '/staff',
+
+  // location
+  COUNTRIES: '/location/country',
+  STATES: '/location/{countryId}/state',
+  CITIES: '/location/{countryId}/{stateId}/city',
+
+  //project
+  PROJECTS: '/project',
+  PROJECT: '/project/{id}',
+  CREATE_PROJECT: '/project',
+  UPDATE_PROJECT: '/project/{id}',
+  DELETE_PROJECT: '/project/{id}',
 };
 
 
@@ -35,4 +47,9 @@ export const QUERY_KEYS = {
 
   // user and staff management
   STAFF_USERS: ['users', 'staff'],
+
+  // location
+  COUNTRIES: ['location', 'countries'],
+  STATES: ['location', 'states'],
+  CITIES: ['location', 'cities'],
 };

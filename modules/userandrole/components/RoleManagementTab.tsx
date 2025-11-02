@@ -108,6 +108,7 @@ const RoleManagementTab = () => {
         onFirstPage={handleFirstPage}
         hasNextPage={hasNextPage(rolesData?.data?.pagination)}
         hasPreviousPage={hasPreviousPage}
+        onAdd={handleAddRole}
         currentPageIndex={currentPageIndex}
         totalItems={rolesData?.data?.pagination?.total || 0}
         currentItems={rolesData?.data?.pagination?.noOfOutput || 0}
