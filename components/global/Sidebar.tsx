@@ -105,7 +105,7 @@ export const RoleBasedSidebar = () => {
   }, [isOpen]);
 
   const SidebarComponent = (
-    <Sidebar className="border-r h-full">
+    <Sidebar className="border-r h-full ">
       {/* Logo Section */}
       <SidebarHeader className="border-b px-4 py-[26.5px]">
         <div className="flex items-center gap-2">

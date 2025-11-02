@@ -3,5 +3,9 @@
 import ScheduleManagementPage from "@/modules/scheduleManagement/ScheduleManagementPage";
 
 export default function ScheduleOverviewPage() {
-  return <ScheduleManagementPage />;
+  return (
+    <div>
+      <h1>Overview</h1>
+    </div>
+  );
 }
