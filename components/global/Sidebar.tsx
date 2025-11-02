@@ -51,7 +51,8 @@ const menuItems: Record<string, MenuItem[]> = {
       icon: Calendar, 
       subItems: [
         { title: "Overview", url: "/schedule-management/overview" },
-        { title: "Management", url: "/schedule-management/management" },
+        { title: "Create Schedule", url: "/schedule-management/management" },
+        { title: "Production Planning", url: "/schedule-management/production-planning" },
       ]
     },
   ],

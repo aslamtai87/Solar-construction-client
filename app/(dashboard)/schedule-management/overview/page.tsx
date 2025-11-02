@@ -1,11 +1,7 @@
 "use client";
 
-import ScheduleManagementPage from "@/modules/scheduleManagement/ScheduleManagementPage";
+import ScheduleOverviewPage from "@/modules/scheduleManagement/ScheduleOverviewPage";
 
-export default function ScheduleOverviewPage() {
-  return (
-    <div>
-      <h1>Overview</h1>
-    </div>
-  );
+export default function ScheduleOverviewRoute() {
+  return <ScheduleOverviewPage />;
 }
