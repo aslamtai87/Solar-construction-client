@@ -29,12 +29,15 @@ import {
 import { Phase, Activity, SubActivity } from "@/lib/types/schedule";
 import { ProductionConfiguration, DailyProduction, Crew } from "@/lib/types/production";
 import ActivityTrackerItem from "./components/Overview/ActivityTrackerItem";
+import ActivityTrackerTable from "./components/Overview/ActivityTrackerTable";
 import UpdateProgressDialog from "./components/Overview/UpdateProgressDialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const ScheduleOverviewPage = () => {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | "all">("all");
   const [updatingActivity, setUpdatingActivity] = useState<Activity | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table"); // Toggle between views
 
   // Sample data - replace with actual data
   const [phases] = useState<Phase[]>([
@@ -460,7 +463,7 @@ const ScheduleOverviewPage = () => {
         </TabsList>
 
         <TabsContent value="tracker" className="space-y-4">
-          {/* Phase Filter */}
+          {/* Phase Filter & View Toggle */}
           <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
             <FolderKanban className="h-5 w-5 text-muted-foreground" />
             <div className="flex-1">
@@ -470,6 +473,22 @@ const ScheduleOverviewPage = () => {
               <p className="text-xs text-muted-foreground">
                 View activities for a specific phase
               </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={viewMode === "table" ? "default" : "outline"}
+                onClick={() => setViewMode("table")}
+              >
+                Table View
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "cards" ? "default" : "outline"}
+                onClick={() => setViewMode("cards")}
+              >
+                Card View
+              </Button>
             </div>
             <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId}>
               <SelectTrigger id="phase-filter-overview" className="w-[250px]">
@@ -500,6 +519,11 @@ const ScheduleOverviewPage = () => {
                   </p>
                 </CardContent>
               </Card>
+            ) : viewMode === "table" ? (
+              <ActivityTrackerTable
+                activities={filteredActivities}
+                onUpdateProgress={handleUpdateProgress}
+              />
             ) : (
               filteredActivities.map((activity) => {
                 const config = productionConfigs.find(
