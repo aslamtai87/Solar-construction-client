@@ -2,15 +2,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Trash } from 'lucide-react';
 
-const DeleteDialog = (
-    { open, onClose, onConfirm, data }: { open: boolean; onClose: () => void; onConfirm: () => void; data: { id: string } | null }
-) => {
+interface DeleteDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  data?: { id: string } | null;
+  title?: string;
+  description?: string;
+}
+
+const DeleteDialog = ({
+  open,
+  onClose,
+  onConfirm,
+  data,
+  title = "Delete Item",
+  description = "Are you sure you want to delete this item? This action cannot be undone."
+}: DeleteDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Item</DialogTitle>
-          <DialogDescription>Are you sure you want to delete this item? {data?.id}</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>

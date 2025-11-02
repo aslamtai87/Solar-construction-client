@@ -14,11 +14,15 @@ import { useLogout } from "@/hooks/ReactQuery/useAuth";
 import { useGetProjects } from "@/hooks/ReactQuery/useProject";
 import CreateProject from "@/modules/project/components/CreateProject";
 import { useDialog } from "@/hooks/useDialog";
+import { useProjectStore } from "@/store/projectStore";
 
 export const DashboardHeader = () => {
   const [notifications] = useState(3);
   const { toggle } = useSidebar();
   const logout = useLogout();
+  const { data: projectsData, refetch } = useGetProjects();
+  const { selectedProject, setSelectedProject } = useProjectStore();
+  
   const handleLogout = () => {
     try {
       logout.mutate();
@@ -27,7 +31,6 @@ export const DashboardHeader = () => {
       console.error("Logout failed:", error);
     }
   };
-  const { data: projectsData } = useGetProjects();
 
   const {
     dialog: projectDialog,
@@ -73,58 +76,44 @@ export const DashboardHeader = () => {
 
               {/* Project Selector */}
               {projectsData && projectsData.length > 0 && (
-                <>
-                  {projectsData.map((project) => (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="flex items-center gap-2 h-10"
-                        >
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium text-sm">
-                              Desert Bloom Phase 2
-                            </span>
-                            <span className="text-xs text-gray-500">250MW</span>
-                          </div>
-                          <ChevronDown className="h-4 w-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-64">
-                        <DropdownMenuItem>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              Desert Bloom Phase 2
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              250MW • Arizona
-                            </span>
-                          </div>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              Riverside Solar Farm
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              180MW • California
-                            </span>
-                          </div>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              Mountain View Project
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              120MW • Nevada
-                            </span>
-                          </div>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ))}
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 h-10"
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium text-sm">
+                          {selectedProject?.projectName || "Select Project"}
+                        </span>
+                        {selectedProject && (
+                          <span className="text-xs text-gray-500">
+                            {selectedProject.projectSize}{selectedProject.projectUnit} • {selectedProject.location.state.name}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    {projectsData.map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => setSelectedProject(project)}
+                        className={selectedProject?.id === project.id ? "bg-gray-100" : ""}
+                      >
+                        <div className="flex flex-col w-full">
+                          <span className="font-medium">
+                            {project.projectName}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {project.projectSize}{project.projectUnit} • {project.location.city.name}, {project.location.state.name}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               <div className="flex items-center gap-2">
@@ -170,7 +159,13 @@ export const DashboardHeader = () => {
         onOpenChange={setIsNewProjectOpen}
         onSubmit={handleNewProject}
       /> */}
-      <CreateProject open={projectDialog.open} onClose={closeProjectDialog} />
+      <CreateProject 
+        open={projectDialog.open} 
+        onClose={() => {
+          closeProjectDialog();
+          refetch();
+        }} 
+      />
     </>
   );
 };

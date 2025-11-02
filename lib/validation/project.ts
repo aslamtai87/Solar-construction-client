@@ -20,24 +20,8 @@ export const ProjectValidationSchema = z.object({
     [projectSizeUnits.kW, projectSizeUnits.MW, projectSizeUnits.GW],
     "Project size unit is required"
   ),
-  projectType: z.enum(
-    [
-      projectTypes.Rooftop,
-      projectTypes.GroundMount,
-      projectTypes.SingleAxisTracker,
-      projectTypes.Carport,
-    ],
-    "Project type is required"
-  ),
-  projectState: z.enum(
-    [
-      projectState.preliminaryBidding,
-      projectState.finalBidding,
-      projectState.awarded,
-      projectState.inProgress,
-    ],
-    "Project state is required"
-  ),
+  projectType: z.enum(Object.keys(projectTypes) as [string, ...string[]], "Project type is required"),
+  projectState: z.enum(Object.keys(projectState) as [string, ...string[]], "Project state is required"),
   scope: z
     .object({
       mechanical: z.string().optional(),

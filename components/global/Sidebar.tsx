@@ -4,6 +4,7 @@ import {
   Calendar,
   Users,
   Sun,
+  FolderKanban,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {  useEffect } from "react";
@@ -33,6 +34,7 @@ interface MenuItem {
 const menuItems: Record<string, MenuItem[]> = {
   items: [
     { title: "Dashboard", icon: House, url: "/dashboard" },
+    { title: "Projects", icon: FolderKanban, url: "/projects" },
     {
       title: "User Management",
       icon: Users,

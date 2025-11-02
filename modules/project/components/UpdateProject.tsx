@@ -1,3 +1,4 @@
+"use client";
 import {
   Dialog,
   DialogDescription,
@@ -13,39 +14,44 @@ import {
   ProjectValidationType,
 } from "@/lib/validation/project";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
+import { FormSelectField } from "@/components/global/Form/FormSelectField";
+import FileUpload from "@/components/global/Form/FileUpload";
+import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/global/SearchableSelect";
+import { useEffect } from "react";
+import {
   projectSizeUnits,
   projectTypes,
   projectState,
+  ProjectResponse,
 } from "@/lib/types/project";
-import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
-import { FormSelectField } from "@/components/global/Form/FormSelectField";
-import FileUpload from "@/components/global/Form/FileUpload";
-import {
-  useGetCountries,
   useGetCities,
+  useGetCountries,
   useGetStates,
 } from "@/hooks/ReactQuery/useLocation";
-import { SearchableSelect } from "@/components/global/SearchableSelect";
-import { Label } from "@/components/ui/label";
-import { FieldError } from "@/components/ui/field";
-import { useCreateProjects } from "@/hooks/ReactQuery/useProject";
+import { useUpdateProject, useGetProjectById } from "@/hooks/ReactQuery/useProject";
 
-const CreateProject = ({
+const UpdateProject = ({
   open,
   onClose,
+  projectData,
 }: {
   open: boolean;
   onClose: () => void;
+  projectData: ProjectResponse;
 }) => {
+  const { data: fullProjectData } = useGetProjectById(projectData.id);
+  
   const form = useForm<ProjectValidationType>({
     resolver: zodResolver(ProjectValidationSchema),
     defaultValues: {
@@ -73,65 +79,95 @@ const CreateProject = ({
   });
 
   const countries = useGetCountries();
-  const getCountryName = (countryId: string) => {
-    return countries.data?.data.find((c) => c.id === countryId)?.name || "";
-  };
-
-  const states = useGetStates(
-    getCountryName(form.watch("projectLocation.country"))
-  );
-  const getStateName = (stateId: string) => {
-    return states.data?.data.find((s) => s.id === stateId)?.name || "";
-  };
+  const states = useGetStates(form.watch("projectLocation.country"));
   const cities = useGetCities(
-    getCountryName(form.watch("projectLocation.country")),
-    getStateName(form.watch("projectLocation.state"))
+    form.watch("projectLocation.country"),
+    form.watch("projectLocation.state")
   );
 
+  // Populate form when project data is loaded
   useEffect(() => {
-    if (!open) {
-      form.reset();
+    if (fullProjectData) {
+      form.reset({
+        projectNumber: fullProjectData.projectNumber,
+        projectName: fullProjectData.projectName,
+        clientName: fullProjectData.clientName,
+        projectLocation: {
+          country: fullProjectData.location.country.id,
+          state: fullProjectData.location.state.id,
+          city: fullProjectData.location.city.id,
+          address: "", // Add this to ProjectByIdResponse if available
+        },
+        projectSize: fullProjectData.projectSize,
+        projectSizeUnit: fullProjectData.projectUnit as any,
+        projectType: fullProjectData.projectType as any,
+        projectState: fullProjectData.projectState as any,
+        scope: {
+          mechanical: fullProjectData.scope.mechanicalScope || "",
+          electrical: fullProjectData.scope.electricalScope || "",
+          foundational: fullProjectData.scope.foundationalScope || "",
+          civil: fullProjectData.scope.civilScope || "",
+        },
+        documents: fullProjectData.projectDocumentation || [],
+      });
     }
-  }, [open, form]);
+  }, [fullProjectData, form]);
 
-  const createProjectMutation = useCreateProjects();
+  // Reset dependent fields when parent changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "projectLocation.country") {
+        form.setValue("projectLocation.state", "");
+        form.setValue("projectLocation.city", "");
+      }
+      if (name === "projectLocation.state") {
+        form.setValue("projectLocation.city", "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  const updateProjectMutation = useUpdateProject(projectData.id);
 
   const onSubmit = (data: ProjectValidationType) => {
-    console.log("Form Data:", data);
-    console.log("Uploaded Files:", data.documents);
-    createProjectMutation.mutate({
-      projectNumber: data.projectNumber,
-      projectName: data.projectName,
-      clientName: data.clientName,
-      location: {
-        countryId: data.projectLocation.country,
-        stateId: data.projectLocation.state,
-        cityId: data.projectLocation.city,
-        address: data.projectLocation.address || "",
+    updateProjectMutation.mutate(
+      {
+        projectNumber: data.projectNumber,
+        projectName: data.projectName,
+        clientName: data.clientName,
+        location: {
+          countryId: data.projectLocation.country,
+          stateId: data.projectLocation.state,
+          cityId: data.projectLocation.city,
+          address: data.projectLocation.address || "",
+        },
+        projectSize: data.projectSize,
+        projectSizeUnit: data.projectSizeUnit,
+        projectType: data.projectType,
+        projectState: data.projectState,
+        scope: {
+          mechanicalScope: data.scope.mechanical || null,
+          electricalScope: data.scope.electrical || null,
+          foundationalScope: data.scope.foundational || null,
+          civilScope: data.scope.civil || null,
+        },
+        projectDocumentation: data.documents || [],
       },
-      projectSize: data.projectSize,
-      projectSizeUnit: data.projectSizeUnit,
-      projectType: data.projectType,
-      projectState: data.projectState,
-      scope: {
-        mechanicalScope: data.scope.mechanical || null,
-        electricalScope: data.scope.electrical || null,
-        foundationalScope: data.scope.foundational || null,
-        civilScope: data.scope.civil || null,
-      },
-      projectDocumentation: data.documents || [],
-    });
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      }
+    );
   };
-
-  console.log(form.watch("projectState"));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="flex flex-col gap-4 max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader className="flex flex-col gap-0">
-          <DialogTitle className="text-2xl mb-0">Create Project</DialogTitle>
+          <DialogTitle className="text-2xl mb-0">Update Project</DialogTitle>
           <DialogDescription>
-            Create a new project by filling out the form below.
+            Update project information and details.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -139,7 +175,7 @@ const CreateProject = ({
             <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Basic Information</CardTitle>
               <CardDescription>
-                Provide the essential details for the new project.
+                Update the essential details for the project.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
@@ -202,7 +238,7 @@ const CreateProject = ({
             <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Project Location</CardTitle>
               <CardDescription>
-                Specify the geographical location of the project.
+                Update the geographical location of the project.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
@@ -251,7 +287,7 @@ const CreateProject = ({
                       onChange={field.onChange}
                       placeholder="Select a state"
                       onClear={() => field.onChange("")}
-                      disabled={states.isLoading}
+                      disabled={states.isLoading || !form.watch("projectLocation.country")}
                     />
                     {fieldState.error && (
                       <FieldError>{fieldState.error.message}</FieldError>
@@ -278,6 +314,7 @@ const CreateProject = ({
                       onClear={() => field.onChange("")}
                       allowCustomInput={true}
                       customInputLabel="Use custom city"
+                      disabled={cities.isLoading || !form.watch("projectLocation.state")}
                     />
                     {fieldState.error && (
                       <FieldError>{fieldState.error.message}</FieldError>
@@ -298,7 +335,7 @@ const CreateProject = ({
             <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Project Stage</CardTitle>
               <CardDescription>
-                Specify the current stage of the project.
+                Update the current stage of the project.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -306,9 +343,9 @@ const CreateProject = ({
                 label="Project State"
                 name="projectState"
                 control={form.control}
-                options={Object.entries(projectState).map(([key, val]) => ({
-                  label: val,
-                  value: key,
+                options={Object.values(projectState).map((state) => ({
+                  label: state,
+                  value: state,
                 }))}
               />
             </CardContent>
@@ -317,7 +354,7 @@ const CreateProject = ({
             <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Scope of Work</CardTitle>
               <CardDescription>
-                Define the scope of work for the project.
+                Update the scope of work for the project.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4">
@@ -355,7 +392,7 @@ const CreateProject = ({
             <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Project Documents</CardTitle>
               <CardDescription>
-                Upload and manage project-related documents.
+                Update and manage project-related documents.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -375,14 +412,15 @@ const CreateProject = ({
             </CardContent>
           </Card>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} type="button">
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-orange-600 text-white hover:bg-orange-700 hover:text-white"
+              disabled={updateProjectMutation.isPending}
             >
-              Create Project
+              {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
             </Button>
           </DialogFooter>
         </form>
@@ -391,4 +429,4 @@ const CreateProject = ({
   );
 };
 
-export default CreateProject;
+export default UpdateProject;

@@ -34,3 +34,26 @@ export const getProjectById = async (id: string): Promise<ProjectByIdResponse> =
     throw error;
   }
 }
+
+export const updateProject = async (
+  id: string,
+  data: Partial<ProjectDTO>
+): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.patch(`${API_ENDPOINTS.PROJECTS}/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Update Project Error:", error);
+    throw error;
+  }
+}
+
+export const deleteProject = async (id: string): Promise<APISuccessResponse> => {
+  try {
+    const response = await api.delete(`${API_ENDPOINTS.PROJECTS}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Delete Project Error:", error);
+    throw error;
+  }
+}
