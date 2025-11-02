@@ -22,10 +22,16 @@ import { useRouter } from "next/navigation";
 import House from "@/components/icons/House";
 import { Button } from "@/components/ui/button";
 
+interface SubMenuItem {
+  title: string;
+  url: string;
+}
+
 interface MenuItem {
   title: string;
   icon: any;
-  url: string;
+  url?: string;
+  subItems?: SubMenuItem[];
   perms?: string[];
   anyPerms?: string[];
   role?: string;
@@ -40,16 +46,30 @@ const menuItems: Record<string, MenuItem[]> = {
       icon: Users,
       url: "/user-management",
     },
-    { title: "Schedule Management", icon: Calendar, url: "/schedule-management" },
+    { 
+      title: "Schedule Management", 
+      icon: Calendar, 
+      subItems: [
+        { title: "Overview", url: "/schedule-management/overview" },
+        { title: "Management", url: "/schedule-management/management" },
+      ]
+    },
   ],
 };
 
 export const RoleBasedSidebar = () => {
   const pathname = usePathname();
   const { isOpen, close } = useSidebar();
-  const isItemActive = (url: string) => {
+  
+  const isItemActive = (url?: string) => {
+    if (!url) return false;
     return pathname === url || pathname.startsWith(url + "/");
   };
+
+  const isSubItemActive = (url: string) => {
+    return pathname === url || pathname.startsWith(url + "/");
+  };
+  
   const getRoleDisplayName = (role: string) => {
     return role
       ? `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`
@@ -112,6 +132,8 @@ export const RoleBasedSidebar = () => {
               icon={item.icon}
               url={item.url}
               isActive={isItemActive(item.url)}
+              subItems={item.subItems}
+              isSubItemActive={isSubItemActive}
             />
           ))}
         </SidebarMenu>
@@ -149,6 +171,8 @@ export const RoleBasedSidebar = () => {
               icon={item.icon}
               url={item.url}
               isActive={isItemActive(item.url)}
+              subItems={item.subItems}
+              isSubItemActive={isSubItemActive}
             />
           ))}
         </div>
@@ -165,12 +189,12 @@ export const RoleBasedSidebar = () => {
       <div className="lg:hidden">
         {/* Backdrop */}
         {isOpen && (
-          <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={close} />
+          <div className="fixed inset-0 bg-black/50 z-9998" onClick={close} />
         )}
 
         {/* Mobile Sidebar */}
         <div
-          className={`fixed left-0 top-0 h-full w-64 z-[9999] transform transition-transform duration-300 ease-in-out shadow-lg ${
+          className={`fixed left-0 top-0 h-full w-64 z-9999 transform transition-transform duration-300 ease-in-out shadow-lg ${
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
