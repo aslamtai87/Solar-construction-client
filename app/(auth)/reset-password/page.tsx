@@ -1,8 +1,11 @@
 import ResetPasswordPage from "@/modules/auth/ResetPasswordPage"
+import { Suspense } from "react"
 
 const page = () => {
   return (
-    <ResetPasswordPage />
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordPage />
+    </Suspense>
   )
 }
 

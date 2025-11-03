@@ -1,10 +1,11 @@
 import VerifyEmailPage from "@/modules/auth/VerifyEmailPage"
+import { Suspense } from "react"
 
 const page = () => {
   return (
-    <div>
+    <Suspense fallback={<div>Loading...</div>}>
       <VerifyEmailPage />
-    </div>
+    </Suspense>
   )
 }
 
