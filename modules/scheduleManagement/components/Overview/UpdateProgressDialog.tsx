@@ -149,9 +149,9 @@ export const UpdateProgressDialog = ({
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-muted/30 border-b">
+                        <thead className="bg-gray-50 border-b">
                           <tr>
-                            <th className="text-left p-3 font-medium sticky left-0 bg-muted/30 z-10 min-w-[180px]">
+                            <th className="text-left p-3 font-medium sticky left-0 bg-gray-50 z-10 min-w-[180px]">
                               Crew / Team
                             </th>
                             {crewProgresses[0]?.dailyData.map((day) => (
@@ -168,7 +168,7 @@ export const UpdateProgressDialog = ({
                                 </div>
                               </th>
                             ))}
-                            <th className="text-center p-3 font-medium min-w-[100px] sticky right-0 bg-muted/30">
+                            <th className="text-center p-3 font-medium min-w-[100px] sticky right-0 bg-gray-50">
                               Total
                             </th>
                           </tr>

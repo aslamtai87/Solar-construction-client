@@ -2,14 +2,17 @@
 import React, { useState } from "react";
 import PhaseTable from "./components/Phase/PhaseTable";
 import ActivityTable from "./components/Activity/ActivityTable";
+import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
 import MilestoneDisplay from "./components/Milestone/MilestoneDisplay";
 import { Phase, Activity, Milestone, SubActivity } from "@/lib/types/schedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, ListTodo, Award, FolderKanban } from "lucide-react";
+import { Calendar, ListTodo, Award, FolderKanban, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 const ScheduleManagementPage = () => {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | "all">("all");
+  const [excelUploadOpen, setExcelUploadOpen] = useState(false);
   
   // Sample phases data - Replace with actual API call
   const [phases, setPhases] = useState<Phase[]>([
@@ -254,6 +257,58 @@ const ScheduleManagementPage = () => {
     ));
   };
 
+  const handleExcelUpload = (parsedActivities: any[]) => {
+    // Convert parsed activities to Activity format
+    const newActivities: Activity[] = [];
+    const activityMap = new Map<string, Activity>();
+
+    parsedActivities.forEach((parsed) => {
+      if (!parsed.isSubActivity) {
+        // Create parent activity
+        const activity: Activity = {
+          id: `act-${Date.now()}-${Math.random()}`,
+          phaseId: parsed.phaseId,
+          phaseName: parsed.phaseName,
+          name: parsed.name,
+          units: parsed.targetUnits,
+          startDate: parsed.startDate,
+          endDate: parsed.endDate,
+          duration: parsed.duration || 0,
+          workingDays: { type: parsed.workingDaysType },
+          order: activities.length + newActivities.length + 1,
+          subActivities: [],
+        };
+        activityMap.set(parsed.name, activity);
+        newActivities.push(activity);
+      }
+    });
+
+    // Add sub-activities
+    parsedActivities.forEach((parsed) => {
+      if (parsed.isSubActivity && parsed.parentActivityName) {
+        const parentActivity = activityMap.get(parsed.parentActivityName);
+        if (parentActivity) {
+          const subActivity: SubActivity = {
+            id: `sub-${Date.now()}-${Math.random()}`,
+            parentActivityId: parentActivity.id,
+            phaseId: parsed.phaseId,
+            name: parsed.name,
+            units: parsed.targetUnits,
+            startDate: parsed.startDate,
+            endDate: parsed.endDate,
+            duration: parsed.duration || 0,
+            workingDays: { type: parsed.workingDaysType },
+            order: (parentActivity.subActivities?.length || 0) + 1,
+          };
+          parentActivity.subActivities?.push(subActivity);
+        }
+      }
+    });
+
+    setActivities([...activities, ...newActivities]);
+    setExcelUploadOpen(false);
+  };
+
   const handleUpdateActivities = (updatedActivities: Activity[]) => {
     setActivities(updatedActivities);
   };
@@ -399,6 +454,14 @@ const ScheduleManagementPage = () => {
             onEditSubActivity={handleEditSubActivity}
             onDeleteSubActivity={handleDeleteSubActivity}
           />
+          
+          {/* Excel Upload Button */}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setExcelUploadOpen(true)} variant="outline" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import from Excel
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Milestones Tab */}
@@ -441,6 +504,14 @@ const ScheduleManagementPage = () => {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Excel Upload Dialog */}
+      <ActivityExcelUpload
+        open={excelUploadOpen}
+        onClose={() => setExcelUploadOpen(false)}
+        onUpload={handleExcelUpload}
+        phases={phases}
+      />
     </div>
   );
 };

@@ -33,6 +33,15 @@ export const API_ENDPOINTS = {
   CREATE_PROJECT: '/project',
   UPDATE_PROJECT: '/project/{id}',
   DELETE_PROJECT: '/project/{id}',
+
+
+  // schedule management
+  GET_PHASES: '/phases',
+  CREATE_PHASE: '/phases',
+  GET_PHASE_BY_ID: '/phases/{id}',
+  UPDATE_PHASE: '/phases/{id}',
+  DELETE_PHASE: '/phases/{id}',
+  CREATE_ACTIVITY: '/activities',
 };
 
 
@@ -54,4 +63,8 @@ export const QUERY_KEYS = {
 
   //project
   PROJECTS: ['projects'],
+
+  // schedule management
+  PHASES: ['phases'],
+  ACTIVITIES: ['activities'],
 };

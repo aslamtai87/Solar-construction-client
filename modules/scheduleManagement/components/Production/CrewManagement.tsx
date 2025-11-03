@@ -107,7 +107,7 @@ const CrewManagement = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">#</TableHead>
+                    <TableHead className="w-12">SN</TableHead>
                     <TableHead>Crew Name</TableHead>
                     <TableHead className="w-40">Number of People</TableHead>
                     <TableHead className="w-32">Created</TableHead>
