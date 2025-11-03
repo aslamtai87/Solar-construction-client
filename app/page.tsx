@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui/button";
+"use client";
+import { useEffect } from "react";
 
 export default function Home() {
-  return (
-    <div className="p-2 flex gap-2">
-      Hello
-      <Button>Click Me</Button>
-    </div>
-  );
+  useEffect(() => {
+    window.location.href = "/signin";
+  }, []);
+  return <div className="p-2 flex gap-2"></div>;
 }
