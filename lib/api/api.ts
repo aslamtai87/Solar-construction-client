@@ -5,6 +5,7 @@ const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003/api/v1",
     headers: {
         "Content-Type": "application/json",
+        "x-device-type": "web",
     },
     withCredentials: true,
 })
@@ -13,6 +14,7 @@ export const apiPublic = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003/api/v1",
     headers: {
         "Content-Type": "application/json",
+        "x-device-type": "web",
     },
 })
 
