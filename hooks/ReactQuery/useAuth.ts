@@ -1,4 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/authStore";
 import {
   loginUser,
   resendOtp,
@@ -13,14 +15,19 @@ import {
   deleteRole,
 } from "@/lib/api/auth";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
-import { CreateRole, GroupedPermissionsResponse, LoginFormData, Roles, RoleByIdResponse } from "@/lib/types/auth";
+import {
+  CreateRole,
+  GroupedPermissionsResponse,
+  LoginFormData,
+  Roles,
+  RoleByIdResponse,
+} from "@/lib/types/auth";
 import { SignupFormData } from "@/lib/types/auth";
 import { toast } from "sonner";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { getUserProfile } from "@/lib/api/auth";
 import { PaginationResponse } from "@/lib/types/pagination";
 import { useQueryClient } from "@tanstack/react-query";
-
 
 export const useLogin = () => {
   return useMutation<APISuccessResponse, ApiError, LoginFormData>({
@@ -74,61 +81,77 @@ export const useResendOtp = () => {
       toast.success(data.message || "OTP resent successfully");
     },
     onError: (error: ApiError) => {
-      const errorMessage =
-        error.response?.data.message || "Resend OTP failed";
+      const errorMessage = error.response?.data.message || "Resend OTP failed";
       toast.error(errorMessage);
     },
   });
 };
 
 export const useLogout = () => {
+  const router = useRouter();
+  const { clearUserProfile } = useUserStore();
+  const queryClient = useQueryClient();
+
   return useMutation<APISuccessResponse, ApiError>({
     mutationFn: () => logoutUser(),
     onSuccess: (data) => {
+      clearUserProfile();
+      queryClient.clear();
       toast.success(data.message || "Logout successful");
+      setTimeout(() => {
+        router.replace("/signin");
+      }, 500);
     },
     onError: (error: ApiError) => {
       const errorMessage = error.response?.data.message[0] || "Logout failed";
       toast.error(errorMessage);
+      clearUserProfile();
+      queryClient.clear();
+      setTimeout(() => {
+        router.replace("/signin");
+      }, 500);
     },
   });
-}
+};
 
 export const useGetUserProfile = () => {
   return useQuery({
     queryKey: [QUERY_KEYS.USER_PROFILE],
     queryFn: () => getUserProfile(),
+    retry: false, 
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
-}
+};
 
 export const useGetGroupedPermissions = () => {
   return useQuery<GroupedPermissionsResponse[]>({
     queryKey: [QUERY_KEYS.GROUPED_PERMISSIONS],
     queryFn: () => getGroupedPermissions(),
   });
-}
+};
 
 export const useCreateRole = () => {
-  return useMutation<APISuccessResponse, ApiError, CreateRole>(
-    {
-      mutationFn: (data) => createRole(data),
-      onSuccess: (data) => {
-        toast.success(data.message || "Role created successfully");
-      },
-      onError: (error: ApiError) => {
-        const errorMessage = error.response?.data.message || "Create role failed";
-        toast.error(errorMessage);
-      },
-    }
-  );
-}
+  return useMutation<APISuccessResponse, ApiError, CreateRole>({
+    mutationFn: (data) => createRole(data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Role created successfully");
+    },
+    onError: (error: ApiError) => {
+      const errorMessage = error.response?.data.message || "Create role failed";
+      toast.error(errorMessage);
+    },
+  });
+};
 
 export const useGetRoles = (cursor?: string | null, limit: number = 10) => {
   return useQuery<PaginationResponse<Roles>>({
     queryKey: [QUERY_KEYS.ROLE, cursor, limit],
     queryFn: () => getRoles(cursor, limit),
   });
-}
+};
 
 export const useGetRolesById = (id: string) => {
   return useQuery<RoleByIdResponse>({
@@ -136,22 +159,20 @@ export const useGetRolesById = (id: string) => {
     queryFn: () => getRolesById(id),
     enabled: !!id,
   });
-}
+};
 
 export const useUpateRole = (id: string) => {
-  return useMutation<APISuccessResponse, ApiError, CreateRole>(
-    {
-      mutationFn: (data) => updateRole(id, data),
-      onSuccess: (data) => {
-        toast.success(data.message || "Role updated successfully");
-      },
-      onError: (error: ApiError) => {
-        const errorMessage = error.response?.data.message || "Update role failed";
-        toast.error(errorMessage);
-      },
-    }
-  );
-}
+  return useMutation<APISuccessResponse, ApiError, CreateRole>({
+    mutationFn: (data) => updateRole(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Role updated successfully");
+    },
+    onError: (error: ApiError) => {
+      const errorMessage = error.response?.data.message || "Update role failed";
+      toast.error(errorMessage);
+    },
+  });
+};
 
 export const useDeleteRole = () => {
   const queryClient = useQueryClient();
@@ -166,4 +187,4 @@ export const useDeleteRole = () => {
       toast.error(errorMessage);
     },
   });
-}
+};

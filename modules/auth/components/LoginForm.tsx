@@ -18,12 +18,15 @@ import {
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import EmailNotVerified from "./EmailNotVerified";
+import { useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/api/endPoints";
 
 const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const loginMutation = useLogin();
   const router = useRouter();
   const [showEmailNotVerified, setShowEmailNotVerified] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(LoginSchema),
@@ -54,7 +57,14 @@ const Login = () => {
       } else {
         localStorage.removeItem("rememberedEmail");
       }
-      router.push("/dashboard");
+      
+      // Invalidate user profile query to refetch after login
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
+      
+      // Small delay to ensure query refetch starts
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 100);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       if (error.response?.data?.message === "User is not active") {

@@ -24,12 +24,7 @@ export const DashboardHeader = () => {
   const { selectedProject, setSelectedProject } = useProjectStore();
   
   const handleLogout = () => {
-    try {
-      logout.mutate();
-      window.location.href = "/signin";
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    logout.mutate();
   };
 
   const {
@@ -143,8 +138,9 @@ export const DashboardHeader = () => {
                       onClick={() => {
                         handleLogout();
                       }}
+                      disabled={logout.isPending}
                     >
-                      Sign Out
+                      {logout.isPending ? "Signing out..." : "Sign Out"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
