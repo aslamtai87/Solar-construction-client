@@ -45,7 +45,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value?: any) => void;
@@ -63,13 +62,20 @@ const processQueue = (error: any = null) => {
   failedQueue = [];
 };
 
+const handleAuthFailure = () => {  
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname;
+    const redirectUrl = currentPath !== '/signin' ? `?redirect=${encodeURIComponent(currentPath)}` : '';
+    window.location.href = `/signin${redirectUrl}`;
+  }
+};
+
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
-    
     if (error.response?.status === 498 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -85,15 +91,25 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
+
       try {
-        await api.post(API_ENDPOINTS.REFRESH_TOKEN);
-        processQueue();
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError);
-        if (typeof window !== 'undefined') {
-          window.location.href = '/signin';
+        const refreshResponse = await api.post(API_ENDPOINTS.REFRESH_TOKEN);
+        if (refreshResponse.status === 200 || refreshResponse.status === 204) {
+          processQueue();
+          return api(originalRequest);
+        } else {
+          throw new Error('Unexpected refresh response');
         }
+      } catch (refreshError: any) {
+        if (refreshError.response) {
+          const status = refreshError.response.status;
+          if (status === 401 || status === 403) {
+            processQueue(new Error('Session expired'));
+            handleAuthFailure();
+            return Promise.reject(refreshError);
+          }
+        }
+        processQueue(refreshError);
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
