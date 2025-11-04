@@ -52,60 +52,12 @@ export const createActivitySchema = z
       .max(1000000, "Target units is too large"),
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
-    workingDaysConfig: workingDaysConfigSchema,
     parentActivityId: z.string().optional().nullable(),
   })
   .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
     message: "End date must be after or equal to start date",
     path: ["endDate"],
   });
-
-// Sub-Activity Validation with parent constraints
-export const createSubActivitySchema = z
-  .object({
-    phaseId: z.string().min(1, "Phase is required"),
-    parentActivityId: z.string().min(1, "Parent activity is required"),
-    name: z
-      .string()
-      .min(1, "Activity name is required")
-      .max(200, "Name must be less than 200 characters"),
-    targetUnits: z
-      .number()
-      .min(1, "Target units must be at least 1")
-      .max(1000000, "Target units is too large"),
-    startDate: z.string().min(1, "Start date is required"),
-    endDate: z.string().min(1, "End date is required"),
-    workingDaysConfig: workingDaysConfigSchema,
-    // Parent data for validation
-    parentStartDate: z.string(),
-    parentEndDate: z.string(),
-    parentTargetUnits: z.number(),
-    existingSubActivitiesUnits: z.number().default(0),
-  })
-  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
-    message: "End date must be after or equal to start date",
-    path: ["endDate"],
-  })
-  .refine(
-    (data) => new Date(data.startDate) >= new Date(data.parentStartDate),
-    {
-      message: "Sub-activity start date must be within parent activity date range",
-      path: ["startDate"],
-    }
-  )
-  .refine((data) => new Date(data.endDate) <= new Date(data.parentEndDate), {
-    message: "Sub-activity end date must be within parent activity date range",
-    path: ["endDate"],
-  })
-  .refine(
-    (data) =>
-      data.targetUnits + data.existingSubActivitiesUnits <=
-      data.parentTargetUnits,
-    {
-      message: "Total sub-activity units cannot exceed parent activity units",
-      path: ["targetUnits"],
-    }
-  );
 
 export const updateActivitySchema = z
   .object({
@@ -180,7 +132,6 @@ export const updateMilestoneSchema = z.object({
 export type CreatePhaseValidationType = z.infer<typeof createPhaseSchema>;
 export type UpdatePhaseValidationType = z.infer<typeof updatePhaseSchema>;
 export type CreateActivityValidationType = z.infer<typeof createActivitySchema>;
-export type CreateSubActivityValidationType = z.infer<typeof createSubActivitySchema>;
 export type UpdateActivityValidationType = z.infer<typeof updateActivitySchema>;
 export type CreateMilestoneValidationType = z.infer<typeof createMilestoneSchema>;
 export type UpdateMilestoneValidationType = z.infer<typeof updateMilestoneSchema>;

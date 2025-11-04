@@ -6,7 +6,7 @@ import { Users, Settings, Activity } from "lucide-react";
 import CrewManagement from "@/modules/scheduleManagement/components/Production/CrewManagement";
 import ConfigureProductionDialog from "@/modules/scheduleManagement/components/Production/ConfigureProductionDialog";
 import { Crew, ProductionConfiguration } from "@/lib/types/production";
-import { Activity as ActivityType, SubActivity } from "@/lib/types/schedule";
+import { Activity as ActivityType } from "@/lib/types/schedule";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,42 +48,12 @@ const ProductionPlanningPage = () => {
       startDate: "2024-03-01",
       endDate: "2024-03-31",
       duration: 22,
-      workingDays: { type: "weekdays" },
-      subActivities: [
-        {
-          id: "sub-1",
-          phaseId: "1",
-          phaseName: "Construction",
-          name: "Roof Mounting",
-          units: 400,
-          startDate: "2024-03-01",
-          endDate: "2024-03-12",
-          duration: 8,
-          workingDays: { type: "weekdays" },
-          parentActivityId: "act-1",
-          order: 1,
-        },
-        {
-          id: "sub-2",
-          phaseId: "1",
-          phaseName: "Construction",
-          name: "Panel Placement",
-          units: 600,
-          startDate: "2024-03-13",
-          endDate: "2024-03-31",
-          duration: 14,
-          workingDays: { type: "weekdays" },
-          parentActivityId: "act-1",
-          order: 2,
-        },
-      ],
       order: 1,
     },
   ]);
 
   const [productionConfigs, setProductionConfigs] = useState<ProductionConfiguration[]>([]);
   const [configuringActivity, setConfiguringActivity] = useState<ActivityType | null>(null);
-  const [configuringSubActivity, setConfiguringSubActivity] = useState<SubActivity | null>(null);
   const [selectedActivityFilter, setSelectedActivityFilter] = useState<string>("all");
 
   const handleCreateCrew = (data: { name: string; numberOfPeople: number }) => {
@@ -127,13 +97,12 @@ const ProductionPlanningPage = () => {
     );
   };
 
-  const handleConfigureActivity = (activity: ActivityType, subActivity?: SubActivity) => {
+  const handleConfigureActivity = (activity: ActivityType) => {
     setConfiguringActivity(activity);
-    setConfiguringSubActivity(subActivity || null);
   };
 
-  const handleSaveProductionConfig = (data: any) => {
-    const targetItem = configuringSubActivity || configuringActivity;
+  const handleSaveConfiguration = (data: any) => {
+    const targetItem = configuringActivity;
     if (!targetItem) return;
 
     const config: any = {};
@@ -192,15 +161,10 @@ const ProductionPlanningPage = () => {
     }
 
     setConfiguringActivity(null);
-    setConfiguringSubActivity(null);
   };
 
-  const getActivityConfig = (activityId: string, subActivityId?: string) => {
-    return productionConfigs.find(
-      (c) =>
-        c.activityId === activityId &&
-        (subActivityId ? c.subActivityId === subActivityId : !c.subActivityId)
-    );
+  const getActivityConfig = (activityId: string) => {
+    return productionConfigs.find((c) => c.activityId === activityId);
   };
 
   const getCrewName = (crewId?: string) => {
@@ -272,7 +236,6 @@ const ProductionPlanningPage = () => {
           <div className="space-y-4">
             {filteredActivities.map((activity) => {
               const activityConfig = getActivityConfig(activity.id);
-              const hasSubActivities = activity.subActivities && activity.subActivities.length > 0;
               
               return (
                 <Card key={activity.id}>
@@ -283,12 +246,7 @@ const ProductionPlanningPage = () => {
                         <CardDescription>
                           {activity.units} units over {activity.duration} days ({activity.startDate} to {activity.endDate})
                         </CardDescription>
-                        {hasSubActivities && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Configure production at sub-activity level below
-                          </p>
-                        )}
-                        {activityConfig && !hasSubActivities && (
+                        {activityConfig && (
                           <div className="flex gap-2 mt-2">
                             <Badge variant="outline">
                               {formatProductionMethod(activityConfig.method)}
@@ -299,61 +257,15 @@ const ProductionPlanningPage = () => {
                           </div>
                         )}
                       </div>
-                      {/* Only show configure button if there are NO sub-activities */}
-                      {!hasSubActivities && (
-                        <Button
-                          variant={activityConfig ? "outline" : "default"}
-                          size="sm"
-                          onClick={() => handleConfigureActivity(activity)}
-                        >
-                          {activityConfig ? "Reconfigure" : "Configure"}
-                        </Button>
-                      )}
+                      <Button
+                        variant={activityConfig ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleConfigureActivity(activity)}
+                      >
+                        {activityConfig ? "Reconfigure" : "Configure"}
+                      </Button>
                     </div>
                   </CardHeader>
-
-                  {/* Sub-activities */}
-                  {activity.subActivities && activity.subActivities.length > 0 && (
-                    <CardContent>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold mb-3">Sub-Activities</h4>
-                        {activity.subActivities.map((sub) => {
-                          const subConfig = getActivityConfig(activity.id, sub.id);
-                          
-                          return (
-                            <div
-                              key={sub.id}
-                              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                            >
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">{sub.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {sub.units} units over {sub.duration} days
-                                </p>
-                                {subConfig && (
-                                  <div className="flex gap-2 mt-1">
-                                    <Badge variant="outline" className="text-xs">
-                                      {formatProductionMethod(subConfig.method)}
-                                    </Badge>
-                                    <Badge variant="secondary" className="text-xs">
-                                      {getCrewName(subConfig.crewId)}
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                variant={subConfig ? "outline" : "default"}
-                                size="sm"
-                                onClick={() => handleConfigureActivity(activity, sub)}
-                              >
-                                {subConfig ? "Reconfigure" : "Configure"}
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  )}
                 </Card>
               );
             })}
@@ -390,11 +302,9 @@ const ProductionPlanningPage = () => {
         open={!!configuringActivity}
         onClose={() => {
           setConfiguringActivity(null);
-          setConfiguringSubActivity(null);
         }}
-        onSubmit={handleSaveProductionConfig}
+        onSubmit={handleSaveConfiguration}
         activity={configuringActivity}
-        subActivity={configuringSubActivity}
         crews={crews}
       />
     </div>

@@ -17,8 +17,10 @@ import {
 import { GroupedPermissionsResponse } from "@/lib/types/auth";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function RoleCreation() {
+  const router = useRouter();
   const form = useForm({
     defaultValues: {
       role: "",
@@ -122,7 +124,7 @@ export default function RoleCreation() {
     mutation(rolePayload, {
       onSuccess: () => {
         form.reset();
-        window.location.href = "/user-management?tab=roles";
+        router.push("/user-management?tab=roles");
       },
       onError: (error) => {
         console.error(`Error ${isEditMode ? 'updating' : 'creating'} role:`, error);

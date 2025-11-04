@@ -4,6 +4,16 @@ import {
   projectTypes,
   projectState,
 } from "@/lib/types/project";
+import { WorkingDaysType } from "@/lib/types/schedule";
+
+// Working Days Config Schema
+export const workingDaysConfigSchema = z.object({
+  type: z.nativeEnum(WorkingDaysType, {
+    message: "Working days type is required",
+  }),
+  includeSaturday: z.boolean().optional(),
+  includeSunday: z.boolean().optional(),
+});
 
 export const ProjectValidationSchema = z.object({
   projectNumber: z.string().min(1, "Project number is required"),
@@ -37,6 +47,8 @@ export const ProjectValidationSchema = z.object({
     ),
   // Document URLs after upload
   documents: z.array(z.url("Invalid file URL")).optional(),
+  // Working Days Configuration
+  workingDaysConfig: workingDaysConfigSchema,
 });
 
 export type ProjectValidationType = z.infer<typeof ProjectValidationSchema>;

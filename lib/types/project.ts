@@ -18,6 +18,10 @@ export enum projectState {
     inProgress = "In Progress",
 }
 
+// Import WorkingDaysConfig from schedule types for project-level configuration
+import type { WorkingDaysConfig } from "./schedule";
+export type { WorkingDaysConfig };
+
 
 export interface ProjectDTO {
   projectName: string;
@@ -30,6 +34,7 @@ export interface ProjectDTO {
   scope: Scope;
   projectDocumentation: string[];
   location: Location;
+  workingDaysConfig?: WorkingDaysConfig;
 }
 
 interface Location {
@@ -84,6 +89,7 @@ export interface ProjectByIdResponse {
   updatedAt: string;
   creator: Creator;
   location: ResponseLocation;
+  workingDaysConfig?: WorkingDaysConfig;
 }
 
 interface Creator {

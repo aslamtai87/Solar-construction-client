@@ -1,18 +1,37 @@
 "use client";
 import React, { useState } from "react";
 import PhaseTable from "./components/Phase/PhaseTable";
-import ActivityTable from "./components/Activity/ActivityTable";
+import ActivityTableNew from "./components/Activity/ActivityTableNew";
 import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
 import MilestoneDisplay from "./components/Milestone/MilestoneDisplay";
-import { Phase, Activity, Milestone, SubActivity } from "@/lib/types/schedule";
+import { Phase, Activity, Milestone, WorkingDaysConfig, WorkingDaysType } from "@/lib/types/schedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ListTodo, Award, FolderKanban, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { calculateDuration } from "@/lib/utils/durationCalculator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { getWorkingDaysLabel } from "@/lib/utils/durationCalculator";
 
-const ScheduleManagementPage = () => {
+interface ScheduleManagementPageProps {
+  projectId?: string;
+  workingDaysConfig?: WorkingDaysConfig;
+}
+
+const ScheduleManagementPage = ({ 
+  projectId, 
+  workingDaysConfig: projectWorkingDaysConfig 
+}: ScheduleManagementPageProps) => {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | "all">("all");
   const [excelUploadOpen, setExcelUploadOpen] = useState(false);
+  
+  // Use project-level working days config or default
+  const workingDaysConfig = projectWorkingDaysConfig || {
+    type: WorkingDaysType.WEEKDAYS_ONLY,
+    includeSaturday: false,
+    includeSunday: false,
+  };
   
   // Sample phases data - Replace with actual API call
   const [phases, setPhases] = useState<Phase[]>([
@@ -49,35 +68,6 @@ const ScheduleManagementPage = () => {
       startDate: "2024-01-15",
       endDate: "2024-02-15",
       duration: 22,
-      workingDays: { type: "weekdays" },
-      subActivities: [
-        {
-          id: "sub-1",
-          phaseId: "1",
-          phaseName: "Planning & Design",
-          name: "Initial Site Visit",
-          units: 400,
-          startDate: "2024-01-15",
-          endDate: "2024-01-25",
-          duration: 8,
-          workingDays: { type: "weekdays" },
-          parentActivityId: "act-1",
-          order: 1,
-        },
-        {
-          id: "sub-2",
-          phaseId: "1",
-          phaseName: "Planning & Design",
-          name: "Detailed Survey",
-          units: 800,
-          startDate: "2024-01-26",
-          endDate: "2024-02-15",
-          duration: 14,
-          workingDays: { type: "weekdays" },
-          parentActivityId: "act-1",
-          order: 2,
-        },
-      ],
       order: 1,
     },
     {
@@ -89,7 +79,6 @@ const ScheduleManagementPage = () => {
       startDate: "2024-02-16",
       endDate: "2024-03-20",
       duration: 24,
-      workingDays: { type: "weekdays" },
       order: 2,
     },
   ]);
@@ -112,27 +101,16 @@ const ScheduleManagementPage = () => {
   ]);
 
   const handleCreateActivity = (data: any) => {
+    const duration = calculateDuration(data.startDate, data.endDate, workingDaysConfig);
     const newActivity: Activity = {
       id: `act-${Date.now()}`,
       phaseId: data.phaseId,
       phaseName: phases.find((p) => p.id === data.phaseId)?.title,
       name: data.name,
-      units: data.targetUnits,
+      units: data.units,
       startDate: data.startDate,
       endDate: data.endDate,
-      duration: data.duration || 0,
-      workingDays: {
-        type: data.workingDaysConfig.type === "weekdays_only" ? "weekdays" : 
-              data.workingDaysConfig.type === "all_days" ? "all" : 
-              data.workingDaysConfig.type === "weekends_only" ? "weekends" : "custom",
-        customDays: data.workingDaysConfig.type === "custom" 
-          ? [
-              ...(data.workingDaysConfig.includeSaturday ? ["Saturday"] : []),
-              ...(data.workingDaysConfig.includeSunday ? ["Sunday"] : [])
-            ]
-          : undefined
-      },
-      subActivities: [],
+      duration: duration,
       order: activities.length + 1,
       createdAt: new Date().toISOString(),
     };
@@ -141,6 +119,7 @@ const ScheduleManagementPage = () => {
   };
 
   const handleEditActivity = (activityId: string, data: any) => {
+    const duration = calculateDuration(data.startDate, data.endDate, workingDaysConfig);
     setActivities(activities.map(activity => 
       activity.id === activityId 
         ? {
@@ -148,21 +127,10 @@ const ScheduleManagementPage = () => {
             phaseId: data.phaseId,
             phaseName: phases.find((p) => p.id === data.phaseId)?.title,
             name: data.name,
-            units: data.targetUnits,
+            units: data.units,
             startDate: data.startDate,
             endDate: data.endDate,
-            duration: data.duration || 0,
-            workingDays: {
-              type: data.workingDaysConfig.type === "weekdays_only" ? "weekdays" : 
-                    data.workingDaysConfig.type === "all_days" ? "all" : 
-                    data.workingDaysConfig.type === "weekends_only" ? "weekends" : "custom",
-              customDays: data.workingDaysConfig.type === "custom" 
-                ? [
-                    ...(data.workingDaysConfig.includeSaturday ? ["Saturday"] : []),
-                    ...(data.workingDaysConfig.includeSunday ? ["Sunday"] : [])
-                  ]
-                : undefined
-            },
+            duration: duration,
           }
         : activity
     ));
@@ -172,99 +140,14 @@ const ScheduleManagementPage = () => {
     setActivities(activities.filter(a => a.id !== activityId));
   };
 
-  const handleCreateSubActivity = (activityId: string, data: any) => {
-    const parentActivity = activities.find((a) => a.id === activityId);
-    if (!parentActivity) return;
-
-    const newSubActivity: SubActivity = {
-      id: `sub-${Date.now()}`,
-      phaseId: parentActivity.phaseId,
-      phaseName: parentActivity.phaseName,
-      name: data.name,
-      units: data.targetUnits,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      duration: data.duration || 0,
-      workingDays: {
-        type: data.workingDaysConfig.type === "weekdays_only" ? "weekdays" : 
-              data.workingDaysConfig.type === "all_days" ? "all" : 
-              data.workingDaysConfig.type === "weekends_only" ? "weekends" : "custom",
-        customDays: data.workingDaysConfig.type === "custom" 
-          ? [
-              ...(data.workingDaysConfig.includeSaturday ? ["Saturday"] : []),
-              ...(data.workingDaysConfig.includeSunday ? ["Sunday"] : [])
-            ]
-          : undefined
-      },
-      parentActivityId: activityId,
-      order: (parentActivity.subActivities?.length || 0) + 1,
-      createdAt: new Date().toISOString(),
-    };
-
-    setActivities(
-      activities.map((activity) =>
-        activity.id === activityId
-          ? {
-              ...activity,
-              subActivities: [...(activity.subActivities || []), newSubActivity],
-            }
-          : activity
-      )
-    );
-  };
-
-  const handleEditSubActivity = (activityId: string, subActivityId: string, data: any) => {
-    setActivities(activities.map(activity => 
-      activity.id === activityId && activity.subActivities
-        ? {
-            ...activity,
-            subActivities: activity.subActivities.map(sub =>
-              sub.id === subActivityId
-                ? {
-                    ...sub,
-                    name: data.name,
-                    units: data.targetUnits,
-                    startDate: data.startDate,
-                    endDate: data.endDate,
-                    duration: data.duration || 0,
-                    workingDays: {
-                      type: data.workingDaysConfig.type === "weekdays_only" ? "weekdays" : 
-                            data.workingDaysConfig.type === "all_days" ? "all" : 
-                            data.workingDaysConfig.type === "weekends_only" ? "weekends" : "custom",
-                      customDays: data.workingDaysConfig.type === "custom" 
-                        ? [
-                            ...(data.workingDaysConfig.includeSaturday ? ["Saturday"] : []),
-                            ...(data.workingDaysConfig.includeSunday ? ["Sunday"] : [])
-                          ]
-                        : undefined
-                    },
-                  }
-                : sub
-            )
-          }
-        : activity
-    ));
-  };
-
-  const handleDeleteSubActivity = (activityId: string, subActivityId: string) => {
-    setActivities(activities.map(activity =>
-      activity.id === activityId && activity.subActivities
-        ? {
-            ...activity,
-            subActivities: activity.subActivities.filter(sub => sub.id !== subActivityId)
-          }
-        : activity
-    ));
-  };
-
   const handleExcelUpload = (parsedActivities: any[]) => {
     // Convert parsed activities to Activity format
     const newActivities: Activity[] = [];
-    const activityMap = new Map<string, Activity>();
 
     parsedActivities.forEach((parsed) => {
       if (!parsed.isSubActivity) {
-        // Create parent activity
+        const duration = calculateDuration(parsed.startDate, parsed.endDate, workingDaysConfig);
+        // Create activity
         const activity: Activity = {
           id: `act-${Date.now()}-${Math.random()}`,
           phaseId: parsed.phaseId,
@@ -273,44 +156,15 @@ const ScheduleManagementPage = () => {
           units: parsed.targetUnits,
           startDate: parsed.startDate,
           endDate: parsed.endDate,
-          duration: parsed.duration || 0,
-          workingDays: { type: parsed.workingDaysType },
+          duration: duration,
           order: activities.length + newActivities.length + 1,
-          subActivities: [],
         };
-        activityMap.set(parsed.name, activity);
         newActivities.push(activity);
-      }
-    });
-
-    // Add sub-activities
-    parsedActivities.forEach((parsed) => {
-      if (parsed.isSubActivity && parsed.parentActivityName) {
-        const parentActivity = activityMap.get(parsed.parentActivityName);
-        if (parentActivity) {
-          const subActivity: SubActivity = {
-            id: `sub-${Date.now()}-${Math.random()}`,
-            parentActivityId: parentActivity.id,
-            phaseId: parsed.phaseId,
-            name: parsed.name,
-            units: parsed.targetUnits,
-            startDate: parsed.startDate,
-            endDate: parsed.endDate,
-            duration: parsed.duration || 0,
-            workingDays: { type: parsed.workingDaysType },
-            order: (parentActivity.subActivities?.length || 0) + 1,
-          };
-          parentActivity.subActivities?.push(subActivity);
-        }
       }
     });
 
     setActivities([...activities, ...newActivities]);
     setExcelUploadOpen(false);
-  };
-
-  const handleUpdateActivities = (updatedActivities: Activity[]) => {
-    setActivities(updatedActivities);
   };
 
   const handleCreateMilestone = (data: any) => {
@@ -417,6 +271,40 @@ const ScheduleManagementPage = () => {
 
         {/* Activities Tab */}
         <TabsContent value="activities" className="space-y-4">
+          {/* Working Days Configuration Display */}
+          {/* <Card className="border-orange-200 dark:border-orange-900/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-orange-500" />
+                Project Working Days Configuration
+              </CardTitle>
+              <CardDescription>
+                This configuration is set at the project level and applies to all activities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-sm">
+                  {getWorkingDaysLabel(workingDaysConfig.type)}
+                </Badge>
+                {workingDaysConfig.type === WorkingDaysType.CUSTOM && (
+                  <span className="text-sm text-muted-foreground">
+                    {workingDaysConfig.includeSaturday && workingDaysConfig.includeSunday
+                      ? "with Saturday and Sunday"
+                      : workingDaysConfig.includeSaturday
+                      ? "with Saturday"
+                      : workingDaysConfig.includeSunday
+                      ? "with Sunday"
+                      : "weekdays only"}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                To change this configuration, edit the project settings
+              </p>
+            </CardContent>
+          </Card> */}
+
           {/* Phase Filter */}
           <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
             <FolderKanban className="h-5 w-5 text-muted-foreground" />
@@ -443,16 +331,13 @@ const ScheduleManagementPage = () => {
             </Select>
           </div>
 
-          <ActivityTable
+          <ActivityTableNew
             activities={filteredActivities}
             phases={phases}
-            onUpdateActivities={handleUpdateActivities}
+            workingDaysConfig={workingDaysConfig}
             onCreateActivity={handleCreateActivity}
-            onCreateSubActivity={handleCreateSubActivity}
-            onEditActivity={handleEditActivity}
+            onUpdateActivity={handleEditActivity}
             onDeleteActivity={handleDeleteActivity}
-            onEditSubActivity={handleEditSubActivity}
-            onDeleteSubActivity={handleDeleteSubActivity}
           />
           
           {/* Excel Upload Button */}

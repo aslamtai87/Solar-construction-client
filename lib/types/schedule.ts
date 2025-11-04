@@ -1,9 +1,9 @@
 // Working Days Configuration
 export enum WorkingDaysType {
-  WEEKDAYS_ONLY = "weekdays_only",
-  WEEKENDS_ONLY = "weekends_only",
-  ALL_DAYS = "all_days",
-  CUSTOM = "custom",
+  WEEKDAYS_ONLY = "WEEKDAYS_ONLY",
+  WEEKENDS_ONLY = "WEEKENDS_ONLY",
+  ALL_DAYS = "ALL_DAYS",
+  CUSTOM = "CUSTOM",
 }
 
 export interface WorkingDaysConfig {
@@ -13,7 +13,7 @@ export interface WorkingDaysConfig {
 }
 
 export interface WorkingDays {
-  type: "weekdays" | "weekends" | "all" | "custom";
+  type: "WEEKDAYS" | "WEEKENDS" | "ALL" | "CUSTOM";
   customDays?: string[];
 }
 
@@ -52,8 +52,6 @@ export interface Activity {
   startDate: string;
   endDate: string;
   duration: number;
-  workingDays: WorkingDays;
-  subActivities?: SubActivity[];
   order: number;
   createdAt?: string;
   updatedAt?: string;
@@ -65,8 +63,6 @@ export interface CreateActivityDTO {
   targetUnits: number;
   startDate: string;
   endDate: string;
-  workingDaysConfig: WorkingDaysConfig;
-  parentActivityId?: string | null;
 }
 
 export interface UpdateActivityDTO {
@@ -75,13 +71,7 @@ export interface UpdateActivityDTO {
   completedUnits?: number;
   startDate?: string;
   endDate?: string;
-  workingDaysConfig?: WorkingDaysConfig;
   order?: number;
-}
-
-// Sub-Activity is same as Activity but always has parentActivityId
-export interface SubActivity extends Activity {
-  parentActivityId: string;
 }
 
 // Milestone Types
@@ -116,13 +106,8 @@ export interface UpdateMilestoneDTO {
   completionDate?: string | null;
 }
 
-// Activity with children for hierarchical display
-export interface ActivityWithChildren extends Activity {
-  subActivities: SubActivity[];
-}
-
 // Phase with complete data
 export interface PhaseWithData extends Phase {
-  activities: ActivityWithChildren[];
+  activities: Activity[];
   milestones: Milestone[];
 }

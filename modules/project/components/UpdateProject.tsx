@@ -40,6 +40,8 @@ import {
   useGetStates,
 } from "@/hooks/ReactQuery/useLocation";
 import { useUpdateProject, useGetProjectById } from "@/hooks/ReactQuery/useProject";
+import { WorkingDaysSelector } from "@/components/global/WorkingDaysSelector";
+import { WorkingDaysType } from "@/lib/types/schedule";
 
 const UpdateProject = ({
   open,
@@ -75,6 +77,11 @@ const UpdateProject = ({
         civil: "",
       },
       documents: [],
+      workingDaysConfig: {
+        type: WorkingDaysType.WEEKDAYS_ONLY,
+        includeSaturday: false,
+        includeSunday: false,
+      },
     },
   });
 
@@ -109,6 +116,11 @@ const UpdateProject = ({
           civil: fullProjectData.scope.civilScope || "",
         },
         documents: fullProjectData.projectDocumentation || [],
+        workingDaysConfig: fullProjectData.workingDaysConfig || {
+          type: WorkingDaysType.WEEKDAYS_ONLY,
+          includeSaturday: false,
+          includeSunday: false,
+        },
       });
     }
   }, [fullProjectData, form]);
@@ -152,6 +164,7 @@ const UpdateProject = ({
           civilScope: data.scope.civil || null,
         },
         projectDocumentation: data.documents || [],
+        workingDaysConfig: data.workingDaysConfig,
       },
       {
         onSuccess: () => {
@@ -385,6 +398,22 @@ const UpdateProject = ({
                 control={form.control}
                 type="textarea"
                 placeholder="Describe the civil scope..."
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-col gap-0">
+              <CardTitle className="text-2xl">Working Days Configuration</CardTitle>
+              <CardDescription>
+                Configure working days for schedule calculations. This will be used when creating activities and calculating project timelines.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WorkingDaysSelector
+                control={form.control}
+                namePrefix="workingDaysConfig"
+                label="Working Days Type"
+                description="Select which days count as working days for all project activities"
               />
             </CardContent>
           </Card>
