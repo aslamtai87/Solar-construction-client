@@ -23,8 +23,8 @@ export const DashboardHeader = () => {
   const { data: projectsData, refetch } = useGetProjects();
   const { selectedProject, setSelectedProject } = useProjectStore();
   
-  const handleLogout = () => {
-    logout.mutate();
+  const handleLogout = async () => {
+    await logout.mutateAsync();
   };
 
   const {

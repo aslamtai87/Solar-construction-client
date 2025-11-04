@@ -57,14 +57,12 @@ const Login = () => {
       } else {
         localStorage.removeItem("rememberedEmail");
       }
-      
+
       // Invalidate user profile query to refetch after login
-      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
-      
-      // Small delay to ensure query refetch starts
-      setTimeout(() => {
-        router.replace("/dashboard");
-      }, 100);
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.USER_PROFILE],
+      });
+      router.push("/dashboard");
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       if (error.response?.data?.message === "User is not active") {
