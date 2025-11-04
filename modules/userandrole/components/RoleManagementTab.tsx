@@ -8,11 +8,13 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import DeleteDialog from '@/components/global/DeleteDialog';
 import { useGetRoles, useDeleteRole } from '@/hooks/ReactQuery/useAuth';
 import { Roles } from '@/lib/types/auth';
+import { useRouter } from 'next/navigation';
 
 
 const RoleManagementTab = () => {
   const { searchText, handleSearchChange } = useTableState();
   const deleteRole = useDeleteRole();
+  const router = useRouter();
   
   const {
     cursor,
@@ -90,7 +92,7 @@ const RoleManagementTab = () => {
   ];
 
   const handleAddRole = () => {
-    window.location.href = '/user-management/role/create';
+    router.push('/user-management/role/create');
   };
 
   return (
