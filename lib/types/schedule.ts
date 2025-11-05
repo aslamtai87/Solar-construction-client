@@ -48,7 +48,7 @@ export interface Activity {
   phaseId: string;
   phaseName?: string;
   name: string;
-  units: number;
+  units?: number | null;
   startDate: string;
   endDate: string;
   duration: number;

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
+import { FormSelectField } from "@/components/global/Form/FormSelectField";
 import {
   Table,
   TableBody,
@@ -25,14 +26,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Equipment } from "@/lib/types/production";
+import { Equipment, EquipmentPricingPeriod } from "@/lib/types/production";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
-  pricePerDay: z.number().min(0, "Price must be positive"),
+  price: z.number().min(0, "Price must be positive"),
+  pricingPeriod: z.nativeEnum(EquipmentPricingPeriod),
 });
 
 type EquipmentForm = z.infer<typeof equipmentSchema>;
+
+const pricingPeriodLabels: Record<EquipmentPricingPeriod, string> = {
+  [EquipmentPricingPeriod.PER_DAY]: "Per Day",
+  [EquipmentPricingPeriod.PER_WEEK]: "Per Week",
+  [EquipmentPricingPeriod.PER_MONTH]: "Per Month",
+};
 
 interface EquipmentManagementProps {
   equipment: Equipment[];
@@ -54,7 +62,8 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
       name: "",
-      pricePerDay: 0,
+      price: 0,
+      pricingPeriod: EquipmentPricingPeriod.PER_DAY,
     },
   });
 
@@ -63,13 +72,15 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
       setEditingEquipment(equip);
       form.reset({
         name: equip.name,
-        pricePerDay: equip.pricePerDay,
+        price: equip.price,
+        pricingPeriod: equip.pricingPeriod,
       });
     } else {
       setEditingEquipment(null);
       form.reset({
         name: "",
-        pricePerDay: 0,
+        price: 0,
+        pricingPeriod: EquipmentPricingPeriod.PER_DAY,
       });
     }
     setIsDialogOpen(true);
@@ -111,14 +122,15 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Equipment Name</TableHead>
-                <TableHead className="text-right">Price Per Day</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-center">Pricing Period</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {equipment.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">
+                  <TableCell colSpan={4} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <Wrench className="h-12 w-12 text-muted-foreground/50" />
                       <p className="text-muted-foreground">No equipment added yet</p>
@@ -134,7 +146,10 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
                   <TableRow key={equip.id}>
                     <TableCell className="font-medium">{equip.name}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="secondary">${equip.pricePerDay.toFixed(2)}/day</Badge>
+                      <Badge variant="secondary">${equip.price.toFixed(2)}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline">{pricingPeriodLabels[equip.pricingPeriod]}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -162,8 +177,34 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormFieldWrapper name="name" control={form.control} label="Equipment Name" placeholder="e.g., Scaffolding, Crane, Generator" />
-            <FormFieldWrapper name="pricePerDay" control={form.control} label="Price Per Day ($)" type="number" placeholder="150.00" min={0} />
+            <FormFieldWrapper 
+              name="name" 
+              control={form.control} 
+              label="Equipment Name" 
+              placeholder="e.g., Scaffolding, Crane, Generator" 
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormFieldWrapper 
+                name="price" 
+                control={form.control} 
+                label="Price ($)" 
+                type="number" 
+                placeholder="150.00" 
+                min={0} 
+              />
+              
+              <FormSelectField
+                name="pricingPeriod"
+                control={form.control}
+                label="Pricing Period"
+                placeholder="Select period"
+                options={Object.entries(pricingPeriodLabels).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>

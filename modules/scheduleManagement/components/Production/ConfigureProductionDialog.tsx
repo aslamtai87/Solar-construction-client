@@ -26,7 +26,8 @@ import {
   Labourer, 
   Equipment, 
   CrewComposition, 
-  EquipmentAssignment 
+  EquipmentAssignment,
+  EquipmentPricingPeriod
 } from "@/lib/types/production";
 import { Activity } from "@/lib/types/schedule";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -130,7 +131,7 @@ export const ConfigureProductionDialog = ({
 
   // Calculate AI-based production forecast
   const productionForecast = useMemo(() => {
-    if (!activity || !duration) return null;
+    if (!activity || !duration || !activity.units) return null;
 
     const config: any = {};
     
@@ -229,9 +230,15 @@ export const ConfigureProductionDialog = ({
   const totalCrewCost = crews.reduce((sum, crew) => 
     sum + (crew.totalCostPerHour * 8 * duration), 0
   );
-  const totalEquipmentCost = equipmentAssignments.reduce((sum, equip) => 
-    sum + (equip.pricePerDay * equip.quantity * duration), 0
-  );
+  const totalEquipmentCost = equipmentAssignments.reduce((sum, equip) => {
+    let dailyRate = equip.price;
+    if (equip.pricingPeriod === EquipmentPricingPeriod.PER_WEEK) {
+      dailyRate = equip.price / 7;
+    } else if (equip.pricingPeriod === EquipmentPricingPeriod.PER_MONTH) {
+      dailyRate = equip.price / 30;
+    }
+    return sum + (dailyRate * equip.quantity * duration);
+  }, 0);
   const totalEstimatedCost = totalCrewCost + totalEquipmentCost;
 
 
@@ -261,7 +268,7 @@ export const ConfigureProductionDialog = ({
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Total Units</p>
-                    <p className="font-semibold">{activity.units.toLocaleString()}</p>
+                    <p className="font-semibold">{activity.units?.toLocaleString() || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Original Duration</p>
@@ -311,7 +318,7 @@ export const ConfigureProductionDialog = ({
                     </p>
                     <div className="text-sm pt-2 border-t">
                       <p className="text-muted-foreground">
-                        {activity.units.toLocaleString()} units ÷ {duration} days = {(activity.units / duration).toFixed(2)} units/day
+                        {activity.units?.toLocaleString() || 'N/A'} units ÷ {duration} days = {activity.units ? (activity.units / duration).toFixed(2) : 'N/A'} units/day
                       </p>
                     </div>
                   </div>
@@ -349,7 +356,7 @@ export const ConfigureProductionDialog = ({
                           {method === "ramp-up" && <li>Process optimization & coordination</li>}
                         </ul>
                         <p className="text-muted-foreground pt-2">
-                          Base capacity: {(activity.units / duration).toFixed(1)} units/day
+                          Base capacity: {activity.units ? (activity.units / duration).toFixed(1) : 'N/A'} units/day
                         </p>
                       </div>
                     )}

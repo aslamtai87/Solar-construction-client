@@ -8,7 +8,7 @@ import { WorkingDaysType } from "@/lib/types/schedule";
 
 // Working Days Config Schema
 export const workingDaysConfigSchema = z.object({
-  type: z.nativeEnum(WorkingDaysType, {
+  type: z.enum(WorkingDaysType, {
     message: "Working days type is required",
   }),
   includeSaturday: z.boolean().optional(),
@@ -47,8 +47,6 @@ export const ProjectValidationSchema = z.object({
     ),
   // Document URLs after upload
   documents: z.array(z.url("Invalid file URL")).optional(),
-  // Working Days Configuration
-  workingDaysConfig: workingDaysConfigSchema,
 });
 
 export type ProjectValidationType = z.infer<typeof ProjectValidationSchema>;

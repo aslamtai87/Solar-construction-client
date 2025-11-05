@@ -2,6 +2,13 @@
 
 export type ProductionMethod = "constant" | "ramp-up" | "ramp-down" | "s-curve";
 
+// Equipment Pricing Period
+export enum EquipmentPricingPeriod {
+  PER_DAY = "per-day",
+  PER_WEEK = "per-week",
+  PER_MONTH = "per-month",
+}
+
 // Labourer Types
 export interface Labourer {
   id: string;
@@ -24,14 +31,16 @@ export interface CreateLabourerDTO {
 export interface Equipment {
   id: string;
   name: string;
-  pricePerDay: number;
+  price: number;
+  pricingPeriod: EquipmentPricingPeriod;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateEquipmentDTO {
   name: string;
-  pricePerDay: number;
+  price: number;
+  pricingPeriod: EquipmentPricingPeriod;
 }
 
 // Crew Composition (used in production configuration)
@@ -56,7 +65,8 @@ export interface EquipmentAssignment {
   id: string;
   equipmentId: string;
   equipmentName: string;
-  pricePerDay: number;
+  price: number;
+  pricingPeriod: EquipmentPricingPeriod;
   quantity: number;
 }
 

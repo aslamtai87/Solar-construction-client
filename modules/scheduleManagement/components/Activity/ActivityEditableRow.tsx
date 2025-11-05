@@ -27,7 +27,15 @@ import { calculateDuration } from "@/lib/utils/durationCalculator";
 const activityFormSchema = z.object({
   phaseId: z.string().min(1, "Phase is required"),
   name: z.string().min(1, "Activity name is required"),
-  units: z.number().min(1, "Units must be at least 1"),
+  units: z.union([
+    z.number(),
+    z.nan(),
+    z.null(),
+    z.undefined(),
+  ]).transform((val) => {
+    if (val === null || val === undefined || isNaN(val as number)) return null;
+    return val as number;
+  }).optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
 }).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
@@ -70,14 +78,14 @@ export const ActivityEditableRow = ({
       ? {
           phaseId: activity.phaseId,
           name: activity.name,
-          units: activity.units,
+          units: activity.units || undefined,
           startDate: activity.startDate,
           endDate: activity.endDate,
         }
       : {
           phaseId: "",
           name: "",
-          units: 0,
+          units: undefined,
           startDate: "",
           endDate: "",
         },
@@ -112,7 +120,7 @@ export const ActivityEditableRow = ({
 
         {/* Units */}
         <TableCell className="min-w-[150px] text-center">
-          {activity.units.toLocaleString()}
+          {activity.units && activity.units > 0 ? activity.units.toLocaleString() : "NaN"}
         </TableCell>
 
         {/* Start Date */}
@@ -197,7 +205,13 @@ export const ActivityEditableRow = ({
       {/* Units */}
       <TableCell className="min-w-[150px]">
         <Input
-          {...register("units", { valueAsNumber: true })}
+          {...register("units", { 
+            setValueAs: (val) => {
+              if (val === "" || val === null || val === undefined) return null;
+              const num = Number(val);
+              return isNaN(num) ? null : num;
+            }
+          })}
           type="number"
           placeholder="0"
           className={errors.units ? "border-destructive" : ""}

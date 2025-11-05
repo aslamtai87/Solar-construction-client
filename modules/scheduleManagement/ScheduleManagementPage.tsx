@@ -1,18 +1,30 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PhaseTable from "./components/Phase/PhaseTable";
 import ActivityTableNew from "./components/Activity/ActivityTableNew";
 import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
 import MilestoneDisplay from "./components/Milestone/MilestoneDisplay";
 import { Phase, Activity, Milestone, WorkingDaysConfig, WorkingDaysType } from "@/lib/types/schedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, ListTodo, Award, FolderKanban, Upload } from "lucide-react";
+import { Calendar, ListTodo, Award, FolderKanban, Upload, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { calculateDuration } from "@/lib/utils/durationCalculator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getWorkingDaysLabel } from "@/lib/utils/durationCalculator";
+import { WorkingDaysSelector } from "@/components/global/WorkingDaysSelector";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const workingDaysSchema = z.object({
+  type: z.nativeEnum(WorkingDaysType),
+  includeSaturday: z.boolean().optional(),
+  includeSunday: z.boolean().optional(),
+});
 
 interface ScheduleManagementPageProps {
   projectId?: string;
@@ -27,10 +39,51 @@ const ScheduleManagementPage = ({
   const [excelUploadOpen, setExcelUploadOpen] = useState(false);
   
   // Use project-level working days config or default
-  const workingDaysConfig = projectWorkingDaysConfig || {
-    type: WorkingDaysType.WEEKDAYS_ONLY,
-    includeSaturday: false,
-    includeSunday: false,
+  const [workingDaysConfig, setWorkingDaysConfig] = useState<WorkingDaysConfig>(
+    projectWorkingDaysConfig || {
+      type: WorkingDaysType.WEEKDAYS_ONLY,
+      includeSaturday: false,
+      includeSunday: false,
+    }
+  );
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const workingDaysForm = useForm<WorkingDaysConfig>({
+    resolver: zodResolver(workingDaysSchema),
+    defaultValues: workingDaysConfig,
+  });
+
+  // Update working days config when project config changes
+  useEffect(() => {
+    if (projectWorkingDaysConfig) {
+      setWorkingDaysConfig(projectWorkingDaysConfig);
+      workingDaysForm.reset(projectWorkingDaysConfig);
+    }
+  }, [projectWorkingDaysConfig]);
+
+  // Watch for changes in the form
+  useEffect(() => {
+    const subscription = workingDaysForm.watch((value) => {
+      const isDifferent = JSON.stringify(value) !== JSON.stringify(workingDaysConfig);
+      setHasUnsavedChanges(isDifferent);
+    });
+    return () => subscription.unsubscribe();
+  }, [workingDaysForm, workingDaysConfig]);
+
+  const handleSaveWorkingDays = () => {
+    const newConfig = workingDaysForm.getValues();
+    setWorkingDaysConfig(newConfig);
+    setHasUnsavedChanges(false);
+    
+    // TODO: Call API to update working days config in backend
+    console.log("Saving working days config:", newConfig);
+    // Example: updateProjectWorkingDays(projectId, newConfig);
+  };
+
+  const handleCancelWorkingDays = () => {
+    workingDaysForm.reset(workingDaysConfig);
+    setHasUnsavedChanges(false);
   };
   
   // Sample phases data - Replace with actual API call
@@ -271,39 +324,132 @@ const ScheduleManagementPage = ({
 
         {/* Activities Tab */}
         <TabsContent value="activities" className="space-y-4">
-          {/* Working Days Configuration Display */}
-          {/* <Card className="border-orange-200 dark:border-orange-900/30">
+          {/* Working Days Configuration Card */}
+          <Card className="border-orange-200 dark:border-orange-900/30">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-orange-500" />
-                Project Working Days Configuration
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-orange-500" />
+                  <CardTitle className="text-lg font-semibold">
+                    Working Days Configuration
+                  </CardTitle>
+                </div>
+                {hasUnsavedChanges && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelWorkingDays}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveWorkingDays}
+                      className="gap-2 bg-orange-600 hover:bg-orange-700"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Changes
+                    </Button>
+                  </div>
+                )}
+              </div>
               <CardDescription>
-                This configuration is set at the project level and applies to all activities
+                Configure working days for all project activities. Changes will affect duration calculations.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-sm">
-                  {getWorkingDaysLabel(workingDaysConfig.type)}
-                </Badge>
-                {workingDaysConfig.type === WorkingDaysType.CUSTOM && (
-                  <span className="text-sm text-muted-foreground">
-                    {workingDaysConfig.includeSaturday && workingDaysConfig.includeSunday
-                      ? "with Saturday and Sunday"
-                      : workingDaysConfig.includeSaturday
-                      ? "with Saturday"
-                      : workingDaysConfig.includeSunday
-                      ? "with Sunday"
-                      : "weekdays only"}
-                  </span>
+              <div className="space-y-4">
+                {/* Working Days Type Selector */}
+                <Controller
+                  name="type"
+                  control={workingDaysForm.control}
+                  render={({ field, fieldState: { error } }) => (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Working Days Type</label>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={false}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select working days type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(WorkingDaysType).map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {getWorkingDaysLabel(type)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {!error && (
+                        <p className="text-xs text-muted-foreground">
+                          Select which days count as working days for all project activities
+                        </p>
+                      )}
+                      {error && <p className="text-sm text-destructive">{error.message}</p>}
+                    </div>
+                  )}
+                />
+
+                {/* Custom Working Days Options */}
+                {workingDaysForm.watch("type") === WorkingDaysType.CUSTOM && (
+                  <div className="space-y-3 pl-4 border-l-2 border-muted">
+                    <p className="text-sm font-medium">Additional Days</p>
+                    
+                    <Controller
+                      name="includeSaturday"
+                      control={workingDaysForm.control}
+                      render={({ field }) => (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="includeSaturday"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <label
+                            htmlFor="includeSaturday"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Include Saturday as working day
+                          </label>
+                        </div>
+                      )}
+                    />
+
+                    <Controller
+                      name="includeSunday"
+                      control={workingDaysForm.control}
+                      render={({ field }) => (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="includeSunday"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <label
+                            htmlFor="includeSunday"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Include Sunday as working day
+                          </label>
+                        </div>
+                      )}
+                    />
+                  </div>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                To change this configuration, edit the project settings
-              </p>
+
+              {hasUnsavedChanges && (
+                <Alert className="mt-4 border-orange-200 dark:border-orange-900/30">
+                  <AlertDescription className="text-sm text-orange-800 dark:text-orange-200">
+                    You have unsaved changes. Click "Save Changes" to update the working days configuration.
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
-          </Card> */}
+          </Card>
 
           {/* Phase Filter */}
           <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">

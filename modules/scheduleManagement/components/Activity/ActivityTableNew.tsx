@@ -17,7 +17,7 @@ import ActivityEditableRow from "./ActivityEditableRow";
 interface ActivityFormData {
   phaseId: string;
   name: string;
-  units: number;
+  units?: number | null;
   startDate: string;
   endDate: string;
 }
