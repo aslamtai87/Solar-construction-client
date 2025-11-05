@@ -21,13 +21,12 @@ import {
   Activity as ActivityIcon,
   Zap,
 } from "lucide-react";
-import { Activity, SubActivity } from "@/lib/types/schedule";
+import { Activity } from "@/lib/types/schedule";
 import { ProductionConfiguration } from "@/lib/types/production";
 import { cn } from "@/lib/utils";
 
 interface ActivityTrackerItemProps {
   activity: Activity;
-  subActivity?: SubActivity;
   productionConfig?: ProductionConfiguration;
   onUpdateProgress: (activity: Activity) => void; // Only pass activity, not sub-activity
   isSubActivity?: boolean;
@@ -35,7 +34,6 @@ interface ActivityTrackerItemProps {
 
 const ActivityTrackerItem = ({
   activity,
-  subActivity,
   productionConfig,
   onUpdateProgress,
   isSubActivity = false,
@@ -43,12 +41,12 @@ const ActivityTrackerItem = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Use sub-activity data if provided, otherwise use activity data
-  const targetItem = subActivity || activity;
-  const hasSubActivities = !subActivity && activity.subActivities && activity.subActivities.length > 0;
+  const targetItem = activity;
+  const hasSubActivities = false;
 
   // Calculate actual progress (mock data - replace with real data)
-  const actualUnitsCompleted = targetItem.units * 0.45; // 45% completed (example)
-  const progressPercentage = (actualUnitsCompleted / targetItem.units) * 100;
+  const actualUnitsCompleted = (targetItem.units || 0) * 0.45; // 45% completed (example)
+  const progressPercentage = (actualUnitsCompleted / (targetItem.units || 1)) * 100;
 
   // Calculate dates
   const startDate = new Date(targetItem.startDate);
@@ -66,20 +64,20 @@ const ActivityTrackerItem = ({
     ? productionConfig.dailyProduction
         .slice(0, daysPassed)
         .reduce((sum, day) => sum + day.targetUnits, 0)
-    : (targetItem.units / totalDays) * daysPassed;
+    : (targetItem.units || 0 / totalDays) * daysPassed;
 
   const unitsVariance = actualUnitsCompleted - plannedUnitsToDate;
   const unitsVariancePercent = (unitsVariance / plannedUnitsToDate) * 100;
 
   // Calculate productivity
-  const plannedDailyRate = targetItem.units / totalDays;
+  const plannedDailyRate = (targetItem.units || 0) / totalDays;
   const actualDailyRate = daysPassed > 0 ? actualUnitsCompleted / daysPassed : 0;
   const productivityVariance =
     ((actualDailyRate - plannedDailyRate) / plannedDailyRate) * 100;
 
   // Duration variance
   const projectedDaysToComplete =
-    actualDailyRate > 0 ? targetItem.units / actualDailyRate : totalDays;
+    actualDailyRate > 0 ? (targetItem.units || 0) / actualDailyRate : totalDays;
   const durationVariance = projectedDaysToComplete - totalDays;
 
   const getVarianceBadge = (variance: number, isPercentage: boolean = false) => {
@@ -128,11 +126,6 @@ const ActivityTrackerItem = ({
                 {isSubActivity && (
                   <Badge variant="outline" className="text-xs">
                     Sub-Activity
-                  </Badge>
-                )}
-                {hasSubActivities && (
-                  <Badge variant="secondary" className="text-xs">
-                    {activity.subActivities?.length} sub-activities
                   </Badge>
                 )}
               </CardTitle>
