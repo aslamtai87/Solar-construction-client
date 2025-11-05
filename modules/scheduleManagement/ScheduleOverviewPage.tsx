@@ -23,9 +23,9 @@ const ScheduleOverviewPage = () => {
         </TabsList>
 
         {/* Activity Tracker Tab */}
-        {/* <TabsContent value="activity-tracker">
+        <TabsContent value="activity-tracker">
           <ActivityTrackerPage />
-        </TabsContent> */}
+        </TabsContent>
 
         {/* Daily Production Tab */}
         <TabsContent value="daily-production">

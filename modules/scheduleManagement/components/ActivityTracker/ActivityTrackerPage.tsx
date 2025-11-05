@@ -231,7 +231,7 @@ export const ActivityTrackerPage = () => {
   return (
     <div className="space-y-6">
       {/* Search & Filters */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white rounded-lg border p-2">
         <h2 className="text-xl font-bold mb-4">Activity Search & Filters</h2>
         <div className="flex gap-4">
           <div className="flex-1 relative">

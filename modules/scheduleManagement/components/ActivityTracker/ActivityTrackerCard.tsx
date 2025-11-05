@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Calendar, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { CircleCheckBig } from 'lucide-react';
 
 interface ActivityTrackerCardProps {
   activity: {
@@ -70,7 +71,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return "✓";
+        return <CircleCheckBig />;
       case "in progress":
         return "▶";
       case "delayed":
@@ -85,10 +86,10 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
   const progressPercentage = (activity.progress.current / activity.progress.total) * 100;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow p-0">
       {/* Main Row */}
       <div
-        className="p-4 cursor-pointer"
+        className="p-2 px-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-4">
@@ -108,15 +109,12 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
           </button>
 
           {/* Status Icon */}
-          <div
-            className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-full",
-              activity.status === "completed" && "bg-green-100 text-green-600",
-              activity.status === "in progress" && "bg-blue-100 text-blue-600",
-              activity.status === "delayed" && "bg-red-100 text-red-600",
-              activity.status === "not started" && "bg-gray-100 text-gray-600"
-            )}
-          >
+          <div className={cn("flex items-center justify-center w-8 h-8 rounded-full",
+            activity.status === "completed" && " text-green-600",
+            activity.status === "in progress" && " text-blue-600",
+            activity.status === "delayed" && " text-red-600",
+            activity.status === "not started" && "text-gray-600"
+          )}>
             {getStatusIcon(activity.status)}
           </div>
 
@@ -170,7 +168,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
                   style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                 />
               </div>
-              <div
+              {/* <div
                 className={cn(
                   "text-xs mt-1",
                   activity.outputVariance >= 0 ? "text-green-600" : "text-red-600"
@@ -178,7 +176,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
               >
                 {activity.outputVariance >= 0 ? "↗" : "↘"}{" "}
                 {Math.abs(activity.outputVariance)}%
-              </div>
+              </div> */}
             </div>
 
             <div className="text-right">
