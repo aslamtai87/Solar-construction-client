@@ -307,7 +307,7 @@ export const ConfigureProductionDialog = ({
             />
 
             {/* Method-specific info */}
-            {method === "constant" && duration > 0 && (
+            {activity.units && activity.units > 0 && method === "constant" && duration > 0 && (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -318,7 +318,7 @@ export const ConfigureProductionDialog = ({
                     </p>
                     <div className="text-sm pt-2 border-t">
                       <p className="text-muted-foreground">
-                        {activity.units?.toLocaleString() || 'N/A'} units ÷ {duration} days = {activity.units ? (activity.units / duration).toFixed(2) : 'N/A'} units/day
+                        {activity.units.toLocaleString()} units ÷ {duration} days = {(activity.units / duration).toFixed(2)} units/day
                       </p>
                     </div>
                   </div>
@@ -326,7 +326,7 @@ export const ConfigureProductionDialog = ({
               </Alert>
             )}
 
-            {(method === "ramp-up" || method === "ramp-down" || method === "s-curve") && (
+            {activity.units && activity.units > 0 && (method === "ramp-up" || method === "ramp-down" || method === "s-curve") && (
               <Alert>
                 <ActivityIcon className="h-4 w-4" />
                 <AlertDescription>
@@ -356,7 +356,7 @@ export const ConfigureProductionDialog = ({
                           {method === "ramp-up" && <li>Process optimization & coordination</li>}
                         </ul>
                         <p className="text-muted-foreground pt-2">
-                          Base capacity: {activity.units ? (activity.units / duration).toFixed(1) : 'N/A'} units/day
+                          Base capacity: {(activity.units / duration).toFixed(1)} units/day
                         </p>
                       </div>
                     )}
@@ -435,7 +435,7 @@ export const ConfigureProductionDialog = ({
             )}
 
             {/* Production Forecast */}
-            {productionForecast && productionForecast.length > 0 && (
+            {activity.units && activity.units > 0 && productionForecast && productionForecast.length > 0 && (
               <>
                 <Separator />
                 <ProductionForecastCard 

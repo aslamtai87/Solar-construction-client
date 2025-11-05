@@ -106,24 +106,29 @@ const ProductionPlanningPage = () => {
 
     const config: any = {};
     
-    // Constant method auto-calculates: units ÷ duration
-    if (data.method === "constant") {
-      config.unitsPerDay = targetItem.units / data.duration;
-    }
+    let dailyProduction: any[] = [];
+    
+    // Only calculate production forecast if units are available
+    if (targetItem.units && targetItem.units > 0) {
+      // Constant method auto-calculates: units ÷ duration
+      if (data.method === "constant") {
+        config.unitsPerDay = targetItem.units / data.duration;
+      }
 
-    const dailyProduction = calculateDailyProduction(
-      data.method,
-      targetItem.units,
-      data.duration,
-      targetItem.startDate,
-      config
-    );
+      dailyProduction = calculateDailyProduction(
+        data.method,
+        targetItem.units,
+        data.duration,
+        targetItem.startDate,
+        config
+      );
+    }
 
     const newConfig: ProductionConfiguration = {
       id: `prod-config-${Date.now()}`,
       activityId: data.activityId,
       activityName: targetItem.name,
-      totalUnits: targetItem.units,
+      totalUnits: targetItem.units || 0,
       duration: data.duration,
       method: data.method,
       crews: data.crews || [],
@@ -237,7 +242,9 @@ const ProductionPlanningPage = () => {
                             <TableRow key={activity.id} className="hover:bg-muted/50">
                               <TableCell className="font-medium">{activity.name}</TableCell>
                               <TableCell>{activity.phaseName || "-"}</TableCell>
-                              <TableCell className="text-center">{activity.units.toLocaleString()}</TableCell>
+                              <TableCell className="text-center">
+                                {activity.units && activity.units > 0 ? activity.units.toLocaleString() : "NaN"}
+                              </TableCell>
                               <TableCell className="text-center">{activity.duration} days</TableCell>
                               <TableCell>
                                 {activityConfig ? (
