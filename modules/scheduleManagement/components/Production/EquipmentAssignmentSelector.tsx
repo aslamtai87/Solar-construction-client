@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Plus, Wrench, Trash2, Edit } from "lucide-react";
+import { Plus, Wrench, Trash2, Edit, Settings } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,12 +32,17 @@ interface EquipmentAssignmentSelectorProps {
   availableEquipment: Equipment[];
   assignments: EquipmentAssignment[];
   onAddAssignment: (assignment: Omit<EquipmentAssignment, "id">) => void;
-  onUpdateAssignment: (id: string, assignment: Partial<EquipmentAssignment>) => void;
+  onUpdateAssignment: (
+    id: string,
+    assignment: Partial<EquipmentAssignment>
+  ) => void;
   onDeleteAssignment: (id: string) => void;
   duration: number;
 }
 
-export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorProps> = ({
+export const EquipmentAssignmentSelector: React.FC<
+  EquipmentAssignmentSelectorProps
+> = ({
   availableEquipment,
   assignments,
   onAddAssignment,
@@ -58,7 +63,10 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
   // Update form when dialog opens
   useEffect(() => {
     if (equipmentDialog.dialog.open) {
-      if (equipmentDialog.dialog.mode === "edit" && equipmentDialog.dialog.data) {
+      if (
+        equipmentDialog.dialog.mode === "edit" &&
+        equipmentDialog.dialog.data
+      ) {
         const assignment = equipmentDialog.dialog.data;
         form.reset({
           equipmentId: assignment.equipmentId,
@@ -71,7 +79,11 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
         });
       }
     }
-  }, [equipmentDialog.dialog.open, equipmentDialog.dialog.mode, equipmentDialog.dialog.data]);
+  }, [
+    equipmentDialog.dialog.open,
+    equipmentDialog.dialog.mode,
+    equipmentDialog.dialog.data,
+  ]);
 
   const handleCloseDialog = () => {
     equipmentDialog.closeDialog();
@@ -131,7 +143,11 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Equipment Assignment</CardTitle>
-            <Button size="sm" onClick={() => equipmentDialog.openCreateDialog()} type="button">
+            <Button
+              size="sm"
+              onClick={() => equipmentDialog.openCreateDialog()}
+              type="button"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Assign Equipment
             </Button>
@@ -139,15 +155,36 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
         </CardHeader>
         <CardContent className="space-y-3">
           {assignments.length === 0 ? (
-            <div className="text-center py-4 text-sm text-muted-foreground">
-              No equipment assigned yet
-            </div>
+            <Card>
+              <CardContent className="py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <Settings className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">
+                    No equipment assigned yet
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => equipmentDialog.openCreateDialog()}
+                    type="button"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Equipment
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <>
               {assignments.map((assignment) => (
-                <div key={assignment.id} className="flex items-start justify-between gap-3 p-3 border rounded-lg">
+                <div
+                  key={assignment.id}
+                  className="flex items-start justify-between gap-3 p-3 border rounded-lg"
+                >
                   <div className="flex-1 space-y-1">
-                    <div className="font-medium">{assignment.equipmentName}</div>
+                    <div className="font-medium">
+                      {assignment.equipmentName}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       Quantity: {assignment.quantity}
                     </div>
@@ -156,22 +193,28 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
                         ${assignment.pricePerDay.toFixed(2)}/day
                       </Badge>
                       <span className="text-muted-foreground">
-                        ${(assignment.pricePerDay * assignment.quantity * duration).toFixed(2)} total
+                        $
+                        {(
+                          assignment.pricePerDay *
+                          assignment.quantity *
+                          duration
+                        ).toFixed(2)}{" "}
+                        total
                       </span>
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => equipmentDialog.openEditDialog(assignment)}
                       type="button"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => onDeleteAssignment(assignment.id)}
                       type="button"
                     >
@@ -191,23 +234,31 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
         </CardContent>
       </Card>
 
-      <Dialog open={equipmentDialog.dialog.open} onOpenChange={(open) => {
-        if (!open) handleCloseDialog();
-      }}>
+      <Dialog
+        open={equipmentDialog.dialog.open}
+        onOpenChange={(open) => {
+          if (!open) handleCloseDialog();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {equipmentDialog.dialog.mode === "edit" ? "Edit Equipment Assignment" : "Assign Equipment"}
+              {equipmentDialog.dialog.mode === "edit"
+                ? "Edit Equipment Assignment"
+                : "Assign Equipment"}
             </DialogTitle>
             <DialogDescription>
               Select equipment and specify quantity
             </DialogDescription>
           </DialogHeader>
 
-          <form   onSubmit={(e) => {
-    e.stopPropagation();
-    form.handleSubmit(handleSubmit)(e);
-  }} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.stopPropagation();
+              form.handleSubmit(handleSubmit)(e);
+            }}
+            className="space-y-4"
+          >
             <FormSelectField
               name="equipmentId"
               control={form.control}
@@ -229,13 +280,21 @@ export const EquipmentAssignmentSelector: React.FC<EquipmentAssignmentSelectorPr
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDialog}
+              >
                 Cancel
               </Button>
-              <Button type="submit" onClick={(e) => {
-    e.stopPropagation();
-  }}>
-                {equipmentDialog.dialog.mode === "edit" ? "Update" : "Assign"} Equipment
+              <Button
+                type="submit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {equipmentDialog.dialog.mode === "edit" ? "Update" : "Assign"}{" "}
+                Equipment
               </Button>
             </DialogFooter>
           </form>
