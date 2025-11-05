@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Settings, Activity } from "lucide-react";
-import CrewManagement from "@/modules/scheduleManagement/components/Production/CrewManagement";
+import { Settings, Plus } from "lucide-react";
 import ConfigureProductionDialog from "@/modules/scheduleManagement/components/Production/ConfigureProductionDialog";
-import { Crew, ProductionConfiguration } from "@/lib/types/production";
+import { LabourerManagement } from "@/modules/scheduleManagement/components/Production/LabourerManagement";
+import { EquipmentManagement } from "@/modules/scheduleManagement/components/Production/EquipmentManagementTab";
+import { Crew, ProductionConfiguration, Labourer, Equipment } from "@/lib/types/production";
 import { Activity as ActivityType } from "@/lib/types/schedule";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,26 +16,67 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatProductionMethod, calculateDailyProduction } from "@/lib/utils/productionCalculator";
 
 const ProductionPlanningPage = () => {
-  // Sample crews data
-  const [crews, setCrews] = useState<Crew[]>([
-    {
-      id: "crew-1",
-      name: "Installation Team A",
-      numberOfPeople: 5,
+  // Master Data - Labourers
+  const [labourers, setLabourers] = useState<Labourer[]>([]);
+
+  const handleAddLabourer = (labourer: Omit<Labourer, "id" | "createdAt" | "updatedAt">) => {
+    const newLabourer: Labourer = {
+      ...labourer,
+      id: `labourer-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    },
-  ]);
+    };
+    setLabourers([...labourers, newLabourer]);
+  };
+
+  const handleUpdateLabourer = (id: string, updates: Partial<Labourer>) => {
+    setLabourers(labourers.map(l => 
+      l.id === id 
+        ? { ...l, ...updates, updatedAt: new Date().toISOString() }
+        : l
+    ));
+  };
+
+  const handleDeleteLabourer = (id: string) => {
+    setLabourers(labourers.filter(l => l.id !== id));
+  };
+
+  // Master Data - Equipment
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+
+  const handleAddEquipment = (equip: Omit<Equipment, "id" | "createdAt" | "updatedAt">) => {
+    const newEquipment: Equipment = {
+      ...equip,
+      id: `equipment-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setEquipment([...equipment, newEquipment]);
+  };
+
+  const handleUpdateEquipment = (id: string, updates: Partial<Equipment>) => {
+    setEquipment(equipment.map(e => 
+      e.id === id 
+        ? { ...e, ...updates, updatedAt: new Date().toISOString() }
+        : e
+    ));
+  };
+
+  const handleDeleteEquipment = (id: string) => {
+    setEquipment(equipment.filter(e => e.id !== id));
+  };
 
   // Sample activities data (would come from Schedule Management)
   const [activities] = useState<ActivityType[]>([
@@ -54,48 +95,6 @@ const ProductionPlanningPage = () => {
 
   const [productionConfigs, setProductionConfigs] = useState<ProductionConfiguration[]>([]);
   const [configuringActivity, setConfiguringActivity] = useState<ActivityType | null>(null);
-  const [selectedActivityFilter, setSelectedActivityFilter] = useState<string>("all");
-
-  const handleCreateCrew = (data: { name: string; numberOfPeople: number }) => {
-    const newCrew: Crew = {
-      id: `crew-${Date.now()}`,
-      name: data.name,
-      numberOfPeople: data.numberOfPeople,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setCrews([...crews, newCrew]);
-  };
-
-  const handleEditCrew = (
-    crewId: string,
-    data: { name: string; numberOfPeople: number }
-  ) => {
-    setCrews(
-      crews.map((crew) =>
-        crew.id === crewId
-          ? {
-              ...crew,
-              name: data.name,
-              numberOfPeople: data.numberOfPeople,
-              updatedAt: new Date().toISOString(),
-            }
-          : crew
-      )
-    );
-  };
-
-  const handleDeleteCrew = (crewId: string) => {
-    setCrews(crews.filter((c) => c.id !== crewId));
-    // Also remove crew assignments from production configs
-    setProductionConfigs(
-      productionConfigs.map((config) =>
-        config.crewId === crewId
-          ? { ...config, crewId: undefined }
-          : config
-      )
-    );
-  };
 
   const handleConfigureActivity = (activity: ActivityType) => {
     setConfiguringActivity(activity);
@@ -107,24 +106,15 @@ const ProductionPlanningPage = () => {
 
     const config: any = {};
     
-    switch (data.method) {
-      case "constant":
-        config.unitsPerDay = data.unitsPerDay;
-        break;
-      case "ramp-up":
-      case "ramp-down":
-        config.startUnitsPerDay = data.startUnitsPerDay;
-        config.endUnitsPerDay = data.endUnitsPerDay;
-        break;
-      case "s-curve":
-        config.peakUnitsPerDay = data.peakUnitsPerDay;
-        break;
+    // Constant method auto-calculates: units ÷ duration
+    if (data.method === "constant") {
+      config.unitsPerDay = targetItem.units / data.duration;
     }
 
     const dailyProduction = calculateDailyProduction(
       data.method,
       targetItem.units,
-      targetItem.duration,
+      data.duration,
       targetItem.startDate,
       config
     );
@@ -132,12 +122,12 @@ const ProductionPlanningPage = () => {
     const newConfig: ProductionConfiguration = {
       id: `prod-config-${Date.now()}`,
       activityId: data.activityId,
-      subActivityId: data.subActivityId,
       activityName: targetItem.name,
       totalUnits: targetItem.units,
-      duration: targetItem.duration,
+      duration: data.duration,
       method: data.method,
-      crewId: data.crewId || undefined,
+      crews: data.crews || [],
+      equipment: data.equipment || [],
       dailyProduction,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -145,11 +135,7 @@ const ProductionPlanningPage = () => {
 
     // Replace existing config if found, otherwise add new
     const existingIndex = productionConfigs.findIndex(
-      (c) =>
-        c.activityId === data.activityId &&
-        (data.subActivityId
-          ? c.subActivityId === data.subActivityId
-          : !c.subActivityId)
+      (c) => c.activityId === data.activityId
     );
 
     if (existingIndex >= 0) {
@@ -167,133 +153,139 @@ const ProductionPlanningPage = () => {
     return productionConfigs.find((c) => c.activityId === activityId);
   };
 
-  const getCrewName = (crewId?: string) => {
-    if (!crewId) return "No crew assigned";
-    const crew = crews.find((c) => c.id === crewId);
-    return crew ? crew.name : "Unknown crew";
-  };
-
-  const filteredActivities =
-    selectedActivityFilter === "all"
-      ? activities
-      : activities.filter((a) => a.id === selectedActivityFilter);
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Production Planning</h1>
         <p className="text-muted-foreground">
-          Configure production methods, manage crews, and set daily targets for activities
+          Manage labourers, equipment, and configure production methods for activities
         </p>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="configuration" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-2">
-          <TabsTrigger value="configuration" className="gap-2">
-            <Settings className="h-4 w-4" />
-            Production Configuration
-          </TabsTrigger>
-          <TabsTrigger value="crews" className="gap-2">
-            <Users className="h-4 w-4" />
-            Crew Management
-          </TabsTrigger>
+      {/* Tabs for Labourers, Equipment, and Activities */}
+      <Tabs defaultValue="activities" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="labourers">Labourers</TabsTrigger>
+          <TabsTrigger value="equipment">Equipment</TabsTrigger>
+          <TabsTrigger value="activities">Activities</TabsTrigger>
         </TabsList>
 
-        {/* Production Configuration Tab */}
-        <TabsContent value="configuration" className="space-y-4">
-          {/* Activity Filter */}
-          <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
-            <Activity className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <label htmlFor="activity-filter" className="text-sm font-medium">
-                Filter by Activity
-              </label>
-              <p className="text-xs text-muted-foreground">
-                Select an activity to configure production
-              </p>
-            </div>
-            <Select
-              value={selectedActivityFilter}
-              onValueChange={setSelectedActivityFilter}
-            >
-              <SelectTrigger id="activity-filter" className="w-[300px]">
-                <SelectValue placeholder="Select activity..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Activities</SelectItem>
-                {activities.map((activity) => (
-                  <SelectItem key={activity.id} value={activity.id}>
-                    {activity.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Activities List */}
-          <div className="space-y-4">
-            {filteredActivities.map((activity) => {
-              const activityConfig = getActivityConfig(activity.id);
-              
-              return (
-                <Card key={activity.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-lg">{activity.name}</CardTitle>
-                        <CardDescription>
-                          {activity.units} units over {activity.duration} days ({activity.startDate} to {activity.endDate})
-                        </CardDescription>
-                        {activityConfig && (
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">
-                              {formatProductionMethod(activityConfig.method)}
-                            </Badge>
-                            <Badge variant="secondary">
-                              {getCrewName(activityConfig.crewId)}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        variant={activityConfig ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => handleConfigureActivity(activity)}
-                      >
-                        {activityConfig ? "Reconfigure" : "Configure"}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-
-            {filteredActivities.length === 0 && (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <div className="rounded-full bg-muted p-4 mb-4">
-                    <Activity className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">No activities found</h3>
-                  <p className="text-sm text-muted-foreground text-center max-w-sm">
-                    Create activities in Schedule Management first to configure production.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        {/* Labourers Tab */}
+        <TabsContent value="labourers" className="space-y-4">
+          <LabourerManagement
+            labourers={labourers}
+            onAddLabourer={handleAddLabourer}
+            onUpdateLabourer={handleUpdateLabourer}
+            onDeleteLabourer={handleDeleteLabourer}
+          />
         </TabsContent>
 
-        {/* Crew Management Tab */}
-        <TabsContent value="crews">
-          <CrewManagement
-            crews={crews}
-            onCreateCrew={handleCreateCrew}
-            onEditCrew={handleEditCrew}
-            onDeleteCrew={handleDeleteCrew}
+        {/* Equipment Tab */}
+        <TabsContent value="equipment" className="space-y-4">
+          <EquipmentManagement
+            equipment={equipment}
+            onAddEquipment={handleAddEquipment}
+            onUpdateEquipment={handleUpdateEquipment}
+            onDeleteEquipment={handleDeleteEquipment}
           />
+        </TabsContent>
+
+        {/* Activities Tab */}
+        <TabsContent value="activities" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Activities</CardTitle>
+              <CardDescription>
+                Configure production planning for each activity
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="min-w-[250px]">Activity Name</TableHead>
+                        <TableHead className="min-w-[120px]">Phase</TableHead>
+                        <TableHead className="min-w-[100px] text-center">Units</TableHead>
+                        <TableHead className="min-w-[100px] text-center">Duration</TableHead>
+                        <TableHead className="min-w-[150px]">Production Method</TableHead>
+                        <TableHead className="min-w-[120px]">Crews</TableHead>
+                        <TableHead className="min-w-[120px]">Equipment</TableHead>
+                        <TableHead className="min-w-[150px] text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activities.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-2">
+                              <Settings className="h-12 w-12 text-muted-foreground/50" />
+                              <p className="text-muted-foreground">No activities available</p>
+                              <p className="text-sm text-muted-foreground">
+                                Create activities in Schedule Management first
+                              </p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        activities.map((activity) => {
+                          const activityConfig = getActivityConfig(activity.id);
+                          
+                          return (
+                            <TableRow key={activity.id} className="hover:bg-muted/50">
+                              <TableCell className="font-medium">{activity.name}</TableCell>
+                              <TableCell>{activity.phaseName || "-"}</TableCell>
+                              <TableCell className="text-center">{activity.units.toLocaleString()}</TableCell>
+                              <TableCell className="text-center">{activity.duration} days</TableCell>
+                              <TableCell>
+                                {activityConfig ? (
+                                  <Badge variant="outline">
+                                    {formatProductionMethod(activityConfig.method)}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">Not configured</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {activityConfig?.crews && activityConfig.crews.length > 0 ? (
+                                  <Badge variant="secondary">
+                                    {activityConfig.crews.length} {activityConfig.crews.length === 1 ? 'crew' : 'crews'}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">No crews</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {activityConfig?.equipment && activityConfig.equipment.length > 0 ? (
+                                  <Badge variant="secondary">
+                                    {activityConfig.equipment.length} {activityConfig.equipment.length === 1 ? 'item' : 'items'}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">No equipment</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  size="sm"
+                                  variant={activityConfig ? "outline" : "default"}
+                                  onClick={() => handleConfigureActivity(activity)}
+                                >
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  {activityConfig ? "Reconfigure" : "Configure"}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -305,7 +297,8 @@ const ProductionPlanningPage = () => {
         }}
         onSubmit={handleSaveConfiguration}
         activity={configuringActivity}
-        crews={crews}
+        availableLabourers={labourers}
+        availableEquipment={equipment}
       />
     </div>
   );

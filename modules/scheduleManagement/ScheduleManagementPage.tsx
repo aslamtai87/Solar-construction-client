@@ -244,7 +244,7 @@ const ScheduleManagementPage = ({
 
       {/* Tabs for Phases, Activities, and Milestones */}
       <Tabs defaultValue="phases" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-2">
           <TabsTrigger value="phases" className="gap-2">
             <FolderKanban className="h-4 w-4" />
             Phases
@@ -253,10 +253,10 @@ const ScheduleManagementPage = ({
             <ListTodo className="h-4 w-4" />
             Activities
           </TabsTrigger>
-          <TabsTrigger value="milestones" className="gap-2">
+          {/* <TabsTrigger value="milestones" className="gap-2">
             <Award className="h-4 w-4" />
             Milestones
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         {/* Phases Tab */}
@@ -350,8 +350,7 @@ const ScheduleManagementPage = ({
         </TabsContent>
 
         {/* Milestones Tab */}
-        <TabsContent value="milestones" className="space-y-4">
-          {/* Phase Filter */}
+        {/* <TabsContent value="milestones" className="space-y-4">
           <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
             <FolderKanban className="h-5 w-5 text-muted-foreground" />
             <div className="flex-1">
@@ -387,7 +386,7 @@ const ScheduleManagementPage = ({
             phases={phases}
             onCreateMilestone={handleCreateMilestone}
           />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
 
       {/* Excel Upload Dialog */}

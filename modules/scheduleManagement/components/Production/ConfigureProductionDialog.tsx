@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,36 +13,80 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
-import { FormSelectField } from "@/components/global/Form/FormSelectField";
-import { Loader2, Info, TrendingUp, TrendingDown, Minus, Activity as ActivityIcon } from "lucide-react";
-import { createProductionConfigSchema } from "@/lib/validation/production";
-import { ProductionMethod, Crew } from "@/lib/types/production";
-import { Activity, SubActivity } from "@/lib/types/schedule";
-import { z } from "zod";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
-  formatProductionMethod, 
-  getProductionMethodDescription,
-  calculateDailyProduction 
-} from "@/lib/utils/productionCalculator";
+  Loader2, 
+  Info, 
+  TrendingUp, 
+  TrendingDown, 
+  Minus, 
+  Activity as ActivityIcon,
+} from "lucide-react";
+import { 
+  ProductionMethod, 
+  Labourer, 
+  Equipment, 
+  CrewComposition, 
+  EquipmentAssignment 
+} from "@/lib/types/production";
+import { Activity } from "@/lib/types/schedule";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { calculateDailyProduction } from "@/lib/utils/productionCalculator";
+import { Separator } from "@/components/ui/separator";
+import { FormSelectField } from "@/components/global/Form/FormSelectField";
+import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
+import { CrewCompositionBuilder } from "./CrewCompositionBuilder";
+import { EquipmentAssignmentSelector } from "./EquipmentAssignmentSelector";
+import { ProductionForecastCard } from "./ProductionForecastCard";
 
-type ProductionConfigFormData = z.infer<typeof createProductionConfigSchema>;
+const configSchema = z.object({
+  activityId: z.string(),
+  method: z.enum(["constant", "ramp-up", "ramp-down", "s-curve"]),
+  duration: z.number().min(1, "Duration must be at least 1 day"),
+});
+
+type ConfigFormData = z.infer<typeof configSchema>;
 
 interface ConfigureProductionDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: ProductionConfigFormData) => void;
+  onSubmit: (data: {
+    activityId: string;
+    method: ProductionMethod;
+    duration: number;
+    crews: CrewComposition[];
+    equipment: EquipmentAssignment[];
+  }) => void;
   activity: Activity | null;
-  subActivity?: SubActivity | null;
-  crews: Crew[];
+  availableLabourers: Labourer[];
+  availableEquipment: Equipment[];
 }
 
-const productionMethods: { value: ProductionMethod; label: string; icon: any }[] = [
-  { value: "constant", label: "Constant", icon: Minus },
-  { value: "ramp-up", label: "Ramp Up", icon: TrendingUp },
-  { value: "ramp-down", label: "Ramp Down", icon: TrendingDown },
-  { value: "s-curve", label: "S-Curve", icon: ActivityIcon },
+const productionMethods: { value: ProductionMethod; label: string; icon: any; description: string }[] = [
+  { 
+    value: "constant", 
+    label: "Constant", 
+    icon: Minus,
+    description: "AI distributes units evenly across all days (units ÷ days)"
+  },
+  { 
+    value: "ramp-up", 
+    label: "Ramp Up", 
+    icon: TrendingUp,
+    description: "AI will forecast gradually increasing production over time"
+  },
+  { 
+    value: "ramp-down", 
+    label: "Ramp Down", 
+    icon: TrendingDown,
+    description: "AI will forecast gradually decreasing production over time"
+  },
+  { 
+    value: "s-curve", 
+    label: "S-Curve", 
+    icon: ActivityIcon,
+    description: "AI will forecast production starting slow, peaking in middle, then slowing down"
+  },
 ];
 
 export const ConfigureProductionDialog = ({
@@ -49,11 +94,11 @@ export const ConfigureProductionDialog = ({
   onClose,
   onSubmit,
   activity,
-  subActivity,
-  crews,
+  availableLabourers,
+  availableEquipment,
 }: ConfigureProductionDialogProps) => {
-  const targetItem = subActivity || activity;
-  const isSubActivity = !!subActivity;
+  const [crews, setCrews] = useState<CrewComposition[]>([]);
+  const [equipmentAssignments, setEquipmentAssignments] = useState<EquipmentAssignment[]>([]);
 
   const {
     control,
@@ -62,109 +107,184 @@ export const ConfigureProductionDialog = ({
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ProductionConfigFormData>({
-    resolver: zodResolver(createProductionConfigSchema),
+  } = useForm<ConfigFormData>({
+    resolver: zodResolver(configSchema),
     defaultValues: {
       activityId: "",
-      subActivityId: undefined,
       method: "constant",
-      crewId: "",
-      unitsPerDay: undefined,
-      startUnitsPerDay: undefined,
-      endUnitsPerDay: undefined,
-      peakUnitsPerDay: undefined,
+      duration: 0,
     },
   });
 
   const method = watch("method");
-  const unitsPerDay = watch("unitsPerDay");
-  const startUnitsPerDay = watch("startUnitsPerDay");
-  const endUnitsPerDay = watch("endUnitsPerDay");
-  const peakUnitsPerDay = watch("peakUnitsPerDay");
+  const duration = watch("duration");
 
-  // Set activity IDs when dialog opens
+  // Set activity data when dialog opens
   useEffect(() => {
     if (activity) {
       setValue("activityId", activity.id);
-      if (subActivity) {
-        setValue("subActivityId", subActivity.id);
-      }
+      setValue("duration", activity.duration);
     }
-  }, [activity, subActivity, setValue]);
+  }, [activity, setValue]);
 
-  // Calculate preview of daily production
-  const productionPreview = useMemo(() => {
-    if (!targetItem) return null;
+
+  // Calculate AI-based production forecast
+  const productionForecast = useMemo(() => {
+    if (!activity || !duration) return null;
 
     const config: any = {};
     
-    switch (method) {
-      case "constant":
-        if (!unitsPerDay) return null;
-        config.unitsPerDay = unitsPerDay;
-        break;
-      case "ramp-up":
-      case "ramp-down":
-        if (!startUnitsPerDay || !endUnitsPerDay) return null;
-        config.startUnitsPerDay = startUnitsPerDay;
-        config.endUnitsPerDay = endUnitsPerDay;
-        break;
-      case "s-curve":
-        if (!peakUnitsPerDay) return null;
-        config.peakUnitsPerDay = peakUnitsPerDay;
-        break;
+    // Constant method auto-calculates: units ÷ days
+    if (method === "constant") {
+      config.unitsPerDay = activity.units / duration;
     }
 
     try {
       return calculateDailyProduction(
         method,
-        targetItem.units,
-        targetItem.duration,
-        targetItem.startDate,
+        activity.units,
+        duration,
+        activity.startDate,
         config
       );
     } catch (error) {
       return null;
     }
-  }, [method, targetItem, unitsPerDay, startUnitsPerDay, endUnitsPerDay, peakUnitsPerDay]);
+  }, [method, activity, duration]);
 
-  const handleFormSubmit = async (data: ProductionConfigFormData) => {
-    onSubmit(data);
+  const handleFormSubmit = async (data: ConfigFormData) => {
+    onSubmit({ 
+      activityId: data.activityId,
+      method: data.method,
+      duration: data.duration,
+      crews, 
+      equipment: equipmentAssignments 
+    });
     reset();
+    setCrews([]);
+    setEquipmentAssignments([]);
   };
 
   const handleClose = () => {
     reset();
+    setCrews([]);
+    setEquipmentAssignments([]);
     onClose();
   };
 
-  if (!targetItem) return null;
+  // Crew management handlers
+  const handleAddCrew = (crew: Omit<CrewComposition, "id" | "totalCostPerHour">) => {
+    const totalCostPerHour = crew.labourers.reduce(
+      (sum, l) => sum + l.totalRate * l.quantity,
+      0
+    );
+    setCrews([...crews, { 
+      ...crew, 
+      id: `crew-${Date.now()}`,
+      totalCostPerHour 
+    }]);
+  };
+
+  const handleUpdateCrew = (id: string, updates: Partial<CrewComposition>) => {
+    setCrews(crews.map(c => {
+      if (c.id === id) {
+        const updated = { ...c, ...updates };
+        if (updates.labourers) {
+          updated.totalCostPerHour = updates.labourers.reduce(
+            (sum, l) => sum + l.totalRate * l.quantity,
+            0
+          );
+        }
+        return updated;
+      }
+      return c;
+    }));
+  };
+
+  const handleDeleteCrew = (id: string) => {
+    setCrews(crews.filter(c => c.id !== id));
+  };
+
+  // Equipment management handlers
+  const handleAddEquipment = (assignment: Omit<EquipmentAssignment, "id">) => {
+    setEquipmentAssignments([...equipmentAssignments, { 
+      ...assignment, 
+      id: `equip-${Date.now()}` 
+    }]);
+  };
+
+  const handleUpdateEquipment = (id: string, updates: Partial<EquipmentAssignment>) => {
+    setEquipmentAssignments(equipmentAssignments.map(e => 
+      e.id === id ? { ...e, ...updates } : e
+    ));
+  };
+
+  const handleDeleteEquipment = (id: string) => {
+    setEquipmentAssignments(equipmentAssignments.filter(e => e.id !== id));
+  };
+
+  if (!activity) return null;
+
+  // Calculate total cost estimate
+  const totalCrewCost = crews.reduce((sum, crew) => 
+    sum + (crew.totalCostPerHour * 8 * duration), 0
+  );
+  const totalEquipmentCost = equipmentAssignments.reduce((sum, equip) => 
+    sum + (equip.pricePerDay * equip.quantity * duration), 0
+  );
+  const totalEstimatedCost = totalCrewCost + totalEquipmentCost;
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Configure Production
+            Configure Production - {activity.name}
           </DialogTitle>
           <DialogDescription>
-            Set up production targeting for {isSubActivity ? "sub-activity" : "activity"}: <strong>{targetItem.name}</strong>
+            Set up production method, duration, assign crews, and add equipment
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6" onKeyDown={(e) => {
+          // Prevent Enter key from submitting the form
+          if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+            e.preventDefault();
+          }
+        }}>
+          <div className="space-y-6 py-4">
             {/* Activity Info */}
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <div className="text-sm space-y-1">
-                  <p><strong>Total Units:</strong> {targetItem.units}</p>
-                  <p><strong>Duration:</strong> {targetItem.duration} days</p>
-                  <p><strong>Dates:</strong> {targetItem.startDate} to {targetItem.endDate}</p>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Total Units</p>
+                    <p className="font-semibold">{activity.units.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Original Duration</p>
+                    <p className="font-semibold">{activity.duration} days</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Period</p>
+                    <p className="font-semibold text-xs">{activity.startDate} to {activity.endDate}</p>
+                  </div>
                 </div>
               </AlertDescription>
             </Alert>
+
+            {/* Duration Input */}
+            <FormFieldWrapper
+              name="duration"
+              control={control}
+              label="Duration (Days)"
+              type="number"
+              placeholder="22"
+              min={1}
+              description="You can adjust the duration for this production configuration"
+            />
 
             {/* Production Method Selection */}
             <FormSelectField
@@ -172,105 +292,150 @@ export const ConfigureProductionDialog = ({
               control={control}
               label="Production Method"
               placeholder="Select production method..."
-              description="Choose how units will be distributed over time"
               options={productionMethods.map((pm) => ({
-                label: pm.label,
                 value: pm.value,
+                label: `${pm.label}`,
               }))}
+              description={productionMethods.find(pm => pm.value === method)?.description}
             />
 
-            {/* Method Description */}
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>{formatProductionMethod(method)}:</strong> {getProductionMethodDescription(method)}
-              </p>
+            {/* Method-specific info */}
+            {method === "constant" && duration > 0 && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-semibold">Auto-Calculated</p>
+                    <p className="text-sm">
+                      Units are distributed evenly across all days.
+                    </p>
+                    <div className="text-sm pt-2 border-t">
+                      <p className="text-muted-foreground">
+                        {activity.units.toLocaleString()} units ÷ {duration} days = {(activity.units / duration).toFixed(2)} units/day
+                      </p>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {(method === "ramp-up" || method === "ramp-down" || method === "s-curve") && (
+              <Alert>
+                <ActivityIcon className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-semibold">AI Forecast Enabled</p>
+                    <p className="text-sm">
+                      {method === "ramp-up" && 
+                        "AI will analyze optimal ramp-up with learning curves, team efficiency improvements, weekend adjustments, and external factors."
+                      }
+                      {method === "ramp-down" && 
+                        "AI will model realistic ramp-down considering team fatigue, resource depletion, material availability, and project closeout."
+                      }
+                      {method === "s-curve" && 
+                        "AI will simulate complete project lifecycle: mobilization (20%), acceleration (25%), peak efficiency (30%), and controlled closeout (25%)."
+                      }
+                    </p>
+                    {duration > 0 && (
+                      <div className="text-xs pt-2 border-t space-y-1">
+                        <p className="text-muted-foreground font-semibold">AI Considers:</p>
+                        <ul className="list-disc list-inside space-y-0.5 text-muted-foreground ml-2">
+                          <li>Team learning curves & efficiency optimization</li>
+                          <li>Weekend & holiday productivity adjustments</li>
+                          <li>Weather & seasonal variations</li>
+                          <li>Resource availability & material flow</li>
+                          {method === "s-curve" && <li>Project phase dynamics</li>}
+                          {method === "ramp-down" && <li>Team fatigue & closeout complexity</li>}
+                          {method === "ramp-up" && <li>Process optimization & coordination</li>}
+                        </ul>
+                        <p className="text-muted-foreground pt-2">
+                          Base capacity: {(activity.units / duration).toFixed(1)} units/day
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Separator />
+
+            {/* Crew Composition */}
+            <div onKeyDown={(e) => {
+              // Prevent Enter key in nested dialogs from submitting parent form
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+              }
+            }}>
+              <CrewCompositionBuilder
+                availableLabourers={availableLabourers}
+                crews={crews}
+                onAddCrew={handleAddCrew}
+                onUpdateCrew={handleUpdateCrew}
+                onDeleteCrew={handleDeleteCrew}
+                duration={duration || activity.duration}
+              />
             </div>
 
-            {/* Method-specific fields */}
-            {method === "constant" && (
-              <FormFieldWrapper
-                name="unitsPerDay"
-                control={control}
-                label="Units Per Day"
-                type="number"
-                placeholder="e.g., 10"
-                description="Number of units to complete each day"
+            <Separator />
+
+            {/* Equipment Assignment */}
+            <div onKeyDown={(e) => {
+              // Prevent Enter key in nested dialogs from submitting parent form
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+              }
+            }}>
+              <EquipmentAssignmentSelector
+                availableEquipment={availableEquipment}
+                assignments={equipmentAssignments}
+                onAddAssignment={handleAddEquipment}
+                onUpdateAssignment={handleUpdateEquipment}
+                onDeleteAssignment={handleDeleteEquipment}
+                duration={duration || activity.duration}
               />
-            )}
+            </div>
 
-            {(method === "ramp-up" || method === "ramp-down") && (
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldWrapper
-                  name="startUnitsPerDay"
-                  control={control}
-                  label="Start Units Per Day"
-                  type="number"
-                  placeholder="e.g., 5"
-                  description="Starting daily production"
-                />
-                <FormFieldWrapper
-                  name="endUnitsPerDay"
-                  control={control}
-                  label="End Units Per Day"
-                  type="number"
-                  placeholder="e.g., 15"
-                  description="Ending daily production"
-                />
-              </div>
-            )}
-
-            {method === "s-curve" && (
-              <FormFieldWrapper
-                name="peakUnitsPerDay"
-                control={control}
-                label="Peak Units Per Day"
-                type="number"
-                placeholder="e.g., 20"
-                description="Maximum daily production at peak"
-              />
-            )}
-
-            {/* Crew Assignment */}
-            <FormSelectField
-              name="crewId"
-              control={control}
-              label="Assign Crew (Optional)"
-              placeholder="Select a crew..."
-              description="Assign a crew to this production configuration"
-              options={crews.map((crew) => ({
-                label: `${crew.name} (${crew.numberOfPeople} people)`,
-                value: crew.id,
-              }))}
-            />
-
-            {/* Production Preview */}
-            {productionPreview && productionPreview.length > 0 && (
-              <div className="border rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-sm">Production Preview</h4>
-                <div className="max-h-[200px] overflow-y-auto space-y-2">
-                  {productionPreview.slice(0, 10).map((day) => (
-                    <div key={day.day} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Day {day.day} ({day.date})
-                      </span>
-                      <span className="font-medium">{day.targetUnits} units</span>
+            {/* Cost Summary */}
+            {(crews.length > 0 || equipmentAssignments.length > 0) && duration > 0 && (
+              <>
+                <Separator />
+                <Card className="bg-muted/50">
+                  <CardHeader>
+                    <CardTitle className="text-base">Cost Estimate</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {crews.length > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Crew Costs ({duration} days × 8 hrs):</span>
+                        <span className="font-semibold">${totalCrewCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    {equipmentAssignments.length > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Equipment Costs ({duration} days):</span>
+                        <span className="font-semibold">${totalEquipmentCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between text-base font-bold">
+                      <span>Total Estimated Cost:</span>
+                      <span>${totalEstimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
-                  ))}
-                  {productionPreview.length > 10 && (
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      ... and {productionPreview.length - 10} more days
-                    </p>
-                  )}
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="flex justify-between text-sm font-semibold">
-                    <span>Total</span>
-                    <span>
-                      {productionPreview.reduce((sum, day) => sum + day.targetUnits, 0).toFixed(2)} units
-                    </span>
-                  </div>
-                </div>
-              </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* Production Forecast */}
+            {productionForecast && productionForecast.length > 0 && (
+              <>
+                <Separator />
+                <ProductionForecastCard 
+                  forecast={productionForecast} 
+                  method={method} 
+                />
+              </>
             )}
           </div>
 
@@ -283,7 +448,7 @@ export const ConfigureProductionDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="gap-2">
+            <Button type="submit" disabled={isSubmitting || !duration} className="gap-2">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Configuration
             </Button>
