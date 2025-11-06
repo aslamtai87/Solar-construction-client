@@ -73,7 +73,7 @@ export const ProductionTableView = ({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b">
-                      <th className="p-2 text-left font-semibold text-sm sticky left-0 bg-red-700 min-w-[280px] max-w-[280px]">
+                      <th className="p-2 text-left font-semibold text-sm sticky left-0 bg-white min-w-[280px] max-w-[280px]">
                         Crew
                       </th>
                       <th className="p-2 text-center font-semibold text-sm w-20">

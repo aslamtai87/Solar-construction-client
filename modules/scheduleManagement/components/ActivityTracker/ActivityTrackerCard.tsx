@@ -334,14 +334,14 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
           </div>
 
           {/* Dependencies */}
-          {activity.dependencies && (
+          {/* {activity.dependencies && (
             <div className="mt-4 pt-4 border-t">
               <div className="text-sm">
                 <span className="text-muted-foreground">Dependencies: </span>
                 <span className="font-medium">{activity.dependencies}</span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       )}
     </Card>
