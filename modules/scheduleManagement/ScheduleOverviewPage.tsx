@@ -3,6 +3,7 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityTrackerPage } from "./components/ActivityTracker/ActivityTrackerPage";
+import  DailyProductionTracking  from "./components/DailyProduction/DailyProductionPage";
 
 const ScheduleOverviewPage = () => {
   return (
@@ -29,9 +30,7 @@ const ScheduleOverviewPage = () => {
 
         {/* Daily Production Tab */}
         <TabsContent value="daily-production">
-          <div className="bg-white rounded-lg border p-12 text-center">
-            <p className="text-muted-foreground">Daily Production view coming soon...</p>
-          </div>
+          <DailyProductionTracking />
         </TabsContent>
       </Tabs>
     </div>

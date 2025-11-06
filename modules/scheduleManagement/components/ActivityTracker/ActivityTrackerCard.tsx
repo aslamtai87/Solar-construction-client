@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Calendar, Users } from "lucide-react";
+import { ChevronDown, ChevronRight, Calendar, Users, Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { CircleCheckBig } from 'lucide-react';
+import { CircleCheckBig, Play, TriangleAlert } from 'lucide-react';
 
 interface ActivityTrackerCardProps {
   activity: {
@@ -73,11 +73,11 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
       case "completed":
         return <CircleCheckBig />;
       case "in progress":
-        return "▶";
+        return <Play />;
       case "delayed":
-        return "⚠";
+        return <TriangleAlert />;
       case "not started":
-        return "○";
+        return <Circle />;
       default:
         return "";
     }
