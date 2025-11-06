@@ -392,14 +392,6 @@ const UpdateProject = ({
           </Card>
           <Card>
             <CardHeader className="flex flex-col gap-0">
-              <CardTitle className="text-2xl">Working Days Configuration</CardTitle>
-              <CardDescription>
-                Configure working days for schedule calculations. This will be used when creating activities and calculating project timelines.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-col gap-0">
               <CardTitle className="text-2xl">Project Documents</CardTitle>
               <CardDescription>
                 Update and manage project-related documents.
