@@ -55,6 +55,14 @@ const menuItems: Record<string, MenuItem[]> = {
         { title: "Production Planning", url: "/schedule-management/production-planning" },
       ]
     },
+    {
+      title: "Field and Compliance",
+      icon: Sun,
+      subItems: [
+        { title: "Daily Production", url: "/field-and-compliance/daily-production" },
+        { title: "Production Reports", url: "/field-and-compliance/production-reports" },
+      ],
+    }
   ],
 };
 
