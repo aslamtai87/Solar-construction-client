@@ -5,12 +5,6 @@ import { PaginationResponse } from "../types/pagination";
 import {APISuccessResponse} from "../types/api";
 
 
-// Phases
-export const fetchPhases = async (): Promise<Phase[]> => {
-  const response = await api.get<PaginationResponse<Phase>>(API_ENDPOINTS.GET_PHASES);
-  return response.data.data.result;
-};
-
 export const fetchPhaseById = async (id: string): Promise<Phase> => {
   const response = await api.get<Phase>(API_ENDPOINTS.GET_PHASE_BY_ID.replace("{id}", id));
   return response.data;
@@ -23,7 +17,7 @@ export const createPhase = async (data: CreatePhaseDTO): Promise<APISuccessRespo
 
 
 export const updatePhase = async (id: string, data: Partial<CreatePhaseDTO>): Promise<APISuccessResponse> => {
-  const response = await api.put<APISuccessResponse>(API_ENDPOINTS.UPDATE_PHASE.replace("{id}", id), data);
+  const response = await api.patch<APISuccessResponse>(API_ENDPOINTS.UPDATE_PHASE.replace("{id}", id), data);
   return response.data;
 };
 

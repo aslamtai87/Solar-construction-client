@@ -4,13 +4,38 @@ import PhaseTable from "./components/Phase/PhaseTable";
 import ActivityTableNew from "./components/Activity/ActivityTableNew";
 import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
 import MilestoneDisplay from "./components/Milestone/MilestoneDisplay";
-import { Phase, Activity, Milestone, WorkingDaysConfig, WorkingDaysType } from "@/lib/types/schedule";
+import {
+  Activity,
+  Milestone,
+  WorkingDaysConfig,
+  WorkingDaysType,
+} from "@/lib/types/schedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, ListTodo, Award, FolderKanban, Upload, Save } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Calendar,
+  ListTodo,
+  Award,
+  FolderKanban,
+  Upload,
+  Save,
+  Plus,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { calculateDuration } from "@/lib/utils/durationCalculator";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getWorkingDaysLabel } from "@/lib/utils/durationCalculator";
 import { WorkingDaysSelector } from "@/components/global/WorkingDaysSelector";
@@ -19,6 +44,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePhases } from "@/hooks/ReactQuery/useSchedule";
+import { useProjectStore } from "@/store/projectStore";
+import { Phase } from "@/lib/types/schedule";
 
 const workingDaysSchema = z.object({
   type: z.nativeEnum(WorkingDaysType),
@@ -31,13 +59,15 @@ interface ScheduleManagementPageProps {
   workingDaysConfig?: WorkingDaysConfig;
 }
 
-const ScheduleManagementPage = ({ 
-  projectId, 
-  workingDaysConfig: projectWorkingDaysConfig 
+const ScheduleManagementPage = ({
+  projectId,
+  workingDaysConfig: projectWorkingDaysConfig,
 }: ScheduleManagementPageProps) => {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | "all">("all");
   const [excelUploadOpen, setExcelUploadOpen] = useState(false);
-  
+  const { selectedProject } = useProjectStore();
+  const { data: phases } = usePhases({ projectId: selectedProject?.id || "" });
+
   // Use project-level working days config or default
   const [workingDaysConfig, setWorkingDaysConfig] = useState<WorkingDaysConfig>(
     projectWorkingDaysConfig || {
@@ -65,7 +95,8 @@ const ScheduleManagementPage = ({
   // Watch for changes in the form
   useEffect(() => {
     const subscription = workingDaysForm.watch((value) => {
-      const isDifferent = JSON.stringify(value) !== JSON.stringify(workingDaysConfig);
+      const isDifferent =
+        JSON.stringify(value) !== JSON.stringify(workingDaysConfig);
       setHasUnsavedChanges(isDifferent);
     });
     return () => subscription.unsubscribe();
@@ -75,7 +106,7 @@ const ScheduleManagementPage = ({
     const newConfig = workingDaysForm.getValues();
     setWorkingDaysConfig(newConfig);
     setHasUnsavedChanges(false);
-    
+
     // TODO: Call API to update working days config in backend
     console.log("Saving working days config:", newConfig);
     // Example: updateProjectWorkingDays(projectId, newConfig);
@@ -85,30 +116,6 @@ const ScheduleManagementPage = ({
     workingDaysForm.reset(workingDaysConfig);
     setHasUnsavedChanges(false);
   };
-  
-  // Sample phases data - Replace with actual API call
-  const [phases, setPhases] = useState<Phase[]>([
-    {
-      id: "1",
-      projectId: "project-1",
-      title: "Planning & Design",
-      description: "Initial project planning and design phase",
-      status: "completed",
-      order: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      projectId: "project-1",
-      title: "Construction",
-      description: "Main construction phase",
-      status: "in-progress",
-      order: 2,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ]);
 
   // Sample activities data - Replace with actual API call
   const [activities, setActivities] = useState<Activity[]>([
@@ -154,11 +161,15 @@ const ScheduleManagementPage = ({
   ]);
 
   const handleCreateActivity = (data: any) => {
-    const duration = calculateDuration(data.startDate, data.endDate, workingDaysConfig);
+    const duration = calculateDuration(
+      data.startDate,
+      data.endDate,
+      workingDaysConfig
+    );
     const newActivity: Activity = {
       id: `act-${Date.now()}`,
       phaseId: data.phaseId,
-      phaseName: phases.find((p) => p.id === data.phaseId)?.title,
+      phaseName: phases?.find((p) => p.id === data.phaseId)?.name,
       name: data.name,
       units: data.units,
       startDate: data.startDate,
@@ -172,25 +183,31 @@ const ScheduleManagementPage = ({
   };
 
   const handleEditActivity = (activityId: string, data: any) => {
-    const duration = calculateDuration(data.startDate, data.endDate, workingDaysConfig);
-    setActivities(activities.map(activity => 
-      activity.id === activityId 
-        ? {
-            ...activity,
-            phaseId: data.phaseId,
-            phaseName: phases.find((p) => p.id === data.phaseId)?.title,
-            name: data.name,
-            units: data.units,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            duration: duration,
-          }
-        : activity
-    ));
+    const duration = calculateDuration(
+      data.startDate,
+      data.endDate,
+      workingDaysConfig
+    );
+    setActivities(
+      activities.map((activity) =>
+        activity.id === activityId
+          ? {
+              ...activity,
+              phaseId: data.phaseId,
+              phaseName: phases?.find((p) => p.id === data.phaseId)?.name,
+              name: data.name,
+              units: data.units,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              duration: duration,
+            }
+          : activity
+      )
+    );
   };
 
   const handleDeleteActivity = (activityId: string) => {
-    setActivities(activities.filter(a => a.id !== activityId));
+    setActivities(activities.filter((a) => a.id !== activityId));
   };
 
   const handleExcelUpload = (parsedActivities: any[]) => {
@@ -199,7 +216,11 @@ const ScheduleManagementPage = ({
 
     parsedActivities.forEach((parsed) => {
       if (!parsed.isSubActivity) {
-        const duration = calculateDuration(parsed.startDate, parsed.endDate, workingDaysConfig);
+        const duration = calculateDuration(
+          parsed.startDate,
+          parsed.endDate,
+          workingDaysConfig
+        );
         // Create activity
         const activity: Activity = {
           id: `act-${Date.now()}-${Math.random()}`,
@@ -237,39 +258,30 @@ const ScheduleManagementPage = ({
     setMilestones([...milestones, newMilestone]);
   };
 
-  const handleCreatePhase = (data: { title: string; description: string }) => {
-    const newPhase: Phase = {
-      id: `phase-${Date.now()}`,
-      projectId: "project-1", // Replace with actual project ID
-      title: data.title,
-      description: data.description,
-      status: "not-started",
-      order: phases.length + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setPhases([...phases, newPhase]);
-  };
-
-  const handleEditPhase = (phaseId: string, data: { title: string; description: string }) => {
-    setPhases(phases.map(phase =>
-      phase.id === phaseId
-        ? {
-            ...phase,
-            title: data.title,
-            description: data.description,
-            updatedAt: new Date().toISOString(),
-          }
-        : phase
-    ));
-  };
+  // const handleEditPhase = (
+  //   phaseId: string,
+  //   data: { title: string; description: string }
+  // ) => {
+  //   setPhases(
+  //     phases.map((phase) =>
+  //       phase.id === phaseId
+  //         ? {
+  //             ...phase,
+  //             title: data.title,
+  //             description: data.description,
+  //             updatedAt: new Date().toISOString(),
+  //           }
+  //         : phase
+  //     )
+  //   );
+  // };
 
   const handleDeletePhase = (phaseId: string) => {
     // Delete the phase and all associated activities and milestones
-    setPhases(phases.filter(p => p.id !== phaseId));
-    setActivities(activities.filter(a => a.phaseId !== phaseId));
-    setMilestones(milestones.filter(m => m.phaseId !== phaseId));
-    
+    // setPhases(phases.filter((p) => p.id !== phaseId));
+    setActivities(activities.filter((a) => a.phaseId !== phaseId));
+    setMilestones(milestones.filter((m) => m.phaseId !== phaseId));
+
     // Reset selected phase if the deleted phase was selected
     if (selectedPhaseId === phaseId) {
       setSelectedPhaseId("all");
@@ -277,19 +289,23 @@ const ScheduleManagementPage = ({
   };
 
   // Filter activities and milestones based on selected phase
-  const filteredActivities = selectedPhaseId === "all" 
-    ? activities 
-    : activities.filter(a => a.phaseId === selectedPhaseId);
+  const filteredActivities =
+    selectedPhaseId === "all"
+      ? activities
+      : activities.filter((a) => a.phaseId === selectedPhaseId);
 
-  const filteredMilestones = selectedPhaseId === "all"
-    ? milestones
-    : milestones.filter(m => m.phaseId === selectedPhaseId);
+  const filteredMilestones =
+    selectedPhaseId === "all"
+      ? milestones
+      : milestones.filter((m) => m.phaseId === selectedPhaseId);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Schedule Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Schedule Management
+        </h1>
         <p className="text-muted-foreground">
           Manage project phases, activities, and milestones
         </p>
@@ -314,12 +330,21 @@ const ScheduleManagementPage = ({
 
         {/* Phases Tab */}
         <TabsContent value="phases" className="space-y-4">
-          <PhaseTable
-            phases={phases}
-            onCreatePhase={handleCreatePhase}
-            onEditPhase={handleEditPhase}
-            onDeletePhase={handleDeletePhase}
-          />
+          {phases ? (
+            <PhaseTable phases={phases} />
+          ) : (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-1">No phases yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get started by creating your first project phase to organize
+                your schedule and tasks.
+              </p>
+              <Button onClick={() => {}} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create First Phase
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* Activities Tab */}
@@ -355,7 +380,8 @@ const ScheduleManagementPage = ({
                 )}
               </div>
               <CardDescription>
-                Configure working days for all project activities. Changes will affect duration calculations.
+                Configure working days for all project activities. Changes will
+                affect duration calculations.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -366,7 +392,9 @@ const ScheduleManagementPage = ({
                   control={workingDaysForm.control}
                   render={({ field, fieldState: { error } }) => (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Working Days Type</label>
+                      <label className="text-sm font-medium">
+                        Working Days Type
+                      </label>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
@@ -385,10 +413,15 @@ const ScheduleManagementPage = ({
                       </Select>
                       {!error && (
                         <p className="text-xs text-muted-foreground">
-                          Select which days count as working days for all project activities
+                          Select which days count as working days for all
+                          project activities
                         </p>
                       )}
-                      {error && <p className="text-sm text-destructive">{error.message}</p>}
+                      {error && (
+                        <p className="text-sm text-destructive">
+                          {error.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />
@@ -397,7 +430,7 @@ const ScheduleManagementPage = ({
                 {workingDaysForm.watch("type") === WorkingDaysType.CUSTOM && (
                   <div className="space-y-3 pl-4 border-l-2 border-muted">
                     <p className="text-sm font-medium">Additional Days</p>
-                    
+
                     <Controller
                       name="includeSaturday"
                       control={workingDaysForm.control}
@@ -444,7 +477,8 @@ const ScheduleManagementPage = ({
               {hasUnsavedChanges && (
                 <Alert className="mt-4 border-orange-200 dark:border-orange-900/30">
                   <AlertDescription className="text-sm text-orange-800 dark:text-orange-200">
-                    You have unsaved changes. Click "Save Changes" to update the working days configuration.
+                    You have unsaved changes. Click "Save Changes" to update the
+                    working days configuration.
                   </AlertDescription>
                 </Alert>
               )}
@@ -468,27 +502,33 @@ const ScheduleManagementPage = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Phases</SelectItem>
-                {phases.map((phase) => (
+                {phases?.map((phase) => (
                   <SelectItem key={phase.id} value={phase.id}>
-                    {phase.title}
+                    {phase.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <ActivityTableNew
-            activities={filteredActivities}
-            phases={phases}
-            workingDaysConfig={workingDaysConfig}
-            onCreateActivity={handleCreateActivity}
-            onUpdateActivity={handleEditActivity}
-            onDeleteActivity={handleDeleteActivity}
-          />
-          
+          {phases && (
+            <ActivityTableNew
+              activities={filteredActivities}
+              phases={phases}
+              workingDaysConfig={workingDaysConfig}
+              onCreateActivity={handleCreateActivity}
+              onUpdateActivity={handleEditActivity}
+              onDeleteActivity={handleDeleteActivity}
+            />
+          )}
+
           {/* Excel Upload Button */}
           <div className="flex justify-end mt-4">
-            <Button onClick={() => setExcelUploadOpen(true)} variant="outline" className="gap-2">
+            <Button
+              onClick={() => setExcelUploadOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
               <Upload className="h-4 w-4" />
               Import from Excel
             </Button>
@@ -536,12 +576,12 @@ const ScheduleManagementPage = ({
       </Tabs>
 
       {/* Excel Upload Dialog */}
-      <ActivityExcelUpload
+      {/* <ActivityExcelUpload
         open={excelUploadOpen}
         onClose={() => setExcelUploadOpen(false)}
         onUpload={handleExcelUpload}
         phases={phases}
-      />
+      /> */}
     </div>
   );
 };

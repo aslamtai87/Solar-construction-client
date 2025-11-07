@@ -1,3 +1,5 @@
+import { Project } from "next/dist/build/swc/types";
+
 // Working Days Configuration
 export enum WorkingDaysType {
   WEEKDAYS_ONLY = "WEEKDAYS_ONLY",
@@ -20,27 +22,31 @@ export interface WorkingDays {
 // Phase Types
 export interface Phase {
   id: string;
-  projectId: string;
-  title: string;
+  name: string;
   description: string;
-  status: "not-started" | "in-progress" | "completed";
-  order: number;
+  status: string;
   createdAt: string;
-  updatedAt: string;
+  projectId: string;
+  _count: Count;
+}
+
+interface Count {
+  activities: number;
+  milestones: number;
 }
 
 export interface CreatePhaseDTO {
   projectId: string;
-  title: string;
+  name: string;
   description: string;
 }
 
-export interface UpdatePhaseDTO {
-  title?: string;
-  description?: string;
-  status?: Phase["status"];
-  order?: number;
-}
+// export interface UpdatePhaseDTO {
+//   title?: string;
+//   description?: string;
+//   status?: Phase["status"];
+//   order?: number;
+// }
 
 // Activity Types
 export interface Activity {
@@ -107,7 +113,7 @@ export interface UpdateMilestoneDTO {
 }
 
 // Phase with complete data
-export interface PhaseWithData extends Phase {
-  activities: Activity[];
-  milestones: Milestone[];
-}
+// export interface PhaseWithData extends Phase {
+//   activities: Activity[];
+//   milestones: Milestone[];
+// }

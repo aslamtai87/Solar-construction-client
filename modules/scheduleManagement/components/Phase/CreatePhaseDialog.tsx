@@ -19,7 +19,7 @@ import { Loader2 } from "lucide-react";
 import { Phase } from "@/lib/types/schedule";
 
 const phaseSchema = z.object({
-  title: z.string().min(1, "Phase title is required").max(100, "Title is too long"),
+  name: z.string().min(1, "Phase name is required").max(100, "Name is too long"),
   description: z
     .string()
     .min(1, "Description is required")
@@ -52,11 +52,11 @@ export const CreatePhaseDialog = ({
     resolver: zodResolver(phaseSchema),
     defaultValues: initialData
       ? {
-          title: initialData.title,
+          name: initialData.name,
           description: initialData.description,
         }
       : {
-          title: "",
+          name: "",
           description: "",
         },
   });
@@ -65,7 +65,7 @@ export const CreatePhaseDialog = ({
   useEffect(() => {
     if (initialData) {
       reset({
-        title: initialData.title,
+        name: initialData.name,
         description: initialData.description,
       });
     }
@@ -98,11 +98,11 @@ export const CreatePhaseDialog = ({
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="space-y-4 py-4">
             <FormFieldWrapper
-              name="title"
+              name="name"
               control={control}
-              label="Phase Title"
+              label="Phase Name"
               placeholder="e.g., Installation & Setup"
-              description="Enter a clear and concise title for this phase"
+              description="Enter a clear and concise name for this phase"
             />
 
             <FormTextareaField
