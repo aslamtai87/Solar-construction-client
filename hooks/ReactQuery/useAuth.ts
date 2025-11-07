@@ -114,7 +114,7 @@ export const useLogout = () => {
   });
 };
 
-export const useGetUserProfile = () => {
+export const useGetUserProfile = (enabled: boolean = true) => {
   return useQuery({
     queryKey: [QUERY_KEYS.USER_PROFILE],
     queryFn: () => getUserProfile(),
@@ -123,6 +123,7 @@ export const useGetUserProfile = () => {
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    enabled: enabled,
   });
 };
 

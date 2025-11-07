@@ -50,6 +50,7 @@ let failedQueue: Array<{
   resolve: (value?: any) => void;
   reject: (reason?: any) => void;
 }> = [];
+let hasRedirected = false;
 
 const processQueue = (error: any = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
@@ -63,10 +64,31 @@ const processQueue = (error: any = null) => {
 };
 
 const handleAuthFailure = () => {  
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !hasRedirected) {
+    hasRedirected = true;
     const currentPath = window.location.pathname;
+    
+    // Don't redirect if already on signin or other auth pages
+    if (currentPath === '/signin' || currentPath.startsWith('/signin')) {
+      hasRedirected = false;
+      return;
+    }
+    
+    // Clear any auth-related data from localStorage
+    try {
+      localStorage.removeItem('auth-storage');
+      localStorage.removeItem('user-storage');
+    } catch (e) {
+      console.error('Error clearing localStorage:', e);
+    }
+    
     const redirectUrl = currentPath !== '/signin' ? `?redirect=${encodeURIComponent(currentPath)}` : '';
     window.location.href = `/signin${redirectUrl}`;
+    
+    // Reset after redirect
+    setTimeout(() => {
+      hasRedirected = false;
+    }, 1000);
   }
 };
 
@@ -76,6 +98,22 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    // Don't attempt token refresh on auth pages
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath.startsWith('/signin') || 
+                        currentPath.startsWith('/signup') || 
+                        currentPath.startsWith('/forgot-password') ||
+                        currentPath.startsWith('/reset-password') ||
+                        currentPath.startsWith('/verify-email');
+      
+      if (isAuthPage && error.response?.status === 498) {
+        // Just reject the error without attempting refresh on auth pages
+        return Promise.reject(error);
+      }
+    }
+    
     if (error.response?.status === 498 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

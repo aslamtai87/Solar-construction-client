@@ -20,35 +20,45 @@ export default function AuthGuard({
   children, 
   requireAuth = true 
 }: AuthGuardProps) {
-  const { data: userProfile, isLoading, error, isError } = useGetUserProfile();
-  const { setUserProfile, clearUserProfile } = useUserStore();
+  // Only fetch user profile when auth is required
+  const { data: userProfile, isLoading, error, isError } = useGetUserProfile(requireAuth);
+  const { userProfile: storeUserProfile, setUserProfile, clearUserProfile } = useUserStore();
   const router = useRouter();
   const pathname = usePathname();
+  
   useEffect(() => {
     if (isError && error) {
       clearUserProfile();
     }
   }, [isError, error, clearUserProfile]);
+  
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && requireAuth) {
       if (userProfile) {
         setUserProfile(userProfile);
       } else {
         clearUserProfile();
       }
     }
-  }, [userProfile, isLoading, setUserProfile, clearUserProfile]);
+  }, [userProfile, isLoading, setUserProfile, clearUserProfile, requireAuth]);
+  
   useEffect(() => {
-    if (!isLoading) {
-      if (requireAuth && !userProfile) {
+    if (requireAuth) {
+      // For protected routes, redirect if no user after loading
+      if (!isLoading && !userProfile) {
         router.replace("/signin");
       }
-      if (!requireAuth && userProfile) {
+    } else {
+      // For auth pages (signin, signup, etc.), redirect if user exists in store
+      // Don't fetch from API to avoid the infinite loop issue
+      if (storeUserProfile) {
         window.location.href = "/dashboard";
       }
     }
-  }, [userProfile, isLoading, requireAuth, router]);
-  if (isLoading) {
+  }, [userProfile, storeUserProfile, isLoading, requireAuth, router]);
+  
+  // Show loading only when auth is required and we're fetching
+  if (requireAuth && isLoading) {
     return <LoadingState />;
   }
 
@@ -57,8 +67,8 @@ export default function AuthGuard({
     return null;
   }
 
-  // If auth is not required but user is authenticated, don't render (redirect happening)
-  if (!requireAuth && userProfile) {
+  // If auth is not required but user is authenticated (in store), don't render (redirect happening)
+  if (!requireAuth && storeUserProfile) {
     return null;
   }
 

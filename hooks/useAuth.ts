@@ -4,14 +4,15 @@ import { useUserStore } from "@/store/authStore";
 /**
  * Custom hook to check authentication status and get user info
  * 
+ * @param enabled - Whether to fetch user profile (default: true)
  * @returns {Object} Authentication state
  * @property {boolean} isAuthenticated - Whether user is logged in
  * @property {boolean} isLoading - Whether auth check is in progress
  * @property {UserProfile | null} user - Current user profile
  * @property {boolean} isError - Whether there was an error fetching user
  */
-export const useAuth = () => {
-  const { data: userProfile, isLoading, isError } = useGetUserProfile();
+export const useAuth = (enabled: boolean = true) => {
+  const { data: userProfile, isLoading, isError } = useGetUserProfile(enabled);
   const { userProfile: storeUserProfile } = useUserStore();
 
   return {
