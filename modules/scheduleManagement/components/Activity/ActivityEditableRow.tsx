@@ -115,7 +115,7 @@ export const ActivityEditableRow = ({
 
         {/* Phase */}
         <TableCell className="min-w-[150px]">
-          {phases.find((p) => p.id === activity.phaseId)?.title || "-"}
+          {phases.find((p) => p.id === activity.phaseId)?.name || "-"}
         </TableCell>
 
         {/* Units */}
@@ -192,7 +192,7 @@ export const ActivityEditableRow = ({
           <SelectContent>
             {phases.map((phase) => (
               <SelectItem key={phase.id} value={phase.id}>
-                {phase.title}
+                {phase.name}
               </SelectItem>
             ))}
           </SelectContent>

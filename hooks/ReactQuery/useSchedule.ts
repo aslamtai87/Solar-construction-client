@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { createPhase, updatePhase } from "@/lib/api/schedule";
+import { createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig } from "@/lib/api/schedule";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
-import { Phase, CreatePhaseDTO } from "@/lib/types/schedule";
+import { Phase, CreatePhaseDTO, WorkingDaysConfig } from "@/lib/types/schedule";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api/endPoints";
 import { toast } from "sonner";
 import { PaginationResponse } from "@/lib/types/pagination";
@@ -82,3 +82,24 @@ export const useCreateActivity = () => {
   });
 }
 
+//working days config
+export const useWorkingDaysConfig = (projectId: string) => {
+  return useQuery<any, ApiError>({
+    queryKey: [QUERY_KEYS.WORKING_DAYS_CONFIG, projectId],
+    queryFn: () => fetchWorkingDaysConfig(projectId),
+  });
+};
+
+export const useUpdateWorkingDaysConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, {id: string, data: WorkingDaysConfig}>({
+    mutationFn: ({id, data}) => updateWorkingDaysConfig(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Working days config updated successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKING_DAYS_CONFIG] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update working days config");
+    },
+  });
+};

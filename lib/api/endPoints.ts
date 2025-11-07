@@ -42,6 +42,11 @@ export const API_ENDPOINTS = {
   UPDATE_PHASE: '/phases/{id}',
   DELETE_PHASE: '/phases/{id}',
   CREATE_ACTIVITY: '/activities',
+
+  //working days config
+  WORKING_DAYS_CONFIG: 'working-days-config/project/{projectId}',
+  UPDATE_WORKING_DAYS_CONFIG: 'working-days-config/{id}',
+
 };
 
 
@@ -67,4 +72,7 @@ export const QUERY_KEYS = {
   // schedule management
   PHASES: ['phases'],
   ACTIVITIES: ['activities'],
+
+  //working days config
+  WORKING_DAYS_CONFIG: ['working-days-config'],
 };

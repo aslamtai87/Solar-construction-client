@@ -19,6 +19,7 @@ import {
   Upload,
   Save,
   Plus,
+  Import,
 } from "lucide-react";
 import {
   Select,
@@ -46,48 +47,31 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePhases } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
-import { Phase } from "@/lib/types/schedule";
+import { useWorkingDaysConfig,useUpdateWorkingDaysConfig } from "@/hooks/ReactQuery/useSchedule";
 
 const workingDaysSchema = z.object({
-  type: z.nativeEnum(WorkingDaysType),
+  type: z.enum(WorkingDaysType),
   includeSaturday: z.boolean().optional(),
   includeSunday: z.boolean().optional(),
 });
 
-interface ScheduleManagementPageProps {
-  projectId?: string;
-  workingDaysConfig?: WorkingDaysConfig;
-}
-
-const ScheduleManagementPage = ({
-  projectId,
-  workingDaysConfig: projectWorkingDaysConfig,
-}: ScheduleManagementPageProps) => {
+const ScheduleManagementPage = () => {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | "all">("all");
-  const [excelUploadOpen, setExcelUploadOpen] = useState(false);
   const { selectedProject } = useProjectStore();
   const { data: phases } = usePhases({ projectId: selectedProject?.id || "" });
-
-  // Use project-level working days config or default
-  const [workingDaysConfig, setWorkingDaysConfig] = useState<WorkingDaysConfig>(
-    projectWorkingDaysConfig || {
-      type: WorkingDaysType.WEEKDAYS_ONLY,
-      includeSaturday: false,
-      includeSunday: false,
-    }
+  const { data: projectWorkingDaysConfig } = useWorkingDaysConfig(
+    selectedProject?.id || ""
   );
-
+  const {mutateAsync: updateWorkingDaysConfigMutate} = useUpdateWorkingDaysConfig();
+  const [excelUploadOpen, setExcelUploadOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const workingDaysForm = useForm<WorkingDaysConfig>({
     resolver: zodResolver(workingDaysSchema),
-    defaultValues: workingDaysConfig,
+    defaultValues: projectWorkingDaysConfig,
   });
-
-  // Update working days config when project config changes
   useEffect(() => {
     if (projectWorkingDaysConfig) {
-      setWorkingDaysConfig(projectWorkingDaysConfig);
       workingDaysForm.reset(projectWorkingDaysConfig);
     }
   }, [projectWorkingDaysConfig]);
@@ -96,52 +80,31 @@ const ScheduleManagementPage = ({
   useEffect(() => {
     const subscription = workingDaysForm.watch((value) => {
       const isDifferent =
-        JSON.stringify(value) !== JSON.stringify(workingDaysConfig);
+        JSON.stringify(value) !== JSON.stringify(projectWorkingDaysConfig);
       setHasUnsavedChanges(isDifferent);
     });
     return () => subscription.unsubscribe();
-  }, [workingDaysForm, workingDaysConfig]);
+  }, [workingDaysForm, projectWorkingDaysConfig]);
 
   const handleSaveWorkingDays = () => {
     const newConfig = workingDaysForm.getValues();
-    setWorkingDaysConfig(newConfig);
     setHasUnsavedChanges(false);
-
-    // TODO: Call API to update working days config in backend
-    console.log("Saving working days config:", newConfig);
-    // Example: updateProjectWorkingDays(projectId, newConfig);
+    updateWorkingDaysConfigMutate({
+      id: projectWorkingDaysConfig?.id || "",
+      data: {
+        type: newConfig.type,
+        includeSaturday: newConfig.includeSaturday,
+        includeSunday: newConfig.includeSunday,
+        projectId: selectedProject?.id || "",
+      },
+    });
   };
 
   const handleCancelWorkingDays = () => {
-    workingDaysForm.reset(workingDaysConfig);
+    workingDaysForm.reset(projectWorkingDaysConfig);
     setHasUnsavedChanges(false);
   };
 
-  // Sample activities data - Replace with actual API call
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: "act-1",
-      phaseId: "1",
-      phaseName: "Planning & Design",
-      name: "Site Survey and Assessment",
-      units: 1200,
-      startDate: "2024-01-15",
-      endDate: "2024-02-15",
-      duration: 22,
-      order: 1,
-    },
-    {
-      id: "act-2",
-      phaseId: "1",
-      phaseName: "Planning & Design",
-      name: "Engineering Design",
-      units: 1500,
-      startDate: "2024-02-16",
-      endDate: "2024-03-20",
-      duration: 24,
-      order: 2,
-    },
-  ]);
 
   // Sample milestones data - Replace with actual API call
   const [milestones, setMilestones] = useState<Milestone[]>([
@@ -160,86 +123,6 @@ const ScheduleManagementPage = ({
     },
   ]);
 
-  const handleCreateActivity = (data: any) => {
-    const duration = calculateDuration(
-      data.startDate,
-      data.endDate,
-      workingDaysConfig
-    );
-    const newActivity: Activity = {
-      id: `act-${Date.now()}`,
-      phaseId: data.phaseId,
-      phaseName: phases?.find((p) => p.id === data.phaseId)?.name,
-      name: data.name,
-      units: data.units,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      duration: duration,
-      order: activities.length + 1,
-      createdAt: new Date().toISOString(),
-    };
-    console.log("Creating activity:", newActivity);
-    setActivities([...activities, newActivity]);
-  };
-
-  const handleEditActivity = (activityId: string, data: any) => {
-    const duration = calculateDuration(
-      data.startDate,
-      data.endDate,
-      workingDaysConfig
-    );
-    setActivities(
-      activities.map((activity) =>
-        activity.id === activityId
-          ? {
-              ...activity,
-              phaseId: data.phaseId,
-              phaseName: phases?.find((p) => p.id === data.phaseId)?.name,
-              name: data.name,
-              units: data.units,
-              startDate: data.startDate,
-              endDate: data.endDate,
-              duration: duration,
-            }
-          : activity
-      )
-    );
-  };
-
-  const handleDeleteActivity = (activityId: string) => {
-    setActivities(activities.filter((a) => a.id !== activityId));
-  };
-
-  const handleExcelUpload = (parsedActivities: any[]) => {
-    // Convert parsed activities to Activity format
-    const newActivities: Activity[] = [];
-
-    parsedActivities.forEach((parsed) => {
-      if (!parsed.isSubActivity) {
-        const duration = calculateDuration(
-          parsed.startDate,
-          parsed.endDate,
-          workingDaysConfig
-        );
-        // Create activity
-        const activity: Activity = {
-          id: `act-${Date.now()}-${Math.random()}`,
-          phaseId: parsed.phaseId,
-          phaseName: parsed.phaseName,
-          name: parsed.name,
-          units: parsed.targetUnits,
-          startDate: parsed.startDate,
-          endDate: parsed.endDate,
-          duration: duration,
-          order: activities.length + newActivities.length + 1,
-        };
-        newActivities.push(activity);
-      }
-    });
-
-    setActivities([...activities, ...newActivities]);
-    setExcelUploadOpen(false);
-  };
 
   const handleCreateMilestone = (data: any) => {
     const newMilestone: Milestone = {
@@ -257,47 +140,6 @@ const ScheduleManagementPage = ({
     };
     setMilestones([...milestones, newMilestone]);
   };
-
-  // const handleEditPhase = (
-  //   phaseId: string,
-  //   data: { title: string; description: string }
-  // ) => {
-  //   setPhases(
-  //     phases.map((phase) =>
-  //       phase.id === phaseId
-  //         ? {
-  //             ...phase,
-  //             title: data.title,
-  //             description: data.description,
-  //             updatedAt: new Date().toISOString(),
-  //           }
-  //         : phase
-  //     )
-  //   );
-  // };
-
-  const handleDeletePhase = (phaseId: string) => {
-    // Delete the phase and all associated activities and milestones
-    // setPhases(phases.filter((p) => p.id !== phaseId));
-    setActivities(activities.filter((a) => a.phaseId !== phaseId));
-    setMilestones(milestones.filter((m) => m.phaseId !== phaseId));
-
-    // Reset selected phase if the deleted phase was selected
-    if (selectedPhaseId === phaseId) {
-      setSelectedPhaseId("all");
-    }
-  };
-
-  // Filter activities and milestones based on selected phase
-  const filteredActivities =
-    selectedPhaseId === "all"
-      ? activities
-      : activities.filter((a) => a.phaseId === selectedPhaseId);
-
-  const filteredMilestones =
-    selectedPhaseId === "all"
-      ? milestones
-      : milestones.filter((m) => m.phaseId === selectedPhaseId);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -513,12 +355,8 @@ const ScheduleManagementPage = ({
 
           {phases && (
             <ActivityTableNew
-              activities={filteredActivities}
               phases={phases}
-              workingDaysConfig={workingDaysConfig}
-              onCreateActivity={handleCreateActivity}
-              onUpdateActivity={handleEditActivity}
-              onDeleteActivity={handleDeleteActivity}
+              workingDaysConfig={projectWorkingDaysConfig}
             />
           )}
 

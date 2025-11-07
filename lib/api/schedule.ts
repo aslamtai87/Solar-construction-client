@@ -27,3 +27,15 @@ export const createActivity = async (data: CreateActivityDTO): Promise<APISucces
   const response = await api.post<APISuccessResponse>(API_ENDPOINTS.CREATE_ACTIVITY, data);
   return response.data;
 };
+
+
+//working days config
+export const fetchWorkingDaysConfig = async (projectId: string): Promise<any> => {
+  const response = await api.get<any>(API_ENDPOINTS.WORKING_DAYS_CONFIG.replace("{projectId}", projectId));
+  return response.data.data;
+};
+
+export const updateWorkingDaysConfig = async (id: string, data: any): Promise<APISuccessResponse> => {
+  const response = await api.patch<APISuccessResponse>(API_ENDPOINTS.UPDATE_WORKING_DAYS_CONFIG.replace("{id}", id), data);
+  return response.data;
+}

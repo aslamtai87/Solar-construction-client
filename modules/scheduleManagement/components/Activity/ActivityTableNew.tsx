@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Activity, Phase, WorkingDaysConfig } from "@/lib/types/schedule";
 import ActivityEditableRow from "./ActivityEditableRow";
+import { calculateDuration } from "@/lib/utils/durationCalculator";
 
 interface ActivityFormData {
   phaseId: string;
@@ -23,38 +24,34 @@ interface ActivityFormData {
 }
 
 interface ActivityTableNewProps {
-  activities: Activity[];
   phases: Phase[];
   workingDaysConfig: WorkingDaysConfig;
-  onCreateActivity: (data: ActivityFormData) => void;
-  onUpdateActivity: (activityId: string, data: ActivityFormData) => void;
-  onDeleteActivity: (activityId: string) => void;
 }
 
 export const ActivityTableNew = ({
-  activities,
   phases,
   workingDaysConfig,
-  onCreateActivity,
-  onUpdateActivity,
-  onDeleteActivity,
 }: ActivityTableNewProps) => {
-  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(
+    null
+  );
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
+  
+ const activities: Activity[] = [];
 
   const handleCreateActivity = (data: ActivityFormData) => {
-    onCreateActivity(data);
+    console.log("Creating activity with data:", data);
     setIsCreatingActivity(false);
   };
 
   const handleUpdateActivity = (activityId: string, data: ActivityFormData) => {
-    onUpdateActivity(activityId, data);
+    console.log("Updating activity with ID:", activityId, "and data:", data);
     setEditingActivityId(null);
   };
 
   const handleDeleteActivity = (activityId: string) => {
     if (confirm("Are you sure you want to delete this activity?")) {
-      onDeleteActivity(activityId);
+      console.log("Deleting activity with ID:", activityId);
     }
   };
 
@@ -89,11 +86,17 @@ export const ActivityTableNew = ({
                   Activity Name
                 </TableHead>
                 <TableHead className="min-w-[150px]">Phase</TableHead>
-                <TableHead className="min-w-[150px] text-center">Units</TableHead>
+                <TableHead className="min-w-[150px] text-center">
+                  Units
+                </TableHead>
                 <TableHead className="min-w-[150px]">Start Date</TableHead>
                 <TableHead className="min-w-[150px]">End Date</TableHead>
-                <TableHead className="min-w-[150px] text-center">Duration</TableHead>
-                <TableHead className="min-w-[150px] text-center">Actions</TableHead>
+                <TableHead className="min-w-[150px] text-center">
+                  Duration
+                </TableHead>
+                <TableHead className="min-w-[150px] text-center">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,7 +112,7 @@ export const ActivityTableNew = ({
               )}
 
               {/* Empty State */}
-              {activities.length === 0 && !isCreatingActivity && (
+              {activities?.length === 0 && !isCreatingActivity && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
@@ -128,7 +131,7 @@ export const ActivityTableNew = ({
               )}
 
               {/* Activity Rows */}
-              {activities.map((activity) => (
+              {activities?.map((activity) => (
                 <ActivityEditableRow
                   key={activity.id}
                   activity={activity}

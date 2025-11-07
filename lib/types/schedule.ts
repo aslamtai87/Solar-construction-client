@@ -3,7 +3,6 @@ import { Project } from "next/dist/build/swc/types";
 // Working Days Configuration
 export enum WorkingDaysType {
   WEEKDAYS_ONLY = "WEEKDAYS_ONLY",
-  WEEKENDS_ONLY = "WEEKENDS_ONLY",
   ALL_DAYS = "ALL_DAYS",
   CUSTOM = "CUSTOM",
 }
@@ -12,6 +11,7 @@ export interface WorkingDaysConfig {
   type: WorkingDaysType;
   includeSaturday?: boolean;
   includeSunday?: boolean;
+  projectId?: string;
 }
 
 export interface WorkingDays {
