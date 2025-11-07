@@ -70,9 +70,9 @@ interface LabourerTimeLog {
   id: string;
   labourerId: string;
   labourerName: string;
+  labourerType?: string;
   entryTime: string;
-  exitTime?: string;
-  totalHours?: number;
+  exitTime: string;
 }
 
 interface LabourerOption {

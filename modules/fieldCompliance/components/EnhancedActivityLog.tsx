@@ -48,6 +48,7 @@ interface ActivityLogEntry {
   crews: {
     crewId: string;
     crewName: string;
+    forecastedUnits: number;
     actualUnits: number;
   }[];
   totalForecasted: number;
@@ -78,7 +79,7 @@ export const EnhancedActivityLog: React.FC<EnhancedActivityLogProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<ActivityLogEntry | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState("");
-  const [selectedCrews, setSelectedCrews] = useState<{ id: string; name: string }[]>([]);
+  const [selectedCrews, setSelectedCrews] = useState<{ id: string; name: string; forecastedUnits: number }[]>([]);
   const [forecastedUnits, setForecastedUnits] = useState(0);
   const [crewActuals, setCrewActuals] = useState<{ [crewId: string]: number }>({});
 
@@ -112,6 +113,7 @@ export const EnhancedActivityLog: React.FC<EnhancedActivityLogProps> = ({
       const crews = config.crews.map((crew: any) => ({
         id: crew.id,
         name: crew.name,
+        forecastedUnits: crew.forecastedUnits || 0,
       }));
       setSelectedCrews(crews);
       
@@ -135,7 +137,11 @@ export const EnhancedActivityLog: React.FC<EnhancedActivityLogProps> = ({
         setForecastedUnits(selectedActivity.targetUnits);
       }
       
-      setSelectedCrews(log.crews.map((c) => ({ id: c.crewId, name: c.crewName })));
+      setSelectedCrews(log.crews.map((c) => ({ 
+        id: c.crewId, 
+        name: c.crewName,
+        forecastedUnits: c.forecastedUnits 
+      })));
       
       const actuals: { [key: string]: number } = {};
       log.crews.forEach((c) => {
@@ -170,6 +176,7 @@ export const EnhancedActivityLog: React.FC<EnhancedActivityLogProps> = ({
     const crewsData = selectedCrews.map((crew) => ({
       crewId: crew.id,
       crewName: crew.name,
+      forecastedUnits: crew.forecastedUnits,
       actualUnits: data.crewActuals[crew.id] || 0,
     }));
 

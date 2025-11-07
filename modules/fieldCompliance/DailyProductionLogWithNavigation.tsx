@@ -15,7 +15,7 @@ interface TimeLog {
   id: string;
   date: string;
   entryTime: string;
-  exitTime?: string;
+  exitTime: string;
   totalHours?: number;
   loggedByRole: "labourer" | "contractor";
 }
@@ -26,7 +26,7 @@ interface LabourerTimeLog {
   labourerName: string;
   labourerType?: string;
   entryTime: string;
-  exitTime?: string;
+  exitTime: string;
   totalHours?: number;
 }
 
@@ -122,6 +122,8 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
       labourerType: "Welder",
       labourerName: "Sarah Williams",
       entryTime: "08:00",
+      exitTime: "17:00",
+      totalHours: 9,
     },
   ]);
 
@@ -273,19 +275,16 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
   };
 
   // Handlers for labourer's time log
-  const handleLabourerLogTime = (date: string, entryTime: string, exitTime?: string) => {
+  const handleLabourerLogTime = (date: string, entryTime: string, exitTime: string) => {
     const existingLog = timeLogs.find(log => log.date === date);
 
-    if (existingLog) {
-      // Calculate total hours if both times provided
-      let totalHours: number | undefined = undefined;
-      if (exitTime) {
-        const [entryHour, entryMinute] = entryTime.split(":").map(Number);
-        const [exitHour, exitMinute] = exitTime.split(":").map(Number);
-        const totalMinutes = (exitHour * 60 + exitMinute) - (entryHour * 60 + entryMinute);
-        totalHours = totalMinutes / 60;
-      }
+    // Calculate total hours
+    const [entryHour, entryMinute] = entryTime.split(":").map(Number);
+    const [exitHour, exitMinute] = exitTime.split(":").map(Number);
+    const totalMinutes = (exitHour * 60 + exitMinute) - (entryHour * 60 + entryMinute);
+    const totalHours = totalMinutes / 60;
 
+    if (existingLog) {
       setTimeLogs(timeLogs.map(log =>
         log.id === existingLog.id
           ? { ...log, entryTime, exitTime, totalHours }
@@ -297,6 +296,7 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
         date,
         entryTime,
         exitTime,
+        totalHours,
         loggedByRole: "labourer",
       };
       setTimeLogs([...timeLogs, newLog]);
@@ -435,6 +435,7 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
             <LabourerTimeHistory
               logs={timeLogs}
               currentUserName={currentUserName}
+              labourerId={currentUserId}
               onLogTime={handleLabourerLogTime}
             />
           </TabsContent>
