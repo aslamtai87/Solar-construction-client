@@ -99,25 +99,30 @@ export const ActivityEditableRow = ({
   const endDate = watch("endDate");
 
   const duration = React.useMemo(() => {
-    if (startDate && endDate && workingDaysConfig) {
+    // Only calculate duration in create mode
+    if (mode === "create" && startDate && endDate && workingDaysConfig) {
       return calculateDuration(startDate, endDate, workingDaysConfig);
     }
+    // In edit mode, use the existing duration from database
     return activity?.duration || 0;
-  }, [startDate, endDate, workingDaysConfig, activity?.duration]);
+  }, [startDate, endDate, workingDaysConfig, activity?.duration, mode]);
 
   const onSubmit = (data: ActivityFormData) => {
-    onSave(data);
+    const submissionData = mode === "edit" 
+      ? { ...data, duration: activity?.duration ?? undefined }
+      : { ...data, duration };
+    onSave(submissionData);
   };
-
-  useEffect(() => {
-    if (mode === "edit" && activity) {
-      setValue("duration", activity.duration || 0);
-    }
-  }, [mode, activity, setValue]);
 
   useEffect(() => {
     setValue("duration", duration);
   }, [duration, activity?.startDate, activity?.endDate]);
+
+  //   useEffect(() => {
+  //   if (mode !== "view") {
+  //     setValue("duration", duration);
+  //   }
+  // }, [duration, mode, setValue]);
 
   if (mode === "view" && activity) {
     return (
@@ -179,9 +184,6 @@ export const ActivityEditableRow = ({
   // Edit or Create Mode
   return (
     <TableRow className="bg-orange-50 dark:bg-orange-950/20 border-l-4 border-orange-500">
-      {/* Empty expand cell */}
-      {/* <TableCell className="sticky left-0 bg-orange-50 dark:bg-orange-950/20 z-10 w-0" /> */}
-
       {/* Activity Name */}
       <TableCell className="min-w-[250px] sticky left-0 bg-orange-50 dark:bg-orange-950/20 z-10">
         <Input
@@ -237,29 +239,45 @@ export const ActivityEditableRow = ({
 
       {/* Start Date */}
       <TableCell className="min-w-[150px]">
-        <Input
-          {...register("startDate")}
-          type="date"
-          className={errors.startDate ? "border-destructive" : ""}
-        />
-        {errors.startDate && (
-          <p className="text-xs text-destructive mt-1">{errors.startDate.message}</p>
+        {mode === "edit" ? (
+          <div className="px-3 py-2 text-sm bg-muted rounded-md">
+            {activity && new Date(activity.startDate).toLocaleDateString()}
+          </div>
+        ) : (
+          <>
+            <Input
+              {...register("startDate")}
+              type="date"
+              className={errors.startDate ? "border-destructive" : ""}
+            />
+            {errors.startDate && (
+              <p className="text-xs text-destructive mt-1">{errors.startDate.message}</p>
+            )}
+          </>
         )}
       </TableCell>
 
       {/* End Date */}
       <TableCell className="min-w-[150px]">
-        <Input
-          {...register("endDate")}
-          type="date"
-          className={errors.endDate ? "border-destructive" : ""}
-        />
-        {errors.endDate && (
-          <p className="text-xs text-destructive mt-1">{errors.endDate.message}</p>
+        {mode === "edit" ? (
+          <div className="px-3 py-2 text-sm bg-muted rounded-md">
+            {activity && new Date(activity.endDate).toLocaleDateString()}
+          </div>
+        ) : (
+          <>
+            <Input
+              {...register("endDate")}
+              type="date"
+              className={errors.endDate ? "border-destructive" : ""}
+            />
+            {errors.endDate && (
+              <p className="text-xs text-destructive mt-1">{errors.endDate.message}</p>
+            )}
+          </>
         )}
       </TableCell>
 
-      {/* Duration (Calculated) */}
+      {/* Duration (Calculated or Fixed) */}
       <TableCell className="min-w-[150px] text-center">
         <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
           {duration} days
