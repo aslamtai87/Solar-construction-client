@@ -148,7 +148,7 @@ export const ActivityEditableRow = ({
 
         {/* Duration */}
         <TableCell className="min-w-[150px] text-center">
-          {duration} days
+          {activity.duration ?? 0} days
         </TableCell>
 
         {/* Actions */}
