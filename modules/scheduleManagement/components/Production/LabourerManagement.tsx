@@ -26,38 +26,34 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
-import { Labourer } from "@/lib/types/production";
+import { GetLabourer } from "@/lib/types/production";
+import { useGetLabourers,useCreateLabourer,useUpdateLabourers } from "@/hooks/ReactQuery/useSchedule";
+import { useProjectStore } from "@/store/projectStore";
 
 const labourerSeparateSchema = z.object({
-  type: z.string().min(1, "Labourer type is required"),
+  type: z.string().min(1, "Labourer name is required"),
   baseRate: z.number().min(0, "Base rate must be positive"),
   fringeRate: z.number().min(0, "Fringe rate must be positive"),
 });
 
 const labourerTotalSchema = z.object({
-  type: z.string().min(1, "Labourer type is required"),
+  type: z.string().min(1, "Labourer name is required"),
   totalRate: z.number().min(0, "Total rate must be positive"),
 });
 
 type LabourerSeparateForm = z.infer<typeof labourerSeparateSchema>;
 type LabourerTotalForm = z.infer<typeof labourerTotalSchema>;
 
-interface LabourerManagementProps {
-  labourers: Labourer[];
-  onAddLabourer: (labourer: Omit<Labourer, "id" | "createdAt" | "updatedAt">) => void;
-  onUpdateLabourer: (id: string, labourer: Partial<Labourer>) => void;
-  onDeleteLabourer: (id: string) => void;
-}
-
-export const LabourerManagement: React.FC<LabourerManagementProps> = ({
-  labourers,
-  onAddLabourer,
-  onUpdateLabourer,
-  onDeleteLabourer,
-}) => {
+export const LabourerManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLabourer, setEditingLabourer] = useState<Labourer | null>(null);
+  const [editingLabourer, setEditingLabourer] = useState<GetLabourer | null>(null);
   const [entryMode, setEntryMode] = useState<"separate" | "total">("separate");
+  const { data: labourerData } = useGetLabourers({
+    limit: 100,
+  });
+  const { mutate: onAddLabourer } = useCreateLabourer();
+  const { mutate: onUpdateLabourer } = useUpdateLabourers();
+  const { selectedProject } = useProjectStore();
 
   const separateForm = useForm<LabourerSeparateForm>({
     resolver: zodResolver(labourerSeparateSchema),
@@ -76,22 +72,22 @@ export const LabourerManagement: React.FC<LabourerManagementProps> = ({
     },
   });
 
-  const handleOpenDialog = (labourer?: Labourer) => {
+  const handleOpenDialog = (labourer?: GetLabourer) => {
     if (labourer) {
       setEditingLabourer(labourer);
-      const mode = labourer.fringeRate === 0 ? "total" : "separate";
+      const mode = Number(labourer.fringeRate) === 0 ? "total" : "separate";
       setEntryMode(mode);
       
       if (mode === "separate") {
         separateForm.reset({
-          type: labourer.type,
-          baseRate: labourer.baseRate,
-          fringeRate: labourer.fringeRate,
+          type: labourer.name,
+          baseRate: Number(labourer.baseRate),
+          fringeRate: Number(labourer.fringeRate),
         });
       } else {
         totalForm.reset({
-          type: labourer.type,
-          totalRate: labourer.totalRate,
+          type: labourer.name,
+          totalRate: Number(labourer.totalRate),
         });
       }
     } else {
@@ -119,25 +115,37 @@ export const LabourerManagement: React.FC<LabourerManagementProps> = ({
     };
 
     if (editingLabourer) {
-      onUpdateLabourer(editingLabourer.id, labourerData);
+      onUpdateLabourer({ id: editingLabourer.id, data: labourerData });
     } else {
-      onAddLabourer(labourerData);
+      onAddLabourer({
+        name: data.type,
+        baseRate: data.baseRate,
+        fringeRate: data.fringeRate,
+        totalRate: data.baseRate + data.fringeRate,
+        projectId: selectedProject?.id || "",
+      });
     }
     handleCloseDialog();
   };
 
   const handleSubmitTotal = (data: LabourerTotalForm) => {
     const labourerData = {
-      type: data.type,
-      baseRate: data.totalRate,
+      name: data.type,
+      baseRate: 0,
       fringeRate: 0,
       totalRate: data.totalRate,
     };
 
     if (editingLabourer) {
-      onUpdateLabourer(editingLabourer.id, labourerData);
+      onUpdateLabourer({ id: editingLabourer.id, data: labourerData });
     } else {
-      onAddLabourer(labourerData);
+      onAddLabourer({
+        name: data.type,
+        baseRate: data.totalRate,
+        fringeRate: 0,
+        totalRate: data.totalRate,
+        projectId: selectedProject?.id || "",
+      });
     }
     handleCloseDialog();
   };
@@ -174,7 +182,7 @@ export const LabourerManagement: React.FC<LabourerManagementProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {labourers.length === 0 ? (
+              {labourerData?.data.result.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
@@ -188,20 +196,20 @@ export const LabourerManagement: React.FC<LabourerManagementProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                labourers.map((labourer) => (
+                labourerData?.data.result.map((labourer) => (
                   <TableRow key={labourer.id}>
-                    <TableCell className="font-medium">{labourer.type}</TableCell>
-                    <TableCell className="text-right">${labourer.baseRate.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">${labourer.fringeRate.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">{labourer.name}</TableCell>
+                    <TableCell className="text-right">${Number(labourer.baseRate).toFixed(2)}</TableCell>
+                    <TableCell className="text-right">${Number(labourer.fringeRate).toFixed(2)}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="secondary">${labourer.totalRate.toFixed(2)}</Badge>
+                      <Badge variant="secondary">${Number(labourer.totalRate).toFixed(2)}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(labourer)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onDeleteLabourer(labourer.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => {}}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>

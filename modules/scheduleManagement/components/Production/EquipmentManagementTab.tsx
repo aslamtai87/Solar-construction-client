@@ -26,12 +26,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Equipment, EquipmentPricingPeriod } from "@/lib/types/production";
+import {
+  Equipment,
+  EquipmentPricingPeriod,
+  GetEquipment,
+} from "@/lib/types/production";
+import {
+  useUpdateEquipment,
+  useCreateEquipment,
+  useGetEquipment,
+} from "@/hooks/ReactQuery/useSchedule";
+import { useProjectStore } from "@/store/projectStore";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
   price: z.number().min(0, "Price must be positive"),
-  pricingPeriod: z.nativeEnum(EquipmentPricingPeriod),
+  pricingType: z.nativeEnum(EquipmentPricingPeriod),
 });
 
 type EquipmentForm = z.infer<typeof equipmentSchema>;
@@ -42,45 +52,44 @@ const pricingPeriodLabels: Record<EquipmentPricingPeriod, string> = {
   [EquipmentPricingPeriod.PER_MONTH]: "Per Month",
 };
 
-interface EquipmentManagementProps {
-  equipment: Equipment[];
-  onAddEquipment: (equipment: Omit<Equipment, "id" | "createdAt" | "updatedAt">) => void;
-  onUpdateEquipment: (id: string, equipment: Partial<Equipment>) => void;
-  onDeleteEquipment: (id: string) => void;
-}
-
-export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
-  equipment,
-  onAddEquipment,
-  onUpdateEquipment,
-  onDeleteEquipment,
-}) => {
+export const EquipmentManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [editingEquipment, setEditingEquipment] = useState<GetEquipment | null>(
+    null
+  );
+  const { selectedProject } = useProjectStore();
+
+  const { mutate: onAddEquipment } = useCreateEquipment();
+  const { mutate: onUpdateEquipment } = useUpdateEquipment();
+  const { data: equipmentData } = useGetEquipment({
+    limit: 50,
+  });
+
+  console.log("Equipment Data:", equipmentData);
 
   const form = useForm<EquipmentForm>({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
       name: "",
       price: 0,
-      pricingPeriod: EquipmentPricingPeriod.PER_DAY,
+      pricingType: EquipmentPricingPeriod.PER_DAY,
     },
   });
 
-  const handleOpenDialog = (equip?: Equipment) => {
+  const handleOpenDialog = (equip?: GetEquipment) => {
     if (equip) {
       setEditingEquipment(equip);
       form.reset({
         name: equip.name,
-        price: equip.price,
-        pricingPeriod: equip.pricingPeriod,
+        price: Number(equip.price),
+        pricingType: equip.pricingType as EquipmentPricingPeriod,
       });
     } else {
       setEditingEquipment(null);
       form.reset({
         name: "",
         price: 0,
-        pricingPeriod: EquipmentPricingPeriod.PER_DAY,
+        pricingType: EquipmentPricingPeriod.PER_DAY,
       });
     }
     setIsDialogOpen(true);
@@ -94,9 +103,17 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
 
   const handleSubmit = (data: EquipmentForm) => {
     if (editingEquipment) {
-      onUpdateEquipment(editingEquipment.id, data);
+      onUpdateEquipment({ id: editingEquipment.id, data });
     } else {
-      onAddEquipment(data);
+      if (!selectedProject) {
+        handleCloseDialog();
+        return;
+      }
+      onAddEquipment({
+        ...data,
+        projectId: selectedProject.id,
+        description: "",
+      });
     }
     handleCloseDialog();
   };
@@ -128,13 +145,19 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {equipment.length === 0 ? (
+              {equipmentData?.data.result.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <Wrench className="h-12 w-12 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">No equipment added yet</p>
-                      <Button variant="outline" size="sm" onClick={() => handleOpenDialog()}>
+                      <p className="text-muted-foreground">
+                        No equipment added yet
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDialog()}
+                      >
                         <Plus className="h-4 w-4 mr-2" />
                         Add First Equipment
                       </Button>
@@ -142,21 +165,31 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                equipment.map((equip) => (
+                equipmentData?.data.result.map((equip) => (
                   <TableRow key={equip.id}>
                     <TableCell className="font-medium">{equip.name}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="secondary">${equip.price.toFixed(2)}</Badge>
+                      <Badge variant="secondary">${equip.price}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline">{pricingPeriodLabels[equip.pricingPeriod]}</Badge>
+                      <Badge variant="outline">
+                        {pricingPeriodLabels[equip.pricingType as EquipmentPricingPeriod]}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(equip)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenDialog(equip)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onDeleteEquipment(equip.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => equip.id}
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -172,43 +205,60 @@ export const EquipmentManagement: React.FC<EquipmentManagementProps> = ({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingEquipment ? "Edit Equipment" : "Add Equipment"}</DialogTitle>
-            <DialogDescription>Enter equipment name and daily rental rate</DialogDescription>
+            <DialogTitle>
+              {editingEquipment ? "Edit Equipment" : "Add Equipment"}
+            </DialogTitle>
+            <DialogDescription>
+              Enter equipment name and daily rental rate
+            </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormFieldWrapper 
-              name="name" 
-              control={form.control} 
-              label="Equipment Name" 
-              placeholder="e.g., Scaffolding, Crane, Generator" 
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormFieldWrapper
+              name="name"
+              control={form.control}
+              label="Equipment Name"
+              placeholder="e.g., Scaffolding, Crane, Generator"
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
-              <FormFieldWrapper 
-                name="price" 
-                control={form.control} 
-                label="Price ($)" 
-                type="number" 
-                placeholder="150.00" 
-                min={0} 
+              <FormFieldWrapper
+                name="price"
+                control={form.control}
+                label="Price ($)"
+                type="number"
+                placeholder="150.00"
+                min={0}
               />
-              
+
               <FormSelectField
-                name="pricingPeriod"
+                name="pricingType"
                 control={form.control}
                 label="Pricing Period"
                 placeholder="Select period"
-                options={Object.entries(pricingPeriodLabels).map(([value, label]) => ({
-                  value,
-                  label,
-                }))}
+                options={Object.entries(pricingPeriodLabels).map(
+                  ([value, label]) => ({
+                    value,
+                    label,
+                  })
+                )}
               />
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
-              <Button type="submit">{editingEquipment ? "Update" : "Add"} Equipment</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDialog}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingEquipment ? "Update" : "Add"} Equipment
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

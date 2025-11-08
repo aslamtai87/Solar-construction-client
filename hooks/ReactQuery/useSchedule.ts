@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig } from "@/lib/api/schedule";
+import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig, updateActivity,createEquipment, fetchEquipment, updateEquipment, createLabourer, updateLabourer } from "@/lib/api/schedule";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { Phase, CreatePhaseDTO, WorkingDaysConfig, Activity } from "@/lib/types/schedule";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api/endPoints";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { PaginationResponse } from "@/lib/types/pagination";
 import api from "@/lib/api/api";
 import { ActivityFormData } from "@/modules/scheduleManagement/components/Activity/ActivityEditableRow";
-import {updateActivity} from "@/lib/api/schedule";
+import { CreateEquipmentDTO, CreateLabourerDTO, GetEquipment, GetLabourer } from "@/lib/types/production";
 
 export const usePhases = ({projectId}: {projectId: string}) => {
   return useQuery<Phase[], ApiError>({
@@ -151,3 +151,92 @@ export const useUpdateWorkingDaysConfig = () => {
     },
   });
 };
+
+//production-planning
+export const useCreateEquipment = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, CreateEquipmentDTO>({
+    mutationFn: (data) => createEquipment(data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Equipment created successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create equipment");
+    },
+  });
+};
+  
+export const useGetEquipment = (params?: {
+  cursor?: string | null;
+  limit?: number;
+  search?: string;
+  phaseId?: string;
+
+}) => {
+  return useQuery<PaginationResponse<GetEquipment>>({
+    queryKey: QUERY_KEYS.EQUIPMENT,
+    queryFn: () => fetchEquipment(params),
+  });
+};
+
+export const useUpdateEquipment = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, {id: string, data: Partial<CreateEquipmentDTO>}>({
+    mutationFn: ({id, data}) => updateEquipment(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Equipment updated successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update equipment");
+    },
+  });
+};
+
+
+export const useGetLabourers = (params?:{
+  cursor?: string | null;
+  limit?: number;
+  search?: string;
+  phaseId?: string;
+}) => {
+  return useQuery<PaginationResponse<GetLabourer>>({
+    queryKey: QUERY_KEYS.LABOURERS,
+    queryFn: async () => {
+      const response = await api.get<PaginationResponse<GetLabourer>>(
+        API_ENDPOINTS.GET_LABOURERS,
+        { params }
+      );
+      return response.data;
+    },
+  });
+};
+
+export const useCreateLabourer = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, CreateLabourerDTO>({
+    mutationFn: (data) => createLabourer(data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Labourer created successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create labourer");
+    },
+  });
+}
+
+export const useUpdateLabourers = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, {id: string, data: Partial<CreateLabourerDTO>}>({
+    mutationFn: ({id, data}) => updateLabourer(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Labourer updated successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update labourer");
+    },
+  });
+}

@@ -50,6 +50,17 @@ export const API_ENDPOINTS = {
   WORKING_DAYS_CONFIG: 'working-days-config/project/{projectId}',
   UPDATE_WORKING_DAYS_CONFIG: 'working-days-config/{id}',
 
+  //production-planning
+  CREATE_EQUIPMENT: '/production-planning/equipment',
+  GET_EQUIPMENT: '/production-planning/equipment',
+  UPDATE_EQUIPMENT: '/production-planning/equipment/{id}',
+  DELETE_EQUIPMENT: '/production-planning/equipment/{id}',
+
+  GET_LABOURERS: '/production-planning/labourers',
+  CREATE_LABOURER: '/production-planning/labourers',
+  UPDATE_LABOURER: '/production-planning/labourers/{id}',
+  DELETE_LABOURER: '/production-planning/labourers/{id}',
+
 };
 
 
@@ -78,4 +89,8 @@ export const QUERY_KEYS = {
 
   //working days config
   WORKING_DAYS_CONFIG: ['working-days-config'],
+
+  //production-planning
+  EQUIPMENT: ['production-planning', 'equipment'],
+  LABOURERS: ['production-planning', 'labourers'],
 };

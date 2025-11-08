@@ -4,9 +4,9 @@ export type ProductionMethod = "constant" | "ramp-up" | "ramp-down" | "s-curve";
 
 // Equipment Pricing Period
 export enum EquipmentPricingPeriod {
-  PER_DAY = "per-day",
-  PER_WEEK = "per-week",
-  PER_MONTH = "per-month",
+  PER_DAY = "PER_DAY",
+  PER_WEEK = "PER_WEEK",
+  PER_MONTH = "PER_MONTH",
 }
 
 // Labourer Types
@@ -20,13 +20,6 @@ export interface Labourer {
   updatedAt: string;
 }
 
-export interface CreateLabourerDTO {
-  type: string;
-  baseRate?: number;
-  fringeRate?: number;
-  totalRate?: number; // If user enters total directly
-}
-
 // Equipment Types
 export interface Equipment {
   id: string;
@@ -37,11 +30,11 @@ export interface Equipment {
   updatedAt: string;
 }
 
-export interface CreateEquipmentDTO {
-  name: string;
-  price: number;
-  pricingPeriod: EquipmentPricingPeriod;
-}
+// export interface CreateEquipmentDTO {
+//   name: string;
+//   price: number;
+//   pricingPeriod: EquipmentPricingPeriod;
+// }
 
 // Crew Composition (used in production configuration)
 export interface CrewLabourer {
@@ -110,7 +103,7 @@ export interface ProductionConfiguration {
   crews: CrewComposition[];
   equipment: EquipmentAssignment[];
   dailyProduction: DailyProduction[];
-  
+
   // AI-specific fields
   useAI?: boolean;
   aiInsights?: {
@@ -123,7 +116,7 @@ export interface ProductionConfiguration {
     confidence: number;
   };
   aiReasoning?: string;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -156,3 +149,47 @@ export interface SCurveConfig {
 }
 
 export type ProductionMethodConfig = ConstantConfig | RampConfig | SCurveConfig;
+
+export interface CreateEquipmentDTO {
+  projectId: string;
+  name: string;
+  description: string;
+  price: number;
+  pricingType: EquipmentPricingPeriod;
+}
+
+export interface GetEquipment {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  pricingType: string;
+  createdAt: string;
+  updatedAt: string;
+  _count: {
+    productionPlannings: number;
+  };
+}
+export interface GetLabourer {
+  id: string;
+  name: string;
+  description: string;
+  rateType: string;
+  baseRate: string;
+  fringeRate: string;
+  totalRate: string;
+  createdAt: string;
+  projectId: string;
+  _count: {
+    crews: number;
+  };
+}
+
+export interface CreateLabourerDTO {
+  projectId: string;
+  name: string;
+  description?: string;
+  baseRate?: number;
+  fringeRate?: number;
+  totalRate: number;
+}

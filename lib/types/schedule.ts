@@ -62,6 +62,9 @@ export interface Activity {
   phaseId: string;
   createdAt: string;
   updatedAt: string;
+  phase:{
+    name:string;
+  }
   _count: Count;
 }
 
