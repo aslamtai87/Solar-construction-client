@@ -42,6 +42,9 @@ export const API_ENDPOINTS = {
   UPDATE_PHASE: '/phases/{id}',
   DELETE_PHASE: '/phases/{id}',
   CREATE_ACTIVITY: '/activities',
+  GET_ACTIVITY: '/activities',
+  UPDATE_ACTIVITY: '/activities/{id}',
+  DELETE_ACTIVITY: '/activities/{id}',
 
   //working days config
   WORKING_DAYS_CONFIG: 'working-days-config/project/{projectId}',

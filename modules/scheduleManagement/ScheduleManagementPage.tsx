@@ -327,50 +327,12 @@ const ScheduleManagementPage = () => {
             </CardContent>
           </Card>
 
-          {/* Phase Filter */}
-          <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
-            <FolderKanban className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <label htmlFor="phase-filter" className="text-sm font-medium">
-                Filter by Phase
-              </label>
-              <p className="text-xs text-muted-foreground">
-                View activities for a specific phase
-              </p>
-            </div>
-            <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId}>
-              <SelectTrigger id="phase-filter" className="w-[250px]">
-                <SelectValue placeholder="Select phase..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Phases</SelectItem>
-                {phases?.map((phase) => (
-                  <SelectItem key={phase.id} value={phase.id}>
-                    {phase.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {phases && (
             <ActivityTableNew
               phases={phases}
               workingDaysConfig={projectWorkingDaysConfig}
             />
           )}
-
-          {/* Excel Upload Button */}
-          <div className="flex justify-end mt-4">
-            <Button
-              onClick={() => setExcelUploadOpen(true)}
-              variant="outline"
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Import from Excel
-            </Button>
-          </div>
         </TabsContent>
 
         {/* Milestones Tab */}

@@ -51,24 +51,22 @@ export interface CreatePhaseDTO {
 // Activity Types
 export interface Activity {
   id: string;
-  phaseId: string;
-  phaseName?: string;
+  activityNo: number;
   name: string;
-  units?: number | null;
+  targetUnit: number;
   startDate: string;
   endDate: string;
-  duration: number;
-  order: number;
-  createdAt?: string;
-  updatedAt?: string;
+  duration: null | number;
+  action: null;
+  description: null;
+  phaseId: string;
+  createdAt: string;
+  updatedAt: string;
+  _count: Count;
 }
 
-export interface CreateActivityDTO {
-  phaseId: string;
-  name: string;
-  targetUnits: number;
-  startDate: string;
-  endDate: string;
+interface Count {
+  subActivities: number;
 }
 
 export interface UpdateActivityDTO {

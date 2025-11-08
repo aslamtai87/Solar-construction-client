@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -27,7 +27,7 @@ import { calculateDuration } from "@/lib/utils/durationCalculator";
 const activityFormSchema = z.object({
   phaseId: z.string().min(1, "Phase is required"),
   name: z.string().min(1, "Activity name is required"),
-  units: z.union([
+  targetUnit: z.union([
     z.number(),
     z.nan(),
     z.null(),
@@ -38,12 +38,13 @@ const activityFormSchema = z.object({
   }).optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  duration: z.number().optional(),
 }).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
   message: "End date must be after or equal to start date",
   path: ["endDate"],
 });
 
-type ActivityFormData = z.infer<typeof activityFormSchema>;
+export type ActivityFormData = z.infer<typeof activityFormSchema>;
 
 interface ActivityEditableRowProps {
   activity?: Activity;
@@ -78,16 +79,18 @@ export const ActivityEditableRow = ({
       ? {
           phaseId: activity.phaseId,
           name: activity.name,
-          units: activity.units || undefined,
+          targetUnit: activity.targetUnit ?? undefined,
           startDate: activity.startDate,
           endDate: activity.endDate,
+          duration: activity.duration ?? undefined,
         }
       : {
           phaseId: "",
           name: "",
-          units: undefined,
+          targetUnit: undefined,
           startDate: "",
           endDate: "",
+          duration: 0,
         },
   });
 
@@ -105,6 +108,16 @@ export const ActivityEditableRow = ({
     onSave(data);
   };
 
+  useEffect(() => {
+    if (mode === "edit" && activity) {
+      setValue("duration", activity.duration || 0);
+    }
+  }, [mode, activity, setValue]);
+
+  useEffect(() => {
+    setValue("duration", duration);
+  }, [duration, activity?.startDate, activity?.endDate]);
+
   if (mode === "view" && activity) {
     return (
       <TableRow className="hover:bg-muted/50">
@@ -120,7 +133,7 @@ export const ActivityEditableRow = ({
 
         {/* Units */}
         <TableCell className="min-w-[150px] text-center">
-          {activity.units && activity.units > 0 ? activity.units.toLocaleString() : "NaN"}
+          {activity.targetUnit && activity.targetUnit > 0 ? activity.targetUnit.toLocaleString() : "NaN"}
         </TableCell>
 
         {/* Start Date */}
@@ -205,7 +218,7 @@ export const ActivityEditableRow = ({
       {/* Units */}
       <TableCell className="min-w-[150px]">
         <Input
-          {...register("units", { 
+          {...register("targetUnit", {
             setValueAs: (val) => {
               if (val === "" || val === null || val === undefined) return null;
               const num = Number(val);
@@ -214,10 +227,10 @@ export const ActivityEditableRow = ({
           })}
           type="number"
           placeholder="0"
-          className={errors.units ? "border-destructive" : ""}
+          className={errors.targetUnit ? "border-destructive" : ""}
         />
-        {errors.units && (
-          <p className="text-xs text-destructive mt-1">{errors.units.message}</p>
+        {errors.targetUnit && (
+          <p className="text-xs text-destructive mt-1">{errors.targetUnit.message}</p>
         )}
       </TableCell>
 
