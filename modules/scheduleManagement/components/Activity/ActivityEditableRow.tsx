@@ -23,6 +23,7 @@ import { Check, X, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Activity, Phase, WorkingDaysConfig } from "@/lib/types/schedule";
 import * as z from "zod";
 import { calculateDuration } from "@/lib/utils/durationCalculator";
+import { formatDateForInput } from "@/lib/utils";
 
 const activityFormSchema = z.object({
   phaseId: z.string().min(1, "Phase is required"),
@@ -80,8 +81,8 @@ export const ActivityEditableRow = ({
           phaseId: activity.phaseId,
           name: activity.name,
           targetUnit: activity.targetUnit ?? undefined,
-          startDate: activity.startDate,
-          endDate: activity.endDate,
+          startDate: formatDateForInput(activity.startDate),
+          endDate: formatDateForInput(activity.endDate),
           duration: activity.duration ?? undefined,
         }
       : {
