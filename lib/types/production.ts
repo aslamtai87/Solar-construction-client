@@ -59,7 +59,7 @@ export interface EquipmentAssignment {
   equipmentId: string;
   equipmentName: string;
   price: number;
-  pricingPeriod: EquipmentPricingPeriod;
+  pricingType: EquipmentPricingPeriod;
   quantity: number;
 }
 
@@ -192,4 +192,17 @@ export interface CreateLabourerDTO {
   baseRate?: number;
   fringeRate?: number;
   totalRate: number;
+}
+
+export interface CreateCrewDTO {
+  projectId: string;
+  name: string;
+  labourers: {
+    labourerId: string;
+    quantity: number;
+  }[];
+}
+
+export interface GetCrew {
+
 }

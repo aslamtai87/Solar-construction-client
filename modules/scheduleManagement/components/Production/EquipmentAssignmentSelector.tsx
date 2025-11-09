@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Equipment, EquipmentAssignment, EquipmentPricingPeriod } from "@/lib/types/production";
+import { Equipment, EquipmentAssignment, EquipmentPricingPeriod, GetEquipment } from "@/lib/types/production";
 import { useDialog } from "@/hooks/useDialog";
 
 const equipmentAssignmentSchema = z.object({
@@ -29,7 +29,7 @@ const equipmentAssignmentSchema = z.object({
 type EquipmentAssignmentForm = z.infer<typeof equipmentAssignmentSchema>;
 
 interface EquipmentAssignmentSelectorProps {
-  availableEquipment: Equipment[];
+  availableEquipment: GetEquipment[];
   assignments: EquipmentAssignment[];
   onAddAssignment: (assignment: Omit<EquipmentAssignment, "id">) => void;
   onUpdateAssignment: (
@@ -98,7 +98,7 @@ export const EquipmentAssignmentSelector: React.FC<
       equipmentId: data.equipmentId,
       equipmentName: equipment.name,
       price: equipment.price,
-      pricingPeriod: equipment.pricingPeriod,
+      pricingType: equipment.pricingType,
       quantity: data.quantity,
     };
 

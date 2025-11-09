@@ -23,11 +23,11 @@ import {
 } from "lucide-react";
 import { 
   ProductionMethod, 
-  Labourer, 
-  Equipment, 
   CrewComposition, 
   EquipmentAssignment,
-  EquipmentPricingPeriod
+  EquipmentPricingPeriod,
+  GetEquipment,
+  GetLabourer
 } from "@/lib/types/production";
 import { Activity } from "@/lib/types/schedule";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -39,6 +39,7 @@ import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { CrewCompositionBuilder } from "./CrewCompositionBuilder";
 import { EquipmentAssignmentSelector } from "./EquipmentAssignmentSelector";
 import { ProductionForecastCard } from "./ProductionForecastCard";
+import { useGetLabourers } from "@/hooks/ReactQuery/useSchedule";
 
 const configSchema = z.object({
   activityId: z.string(),
@@ -59,8 +60,8 @@ interface ConfigureProductionDialogProps {
     equipment: EquipmentAssignment[];
   }) => void;
   activity: Activity | null;
-  availableLabourers: Labourer[];
-  availableEquipment: Equipment[];
+  availableLabourers: GetLabourer[];
+  availableEquipment: GetEquipment[];
 }
 
 const productionMethods: { value: ProductionMethod; label: string; icon: any; description: string }[] = [
@@ -100,6 +101,9 @@ export const ConfigureProductionDialog = ({
 }: ConfigureProductionDialogProps) => {
   const [crews, setCrews] = useState<CrewComposition[]>([]);
   const [equipmentAssignments, setEquipmentAssignments] = useState<EquipmentAssignment[]>([]);
+  const { data: labourers } = useGetLabourers({
+    limit: 50,
+  });
 
   const {
     control,
@@ -124,26 +128,26 @@ export const ConfigureProductionDialog = ({
   useEffect(() => {
     if (activity) {
       setValue("activityId", activity.id);
-      setValue("duration", activity.duration);
+      setValue("duration", activity.duration || 0);
     }
   }, [activity, setValue]);
 
 
   // Calculate AI-based production forecast
   const productionForecast = useMemo(() => {
-    if (!activity || !duration || !activity.units) return null;
+    if (!activity || !duration || !activity.targetUnit) return null;
 
     const config: any = {};
     
     // Constant method auto-calculates: units ÷ days
     if (method === "constant") {
-      config.unitsPerDay = activity.units / duration;
+      config.unitsPerDay = activity.targetUnit / duration;
     }
 
     try {
       return calculateDailyProduction(
         method,
-        activity.units,
+        activity.targetUnit,
         duration,
         activity.startDate,
         config
@@ -232,9 +236,9 @@ export const ConfigureProductionDialog = ({
   );
   const totalEquipmentCost = equipmentAssignments.reduce((sum, equip) => {
     let dailyRate = equip.price;
-    if (equip.pricingPeriod === EquipmentPricingPeriod.PER_WEEK) {
+    if (equip.pricingType === EquipmentPricingPeriod.PER_WEEK) {
       dailyRate = equip.price / 7;
-    } else if (equip.pricingPeriod === EquipmentPricingPeriod.PER_MONTH) {
+    } else if (equip.pricingType === EquipmentPricingPeriod.PER_MONTH) {
       dailyRate = equip.price / 30;
     }
     return sum + (dailyRate * equip.quantity * duration);
@@ -268,7 +272,7 @@ export const ConfigureProductionDialog = ({
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Total Units</p>
-                    <p className="font-semibold">{activity.units?.toLocaleString() || 'N/A'}</p>
+                    <p className="font-semibold">{activity.targetUnit?.toLocaleString() || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Original Duration</p>
@@ -307,7 +311,7 @@ export const ConfigureProductionDialog = ({
             />
 
             {/* Method-specific info */}
-            {activity.units && activity.units > 0 && method === "constant" && duration > 0 && (
+            {activity.targetUnit && activity.targetUnit > 0 && method === "constant" && duration > 0 && (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -318,7 +322,7 @@ export const ConfigureProductionDialog = ({
                     </p>
                     <div className="text-sm pt-2 border-t">
                       <p className="text-muted-foreground">
-                        {activity.units.toLocaleString()} units ÷ {duration} days = {(activity.units / duration).toFixed(2)} units/day
+                        {activity.targetUnit.toLocaleString()} units ÷ {duration} days = {(activity.targetUnit / duration).toFixed(2)} units/day
                       </p>
                     </div>
                   </div>
@@ -326,7 +330,7 @@ export const ConfigureProductionDialog = ({
               </Alert>
             )}
 
-            {activity.units && activity.units > 0 && (method === "ramp-up" || method === "ramp-down" || method === "s-curve") && (
+            {activity.targetUnit && activity.targetUnit > 0 && (method === "ramp-up" || method === "ramp-down" || method === "s-curve") && (
               <Alert>
                 <ActivityIcon className="h-4 w-4" />
                 <AlertDescription>
@@ -356,7 +360,7 @@ export const ConfigureProductionDialog = ({
                           {method === "ramp-up" && <li>Process optimization & coordination</li>}
                         </ul>
                         <p className="text-muted-foreground pt-2">
-                          Base capacity: {(activity.units / duration).toFixed(1)} units/day
+                          Base capacity: {(activity.targetUnit / duration).toFixed(1)} units/day
                         </p>
                       </div>
                     )}
@@ -380,7 +384,7 @@ export const ConfigureProductionDialog = ({
                 onAddCrew={handleAddCrew}
                 onUpdateCrew={handleUpdateCrew}
                 onDeleteCrew={handleDeleteCrew}
-                duration={duration || activity.duration}
+                duration={duration ?? activity.duration ?? 0}
               />
             </div>
 
@@ -399,7 +403,7 @@ export const ConfigureProductionDialog = ({
                 onAddAssignment={handleAddEquipment}
                 onUpdateAssignment={handleUpdateEquipment}
                 onDeleteAssignment={handleDeleteEquipment}
-                duration={duration || activity.duration}
+                duration={duration ?? activity.duration ?? 0}
               />
             </div>
 
@@ -435,7 +439,7 @@ export const ConfigureProductionDialog = ({
             )}
 
             {/* Production Forecast */}
-            {activity.units && activity.units > 0 && productionForecast && productionForecast.length > 0 && (
+            {activity.targetUnit && activity.targetUnit > 0 && productionForecast && productionForecast.length > 0 && (
               <>
                 <Separator />
                 <ProductionForecastCard 

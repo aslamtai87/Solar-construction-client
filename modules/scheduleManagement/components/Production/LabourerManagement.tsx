@@ -50,6 +50,7 @@ export const LabourerManagement = () => {
   const [entryMode, setEntryMode] = useState<"separate" | "total">("separate");
   const { data: labourerData } = useGetLabourers({
     limit: 100,
+    projectId: useProjectStore.getState().selectedProject?.id || "",
   });
   const { mutate: onAddLabourer } = useCreateLabourer();
   const { mutate: onUpdateLabourer } = useUpdateLabourers();

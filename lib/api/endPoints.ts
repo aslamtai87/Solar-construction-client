@@ -61,6 +61,8 @@ export const API_ENDPOINTS = {
   UPDATE_LABOURER: '/production-planning/labourers/{id}',
   DELETE_LABOURER: '/production-planning/labourers/{id}',
 
+  CREATE_CREW: '/production-planning/crews',
+
 };
 
 

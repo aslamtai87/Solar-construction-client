@@ -63,6 +63,7 @@ export const EquipmentManagement = () => {
   const { mutate: onUpdateEquipment } = useUpdateEquipment();
   const { data: equipmentData } = useGetEquipment({
     limit: 50,
+    projectId: selectedProject?.id || "",
   });
 
   console.log("Equipment Data:", equipmentData);

@@ -102,10 +102,10 @@ export const useGetActivity = (params?: {
   cursor?: string | null;
   limit?: number;
   search?: string;
-  phaseId?: string;
+  projectId?: string;
 }) => {
   return useQuery<PaginationResponse<Activity>>({
-    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.phaseId],
+    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.projectId],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       
@@ -118,8 +118,8 @@ export const useGetActivity = (params?: {
       if (params?.search) {
         queryParams.append('search', params.search);
       }
-      if (params?.phaseId) {
-        queryParams.append('phaseId', params.phaseId);
+      if (params?.projectId) {
+        queryParams.append('projectId', params.projectId);
       }
       
       const response = await api.get<PaginationResponse<Activity>>(
@@ -171,7 +171,7 @@ export const useGetEquipment = (params?: {
   cursor?: string | null;
   limit?: number;
   search?: string;
-  phaseId?: string;
+  projectId?: string;
 
 }) => {
   return useQuery<PaginationResponse<GetEquipment>>({
@@ -199,7 +199,7 @@ export const useGetLabourers = (params?:{
   cursor?: string | null;
   limit?: number;
   search?: string;
-  phaseId?: string;
+  projectId?: string;
 }) => {
   return useQuery<PaginationResponse<GetLabourer>>({
     queryKey: QUERY_KEYS.LABOURERS,

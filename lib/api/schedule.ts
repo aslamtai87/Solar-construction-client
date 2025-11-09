@@ -101,7 +101,7 @@ export const fetchEquipment = async (params?: {
   cursor?: string | null;
   limit?: number;
   search?: string;
-  phaseId?: string;
+  projectId?: string;
 }): Promise<PaginationResponse<GetEquipment>> => {
   const queryParams = new URLSearchParams();
 
@@ -114,8 +114,8 @@ export const fetchEquipment = async (params?: {
   if (params?.search) {
     queryParams.append("search", params.search);
   }
-  if (params?.phaseId) {
-    queryParams.append("phaseId", params.phaseId);
+  if (params?.projectId) {
+    queryParams.append("projectId", params.projectId);
   }
   const response = await api.get<PaginationResponse<GetEquipment>>(
     API_ENDPOINTS.GET_EQUIPMENT,
@@ -167,6 +167,17 @@ export const updateLabourer = async (
 ): Promise<APISuccessResponse> => {
   const response = await api.patch<APISuccessResponse>(
     API_ENDPOINTS.UPDATE_LABOURER.replace("{id}", id),
+    data
+  );
+  return response.data;
+}
+
+
+export const createCrew = async (
+  data: any
+): Promise<APISuccessResponse> => {
+  const response = await api.post<APISuccessResponse>(
+    API_ENDPOINTS.CREATE_CREW,
     data
   );
   return response.data;

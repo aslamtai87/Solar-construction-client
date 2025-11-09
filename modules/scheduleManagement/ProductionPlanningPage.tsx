@@ -39,17 +39,21 @@ import {
   useGetEquipment,
   useGetLabourers
 } from "@/hooks/ReactQuery/useSchedule";
+import { useProjectStore } from "@/store/projectStore";
 
 const ProductionPlanningPage = () => {
+  const {selectedProject} = useProjectStore();
   // Master Data - Labourers
   const { data: equipmentData } = useGetEquipment({
     limit: 50,
   });
   const { data: activities } = useGetActivity({
-    limit: 1000,
+    limit: 100,
+    projectId: selectedProject?.id || "",
   });
   const { data: labourers } = useGetLabourers({
     limit: 50,
+    projectId: selectedProject?.id || "",
   });
 
   const [productionConfigs, setProductionConfigs] = useState<

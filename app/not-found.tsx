@@ -41,7 +41,7 @@ export default function NotFound() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
-          <Link href="/">
+          <Link href="/dashboard">
             <Button className="mt-6">
               <House className="mr-2 h-4 w-4" /> Go Back Home
             </Button>

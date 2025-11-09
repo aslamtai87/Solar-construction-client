@@ -26,7 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { FormSelectField } from "@/components/global/Form/FormSelectField";
-import { CrewComposition, CrewLabourer, Labourer } from "@/lib/types/production";
+import { CrewComposition, CrewLabourer, GetLabourer, Labourer } from "@/lib/types/production";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useDialog } from "@/hooks/useDialog";
@@ -44,7 +44,7 @@ type CrewFormData = z.infer<typeof crewSchema>;
 type LabourerSelectionFormData = z.infer<typeof labourerSelectionSchema>;
 
 interface CrewCompositionBuilderProps {
-  availableLabourers: Labourer[];
+  availableLabourers: GetLabourer[];
   crews: CrewComposition[];
   onAddCrew: (crew: Omit<CrewComposition, "id" | "totalCostPerHour">) => void;
   onUpdateCrew: (id: string, crew: Partial<CrewComposition>) => void;
@@ -157,11 +157,11 @@ export const CrewCompositionBuilder: React.FC<CrewCompositionBuilderProps> = ({
 
       return {
         labourerId: labourer.id,
-        labourerType: labourer.type,
+        labourerType: labourer.name,
         quantity: sl.quantity,
-        baseRate: labourer.baseRate,
-        fringeRate: labourer.fringeRate,
-        totalRate: labourer.totalRate,
+        baseRate: Number(labourer.baseRate),
+        fringeRate: Number(labourer.fringeRate),
+        totalRate: Number(labourer.totalRate),
       };
     });
 
@@ -184,7 +184,7 @@ export const CrewCompositionBuilder: React.FC<CrewCompositionBuilderProps> = ({
     return labourers.reduce((sum, sl) => {
       const labourer = availableLabourers.find((l) => l.id === sl.labourerId);
       if (!labourer) return sum;
-      return sum + labourer.totalRate * sl.quantity;
+      return sum + Number(labourer.totalRate) * sl.quantity;
     }, 0);
   };
 
@@ -357,7 +357,7 @@ export const CrewCompositionBuilder: React.FC<CrewCompositionBuilderProps> = ({
                       placeholder="Select labourer..."
                       options={availableForSelection.map((labourer) => ({
                         value: labourer.id,
-                        label: `${labourer.type} - $${labourer.totalRate.toFixed(2)}/hr`,
+                        label: `${labourer.name} - $${Number(labourer.totalRate).toFixed(2)}/hr`,
                       }))}
                     />
 
@@ -400,7 +400,7 @@ export const CrewCompositionBuilder: React.FC<CrewCompositionBuilderProps> = ({
 
                             return (
                               <TableRow key={sl.labourerId}>
-                                <TableCell className="font-medium">{labourer.type}</TableCell>
+                                <TableCell className="font-medium">{labourer.name}</TableCell>
                                 <TableCell className="text-right">
                                   <input
                                     type="number"
@@ -416,10 +416,10 @@ export const CrewCompositionBuilder: React.FC<CrewCompositionBuilderProps> = ({
                                   />
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  ${labourer.totalRate.toFixed(2)}
+                                  ${Number(labourer.totalRate).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  ${(labourer.totalRate * sl.quantity).toFixed(2)}
+                                  ${(Number(labourer.totalRate) * sl.quantity).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <Button
