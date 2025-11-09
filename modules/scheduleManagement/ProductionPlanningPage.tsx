@@ -13,21 +13,6 @@ import {
 } from "@/lib/types/production";
 import { Activity as ActivityType } from "@/lib/types/schedule";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -40,16 +25,34 @@ import {
   useGetLabourers
 } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
+import { GenericTable } from "@/components/global/Table/GenericTable";
+import { useCursorPagination } from "@/hooks/useCursorPagination";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const ProductionPlanningPage = () => {
   const {selectedProject} = useProjectStore();
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  const {
+    cursor,
+    currentPageIndex,
+    handleNextPage,
+    handlePreviousPage,
+    handleFirstPage,
+    hasNextPage: hasPrevPage,
+    hasPreviousPage,
+  } = useCursorPagination();
+
   // Master Data - Labourers
   const { data: equipmentData } = useGetEquipment({
     limit: 50,
   });
-  const { data: activities } = useGetActivity({
-    limit: 100,
+  const { data: activities, isLoading } = useGetActivity({
+    limit: 10,
     projectId: selectedProject?.id || "",
+    cursor: cursor || undefined,
+    search: debouncedSearch || undefined,
   });
   const { data: labourers } = useGetLabourers({
     limit: 50,
@@ -156,146 +159,141 @@ const ProductionPlanningPage = () => {
 
         {/* Activities Tab */}
         <TabsContent value="activities" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activities</CardTitle>
-              <CardDescription>
-                Configure production planning for each activity
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="min-w-[250px]">
-                          Activity Name
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">Phase</TableHead>
-                        <TableHead className="min-w-[100px] text-center">
-                          Units
-                        </TableHead>
-                        <TableHead className="min-w-[100px] text-center">
-                          Duration
-                        </TableHead>
-                        <TableHead className="min-w-[150px]">
-                          Production Method
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">Crews</TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Equipment
-                        </TableHead>
-                        <TableHead className="min-w-[150px] text-center">
-                          Actions
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {activities?.data.result.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-12">
-                            <div className="flex flex-col items-center gap-2">
-                              <Settings className="h-12 w-12 text-muted-foreground/50" />
-                              <p className="text-muted-foreground">
-                                No activities available
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Create activities in Schedule Management first
-                              </p>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+          <GenericTable
+            data={activities?.data.result || []}
+            columns={[
+              {
+                key: "name",
+                header: "Activity Name",
+                render: (item: ActivityType) => (
+                  <div className="px-6 py-4 font-medium min-w-[250px]">{item.name}</div>
+                ),
+              },
+              {
+                key: "phase",
+                header: "Phase",
+                render: (item: ActivityType) => (
+                  <div className="px-6 py-4 min-w-[120px]">{item.phase.name || "-"}</div>
+                ),
+              },
+              {
+                key: "units",
+                header: "Units",
+                render: (item: ActivityType) => (
+                  <div className="px-6 py-4 text-center min-w-[100px]">
+                    {item.targetUnit && item.targetUnit > 0
+                      ? item.targetUnit.toLocaleString()
+                      : "NaN"}
+                  </div>
+                ),
+                className: "text-center",
+              },
+              {
+                key: "duration",
+                header: "Duration",
+                render: (item: ActivityType) => (
+                  <div className="px-6 py-4 text-center min-w-[100px]">
+                    {item.duration} days
+                  </div>
+                ),
+                className: "text-center",
+              },
+              {
+                key: "method",
+                header: "Production Method",
+                render: (item: ActivityType) => {
+                  const activityConfig = getActivityConfig(item.id);
+                  return (
+                    <div className="px-6 py-4 min-w-[150px]">
+                      {activityConfig ? (
+                        <Badge variant="outline">
+                          {formatProductionMethod(activityConfig.method)}
+                        </Badge>
                       ) : (
-                        activities?.data.result.map((activity) => {
-                          const activityConfig = getActivityConfig(activity.id);
-
-                          return (
-                            <TableRow
-                              key={activity.id}
-                              className="hover:bg-muted/50"
-                            >
-                              <TableCell className="font-medium">
-                                {activity.name}
-                              </TableCell>
-                              <TableCell>
-                                {activity.phase.name || "-"}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {activity.targetUnit && activity.targetUnit > 0
-                                  ? activity.targetUnit.toLocaleString()
-                                  : "NaN"}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {activity.duration} days
-                              </TableCell>
-                              <TableCell>
-                                {activityConfig ? (
-                                  <Badge variant="outline">
-                                    {formatProductionMethod(
-                                      activityConfig.method
-                                    )}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">
-                                    Not configured
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {activityConfig?.crews &&
-                                activityConfig.crews.length > 0 ? (
-                                  <Badge variant="secondary">
-                                    {activityConfig.crews.length}{" "}
-                                    {activityConfig.crews.length === 1
-                                      ? "crew"
-                                      : "crews"}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">
-                                    No crews
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {activityConfig?.equipment &&
-                                activityConfig.equipment.length > 0 ? (
-                                  <Badge variant="secondary">
-                                    {activityConfig.equipment.length}{" "}
-                                    {activityConfig.equipment.length === 1
-                                      ? "item"
-                                      : "items"}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">
-                                    No equipment
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Button
-                                  size="sm"
-                                  variant={
-                                    activityConfig ? "outline" : "default"
-                                  }
-                                  onClick={() =>
-                                    handleConfigureActivity(activity)
-                                  }
-                                >
-                                  <Settings className="h-4 w-4 mr-2" />
-                                  {activityConfig ? "Reconfigure" : "Configure"}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                        <span className="text-sm text-muted-foreground">
+                          Not configured
+                        </span>
                       )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    </div>
+                  );
+                },
+              },
+              {
+                key: "crews",
+                header: "Crews",
+                render: (item: ActivityType) => {
+                  const activityConfig = getActivityConfig(item.id);
+                  return (
+                    <div className="px-6 py-4 min-w-[120px]">
+                      {activityConfig?.crews && activityConfig.crews.length > 0 ? (
+                        <Badge variant="secondary">
+                          {activityConfig.crews.length}{" "}
+                          {activityConfig.crews.length === 1 ? "crew" : "crews"}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No crews</span>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                key: "equipment",
+                header: "Equipment",
+                render: (item: ActivityType) => {
+                  const activityConfig = getActivityConfig(item.id);
+                  return (
+                    <div className="px-6 py-4 min-w-[120px]">
+                      {activityConfig?.equipment && activityConfig.equipment.length > 0 ? (
+                        <Badge variant="secondary">
+                          {activityConfig.equipment.length}{" "}
+                          {activityConfig.equipment.length === 1 ? "item" : "items"}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No equipment</span>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                key: "actions",
+                header: "Actions",
+                render: (item: ActivityType) => {
+                  const activityConfig = getActivityConfig(item.id);
+                  return (
+                    <div className="px-6 py-4 text-center min-w-[150px]">
+                      <Button
+                        size="sm"
+                        variant={activityConfig ? "outline" : "default"}
+                        onClick={() => handleConfigureActivity(item)}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        {activityConfig ? "Reconfigure" : "Configure"}
+                      </Button>
+                    </div>
+                  );
+                },
+                className: "text-center",
+              },
+            ]}
+            tableName="Activities"
+            tableDescription="Configure production planning for each activity"
+            isLoading={isLoading}
+            emptyMessage="No activities available"
+            searchText={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            searchPlaceholder="Search activities..."
+            showSearch={true}
+            pagination={true}
+            paginationData={activities?.data.pagination}
+            currentPageIndex={currentPageIndex}
+            onNextPage={() => handleNextPage(activities?.data.pagination.nextCursor || null)}
+            onPreviousPage={handlePreviousPage}
+            onFirstPage={handleFirstPage}
+            hasNextPage={hasPrevPage(activities?.data.pagination)}
+            hasPreviousPage={hasPreviousPage}
+          />
         </TabsContent>
       </Tabs>
 

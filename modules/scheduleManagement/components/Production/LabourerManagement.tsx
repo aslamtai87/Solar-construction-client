@@ -6,15 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { GetLabourer } from "@/lib/types/production";
-import { useGetLabourers,useCreateLabourer,useUpdateLabourers } from "@/hooks/ReactQuery/useSchedule";
+import { useGetLabourers, useCreateLabourer, useUpdateLabourers } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
+import { GenericTable } from "@/components/global/Table/GenericTable";
+import { useCursorPagination } from "@/hooks/useCursorPagination";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const labourerSeparateSchema = z.object({
   type: z.string().min(1, "Labourer name is required"),
@@ -48,13 +42,28 @@ export const LabourerManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLabourer, setEditingLabourer] = useState<GetLabourer | null>(null);
   const [entryMode, setEntryMode] = useState<"separate" | "total">("separate");
-  const { data: labourerData } = useGetLabourers({
-    limit: 100,
-    projectId: useProjectStore.getState().selectedProject?.id || "",
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  const { selectedProject } = useProjectStore();
+
+  const {
+    cursor,
+    currentPageIndex,
+    handleNextPage,
+    handlePreviousPage,
+    handleFirstPage,
+    hasNextPage: hasPrevPage,
+    hasPreviousPage,
+  } = useCursorPagination();
+
+  const { data: labourerData, isLoading } = useGetLabourers({
+    limit: 10,
+    projectId: selectedProject?.id || "",
+    cursor: cursor || undefined,
+    search: debouncedSearch || undefined,
   });
   const { mutate: onAddLabourer } = useCreateLabourer();
   const { mutate: onUpdateLabourer } = useUpdateLabourers();
-  const { selectedProject } = useProjectStore();
 
   const separateForm = useForm<LabourerSeparateForm>({
     resolver: zodResolver(labourerSeparateSchema),
@@ -155,73 +164,84 @@ export const LabourerManagement = () => {
   const fringeRate = separateForm.watch("fringeRate");
   const calculatedTotal = (baseRate || 0) + (fringeRate || 0);
 
+  const columns = [
+    {
+      key: "name",
+      header: "Labourer Type",
+      render: (item: GetLabourer) => (
+        <div className="px-6 py-4 font-medium">{item.name}</div>
+      ),
+    },
+    {
+      key: "baseRate",
+      header: "Base Rate ($/hr)",
+      render: (item: GetLabourer) => (
+        <div className="px-6 py-4 text-right">${Number(item.baseRate).toFixed(2)}</div>
+      ),
+      className: "text-right",
+    },
+    {
+      key: "fringeRate",
+      header: "Fringe ($/hr)",
+      render: (item: GetLabourer) => (
+        <div className="px-6 py-4 text-right">${Number(item.fringeRate).toFixed(2)}</div>
+      ),
+      className: "text-right",
+    },
+    {
+      key: "totalRate",
+      header: "Total ($/hr)",
+      render: (item: GetLabourer) => (
+        <div className="px-6 py-4 text-right">
+          <Badge variant="secondary">${Number(item.totalRate).toFixed(2)}</Badge>
+        </div>
+      ),
+      className: "text-right",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (item: GetLabourer) => (
+        <div className="px-6 py-4 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(item)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => {}}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      ),
+      className: "text-center",
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Labourer Types</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage labourer types with their hourly wage rates
-          </p>
-        </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Labourer Type
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Labourer Type</TableHead>
-                <TableHead className="text-right">Base Rate ($/hr)</TableHead>
-                <TableHead className="text-right">Fringe ($/hr)</TableHead>
-                <TableHead className="text-right">Total ($/hr)</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {labourerData?.data.result.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users className="h-12 w-12 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">No labourer types added yet</p>
-                      <Button variant="outline" size="sm" onClick={() => handleOpenDialog()}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Labourer Type
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                labourerData?.data.result.map((labourer) => (
-                  <TableRow key={labourer.id}>
-                    <TableCell className="font-medium">{labourer.name}</TableCell>
-                    <TableCell className="text-right">${Number(labourer.baseRate).toFixed(2)}</TableCell>
-                    <TableCell className="text-right">${Number(labourer.fringeRate).toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary">${Number(labourer.totalRate).toFixed(2)}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(labourer)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => {}}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <GenericTable
+        data={labourerData?.data.result || []}
+        columns={columns}
+        tableName="Labourer Types"
+        tableDescription="Manage labourer types with their hourly wage rates"
+        isLoading={isLoading}
+        emptyMessage="No labourer types added yet"
+        searchText={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        searchPlaceholder="Search labourers..."
+        showSearch={true}
+        pagination={true}
+        paginationData={labourerData?.data.pagination}
+        currentPageIndex={currentPageIndex}
+        onNextPage={() => handleNextPage(labourerData?.data.pagination.nextCursor || null)}
+        onPreviousPage={handlePreviousPage}
+        onFirstPage={handleFirstPage}
+        hasNextPage={hasPrevPage(labourerData?.data.pagination)}
+        hasPreviousPage={hasPreviousPage}
+        onAdd={() => handleOpenDialog()}
+        addButtonText="Add Labourer Type"
+        addButtonIcon={<Plus className="h-4 w-4" />}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">

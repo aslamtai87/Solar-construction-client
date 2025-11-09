@@ -6,17 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { FormSelectField } from "@/components/global/Form/FormSelectField";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +28,9 @@ import {
   useGetEquipment,
 } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
+import { GenericTable } from "@/components/global/Table/GenericTable";
+import { useCursorPagination } from "@/hooks/useCursorPagination";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
@@ -57,16 +51,28 @@ export const EquipmentManagement = () => {
   const [editingEquipment, setEditingEquipment] = useState<GetEquipment | null>(
     null
   );
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const { selectedProject } = useProjectStore();
+
+  const {
+    cursor,
+    currentPageIndex,
+    handleNextPage,
+    handlePreviousPage,
+    handleFirstPage,
+    hasNextPage: hasPrevPage,
+    hasPreviousPage,
+  } = useCursorPagination();
 
   const { mutate: onAddEquipment } = useCreateEquipment();
   const { mutate: onUpdateEquipment } = useUpdateEquipment();
-  const { data: equipmentData } = useGetEquipment({
-    limit: 50,
+  const { data: equipmentData, isLoading } = useGetEquipment({
+    limit: 10,
     projectId: selectedProject?.id || "",
+    cursor: cursor || undefined,
+    search: debouncedSearch || undefined,
   });
-
-  console.log("Equipment Data:", equipmentData);
 
   const form = useForm<EquipmentForm>({
     resolver: zodResolver(equipmentSchema),
@@ -119,89 +125,88 @@ export const EquipmentManagement = () => {
     handleCloseDialog();
   };
 
+  const columns = [
+    {
+      key: "name",
+      header: "Equipment Name",
+      render: (item: GetEquipment) => (
+        <div className="px-6 py-4 font-medium">{item.name}</div>
+      ),
+    },
+    {
+      key: "price",
+      header: "Price",
+      render: (item: GetEquipment) => (
+        <div className="px-6 py-4 text-right">
+          <Badge variant="secondary">${item.price}</Badge>
+        </div>
+      ),
+      className: "text-right",
+    },
+    {
+      key: "pricingType",
+      header: "Pricing Period",
+      render: (item: GetEquipment) => (
+        <div className="px-6 py-4 text-center">
+          <Badge variant="outline">
+            {pricingPeriodLabels[item.pricingType as EquipmentPricingPeriod]}
+          </Badge>
+        </div>
+      ),
+      className: "text-center",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (item: GetEquipment) => (
+        <div className="px-6 py-4 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleOpenDialog(item)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => item.id}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      ),
+      className: "text-center",
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Equipment Types</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage equipment with their daily rental rates
-          </p>
-        </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Equipment
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Equipment Name</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-center">Pricing Period</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {equipmentData?.data.result.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <Wrench className="h-12 w-12 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">
-                        No equipment added yet
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDialog()}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Equipment
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                equipmentData?.data.result.map((equip) => (
-                  <TableRow key={equip.id}>
-                    <TableCell className="font-medium">{equip.name}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary">${equip.price}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">
-                        {pricingPeriodLabels[equip.pricingType as EquipmentPricingPeriod]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDialog(equip)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => equip.id}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <GenericTable
+        data={equipmentData?.data.result || []}
+        columns={columns}
+        tableName="Equipment Types"
+        tableDescription="Manage equipment with their daily rental rates"
+        isLoading={isLoading}
+        emptyMessage="No equipment added yet"
+        searchText={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        searchPlaceholder="Search equipment..."
+        showSearch={true}
+        pagination={true}
+        paginationData={equipmentData?.data.pagination}
+        currentPageIndex={currentPageIndex}
+        onNextPage={() => handleNextPage(equipmentData?.data.pagination.nextCursor || null)}
+        onPreviousPage={handlePreviousPage}
+        onFirstPage={handleFirstPage}
+        hasNextPage={hasPrevPage(equipmentData?.data.pagination)}
+        hasPreviousPage={hasPreviousPage}
+        onAdd={() => handleOpenDialog()}
+        addButtonText="Add Equipment"
+        addButtonIcon={<Plus className="h-4 w-4" />}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>

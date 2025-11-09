@@ -172,10 +172,9 @@ export const useGetEquipment = (params?: {
   limit?: number;
   search?: string;
   projectId?: string;
-
 }) => {
   return useQuery<PaginationResponse<GetEquipment>>({
-    queryKey: QUERY_KEYS.EQUIPMENT,
+    queryKey: [QUERY_KEYS.EQUIPMENT, params?.cursor, params?.limit, params?.search, params?.projectId],
     queryFn: () => fetchEquipment(params),
   });
 };
@@ -202,7 +201,7 @@ export const useGetLabourers = (params?:{
   projectId?: string;
 }) => {
   return useQuery<PaginationResponse<GetLabourer>>({
-    queryKey: QUERY_KEYS.LABOURERS,
+    queryKey: [QUERY_KEYS.LABOURERS, params?.cursor, params?.limit, params?.search, params?.projectId],
     queryFn: async () => {
       const response = await api.get<PaginationResponse<GetLabourer>>(
         API_ENDPOINTS.GET_LABOURERS,
