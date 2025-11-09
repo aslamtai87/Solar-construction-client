@@ -34,8 +34,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
-  price: z.number().min(0, "Price must be positive"),
-  pricingType: z.nativeEnum(EquipmentPricingPeriod),
+  price: z.number("Price must be a valid number").min(0.01, "Price must be greater than 0"),
+  pricingType: z.enum(EquipmentPricingPeriod),
 });
 
 type EquipmentForm = z.infer<typeof equipmentSchema>;
@@ -78,7 +78,7 @@ export const EquipmentManagement = () => {
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
       name: "",
-      price: 0,
+      price: undefined,
       pricingType: EquipmentPricingPeriod.PER_DAY,
     },
   });
@@ -95,7 +95,7 @@ export const EquipmentManagement = () => {
       setEditingEquipment(null);
       form.reset({
         name: "",
-        price: 0,
+        price: undefined,
         pricingType: EquipmentPricingPeriod.PER_DAY,
       });
     }
@@ -237,7 +237,7 @@ export const EquipmentManagement = () => {
                 label="Price ($)"
                 type="number"
                 placeholder="150.00"
-                min={0}
+                min={0.01}
               />
 
               <FormSelectField

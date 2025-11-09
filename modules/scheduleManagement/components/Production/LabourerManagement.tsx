@@ -26,13 +26,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 const labourerSeparateSchema = z.object({
   type: z.string().min(1, "Labourer name is required"),
-  baseRate: z.number().min(0, "Base rate must be positive"),
-  fringeRate: z.number().min(0, "Fringe rate must be positive"),
+  baseRate: z.number("Base rate must be valid rate").min(0.01, "Base rate must be greater than 0"),
+  fringeRate: z.number("Fringe rate must be valid rate").min(0, "Fringe rate cannot be negative"),
 });
 
 const labourerTotalSchema = z.object({
   type: z.string().min(1, "Labourer name is required"),
-  totalRate: z.number().min(0, "Total rate must be positive"),
+  totalRate: z.number("Total rate must be valid rate").min(0.01, "Total rate must be greater than 0"),
 });
 
 type LabourerSeparateForm = z.infer<typeof labourerSeparateSchema>;
@@ -69,8 +69,8 @@ export const LabourerManagement = () => {
     resolver: zodResolver(labourerSeparateSchema),
     defaultValues: {
       type: "",
-      baseRate: 0,
-      fringeRate: 0,
+      baseRate: undefined,
+      fringeRate: undefined,
     },
   });
 
@@ -78,7 +78,7 @@ export const LabourerManagement = () => {
     resolver: zodResolver(labourerTotalSchema),
     defaultValues: {
       type: "",
-      totalRate: 0,
+      totalRate: undefined,
     },
   });
 
@@ -103,8 +103,8 @@ export const LabourerManagement = () => {
     } else {
       setEditingLabourer(null);
       setEntryMode("separate");
-      separateForm.reset({ type: "", baseRate: 0, fringeRate: 0 });
-      totalForm.reset({ type: "", totalRate: 0 });
+      separateForm.reset({ type: "", baseRate: undefined, fringeRate: undefined });
+      totalForm.reset({ type: "", totalRate: undefined });
     }
     setIsDialogOpen(true);
   };
@@ -259,7 +259,7 @@ export const LabourerManagement = () => {
             <TabsContent value="separate" className="space-y-4">
               <form onSubmit={separateForm.handleSubmit(handleSubmitSeparate)} className="space-y-4">
                 <FormFieldWrapper name="type" control={separateForm.control} label="Labourer Type" placeholder="e.g., Electrician, Installer, Foreman" />
-                <FormFieldWrapper name="baseRate" control={separateForm.control} label="Base Rate ($/hr)" type="number" placeholder="25.00" min={0} />
+                <FormFieldWrapper name="baseRate" control={separateForm.control} label="Base Rate ($/hr)" type="number" placeholder="25.00" min={0.01} />
                 <FormFieldWrapper name="fringeRate" control={separateForm.control} label="Fringe Rate ($/hr)" type="number" placeholder="5.00" min={0} description="Benefits, insurance, etc." />
 
                 <div className="rounded-lg bg-muted p-3">
@@ -279,7 +279,7 @@ export const LabourerManagement = () => {
             <TabsContent value="total" className="space-y-4">
               <form onSubmit={totalForm.handleSubmit(handleSubmitTotal)} className="space-y-4">
                 <FormFieldWrapper name="type" control={totalForm.control} label="Labourer Type" placeholder="e.g., Electrician, Installer, Foreman" />
-                <FormFieldWrapper name="totalRate" control={totalForm.control} label="Total Rate ($/hr)" type="number" placeholder="30.00" min={0} description="Total hourly rate including all costs" />
+                <FormFieldWrapper name="totalRate" control={totalForm.control} label="Total Rate ($/hr)" type="number" placeholder="30.00" min={0.01} description="Total hourly rate including all costs" />
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>

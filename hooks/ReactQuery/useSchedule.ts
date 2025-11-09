@@ -35,7 +35,7 @@ export const useCreatePhase = () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PHASES] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create phase");
+      toast.error(error.response?.data.message || "Failed to create phase");
     },
   });
 };
@@ -49,7 +49,7 @@ export const useUpdatePhase = () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PHASES] });
         },
         onError: (error) => {
-            toast.error(error.message || "Failed to update phase");
+            toast.error(error.response?.data.message || "Failed to update phase");
         },
     });
 };
@@ -64,7 +64,7 @@ export const useDeletePhase = () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PHASES] });
         },
         onError: (error) => {
-            toast.error(error.message || "Failed to delete phase");
+            toast.error(error.response?.data.message || "Failed to delete phase");
         },
     });
 }
@@ -78,7 +78,7 @@ export const useCreateActivity = () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create activity");
+      toast.error(error.response?.data.message || "Failed to create activity");
     },
   });
 }
@@ -92,7 +92,7 @@ export const useUpdateActivity = () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update activity");
+      toast.error(error.response?.data.message || "Failed to update activity");
     },
   });
 };
@@ -147,7 +147,7 @@ export const useUpdateWorkingDaysConfig = () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKING_DAYS_CONFIG] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update working days config");
+      toast.error(error.response?.data.message || "Failed to update working days config");
     },
   });
 };
@@ -162,7 +162,7 @@ export const useCreateEquipment = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create equipment");
+      toast.error(error.response?.data.message || "Failed to create equipment");
     },
   });
 };
@@ -188,7 +188,7 @@ export const useUpdateEquipment = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update equipment");
+      toast.error(error.response?.data.message || "Failed to update equipment");
     },
   });
 };
@@ -221,7 +221,7 @@ export const useCreateLabourer = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create labourer");
+      toast.error(error.response?.data.message || "Failed to create labourer");
     },
   });
 }
@@ -235,7 +235,7 @@ export const useUpdateLabourers = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update labourer");
+      toast.error(error.response?.data.message || "Failed to update labourer");
     },
   });
 }

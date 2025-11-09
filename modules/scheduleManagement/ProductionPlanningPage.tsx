@@ -49,7 +49,7 @@ const ProductionPlanningPage = () => {
     limit: 50,
   });
   const { data: activities, isLoading } = useGetActivity({
-    limit: 10,
+    limit: 2,
     projectId: selectedProject?.id || "",
     cursor: cursor || undefined,
     search: debouncedSearch || undefined,
