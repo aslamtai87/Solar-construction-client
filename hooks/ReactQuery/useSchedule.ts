@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig, updateActivity,createEquipment, fetchEquipment, updateEquipment, createLabourer, updateLabourer } from "@/lib/api/schedule";
+import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig, updateActivity,createEquipment, fetchEquipment, updateEquipment, createLabourer, updateLabourer, createCrew, getCrews, updateCrew, deleteCrew, createProductionPlanning } from "@/lib/api/schedule";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { Phase, CreatePhaseDTO, WorkingDaysConfig, Activity } from "@/lib/types/schedule";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api/endPoints";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { PaginationResponse } from "@/lib/types/pagination";
 import api from "@/lib/api/api";
 import { ActivityFormData } from "@/modules/scheduleManagement/components/Activity/ActivityEditableRow";
-import { CreateEquipmentDTO, CreateLabourerDTO, GetEquipment, GetLabourer } from "@/lib/types/production";
+import { CreateCrewDTO, CreateEquipmentDTO, CreateLabourerDTO, GetCrew, GetEquipment, GetLabourer } from "@/lib/types/production";
 
 export const usePhases = ({projectId}: {projectId: string}) => {
   return useQuery<Phase[], ApiError>({
@@ -103,9 +103,10 @@ export const useGetActivity = (params?: {
   limit?: number;
   search?: string;
   projectId?: string;
+  includeProductionPlanning?: boolean;
 }) => {
   return useQuery<PaginationResponse<Activity>>({
-    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.projectId],
+    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.projectId, params?.includeProductionPlanning],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       
@@ -120,6 +121,9 @@ export const useGetActivity = (params?: {
       }
       if (params?.projectId) {
         queryParams.append('projectId', params.projectId);
+      }
+      if (params?.includeProductionPlanning) {
+        queryParams.append('includeProductionPlanning', 'true');
       }
       
       const response = await api.get<PaginationResponse<Activity>>(
@@ -236,6 +240,76 @@ export const useUpdateLabourers = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to update labourer");
+    },
+  });
+}
+
+export const useCreateCrew = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, CreateCrewDTO>({
+    mutationFn: (data) => createCrew(data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Crew created successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to create crew");
+    },
+  });
+}
+
+export const useGetCrews = (params?: {
+  cursor?: string | null;
+  limit?: number;
+  search?: string;
+  projectId?: string;
+  activityId?: string;
+}) => {
+  return useQuery<PaginationResponse<GetCrew>>({
+    queryKey: [QUERY_KEYS.CREWS, params?.cursor, params?.limit, params?.search, params?.projectId, params?.activityId],
+    queryFn: () => getCrews(params),
+    enabled: !!params?.projectId,
+  });
+};
+
+export const useUpdateCrew = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, {id: string, data: any}>({
+    mutationFn: ({id, data}) => updateCrew(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Crew updated successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to update crew");
+    },
+  });
+}
+
+export const useDeleteCrew = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, string>({
+    mutationFn: (id: string) => deleteCrew(id),
+    onSuccess: (data) => {
+      toast.success(data.message || "Crew deleted successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to delete crew");
+    },
+  });
+}
+
+export const useCreateProductionPlanning = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, any>({
+    mutationFn: (data) => createProductionPlanning(data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Production planning created successfully");
+      // Add any relevant query invalidations here
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to create production planning");
     },
   });
 }

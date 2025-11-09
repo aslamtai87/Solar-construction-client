@@ -197,6 +197,7 @@ export interface CreateLabourerDTO {
 export interface CreateCrewDTO {
   projectId: string;
   name: string;
+  description?: string;
   labourers: {
     labourerId: string;
     quantity: number;
@@ -204,5 +205,46 @@ export interface CreateCrewDTO {
 }
 
 export interface GetCrew {
+  id: string;
+  name: string;
+  description: string | null;
+  projectId: string;
+  totalCostPerHour: number;
+  createdAt: string;
+  updatedAt: string;
+  labourers: {
+    id: string;
+    quantity: number;
+    labourer: {
+      id: string;
+      name: string;
+      baseRate: string;
+      fringeRate: string;
+      totalRate: string;
+    };
+  }[];
+  _count: {
+    productionPlannings: number;
+  };
+}
 
+export interface CreateProductionPlanningDTO {
+  projectId: string;
+  activityId: string;
+  name: string;
+  productionMethod: "CONSTANT" | "RAMP_UP" | "RAMP_DOWN" | "S_CURVE";
+  startDate: string;
+  endDate: string;
+  duration: number;
+  targetUnits: number;
+  unitsPerDay: number;
+  action?: string;
+  description?: string;
+  crews: {
+    crewId: string;
+  }[];
+  equipments: {
+    equipmentId: string;
+    quantity: number;
+  }[];
 }

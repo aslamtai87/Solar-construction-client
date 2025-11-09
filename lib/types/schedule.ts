@@ -66,6 +66,7 @@ export interface Activity {
     name:string;
   }
   _count: Count;
+
 }
 
 interface Count {

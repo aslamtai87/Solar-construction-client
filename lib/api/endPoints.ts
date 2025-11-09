@@ -61,7 +61,12 @@ export const API_ENDPOINTS = {
   UPDATE_LABOURER: '/production-planning/projects/labourers/{id}',
   DELETE_LABOURER: '/production-planning/projects/labourers/{id}',
 
-  CREATE_CREW: '/production-planning/crews',
+  CREATE_CREW: '/production-planning/projects/crews',
+  GET_CREWS: '/production-planning/projects/crews',
+  UPDATE_CREW: '/production-planning/projects/crews/{id}',
+  DELETE_CREW: '/production-planning/projects/crews/{id}',
+
+  CREATE_PRODUCTION_PLANNING: '/production-planning',
 
 };
 
@@ -95,4 +100,5 @@ export const QUERY_KEYS = {
   //production-planning
   EQUIPMENT: ['production-planning', 'equipment'],
   LABOURERS: ['production-planning', 'labourers'],
+  CREWS: ['production-planning', 'crews'],
 };

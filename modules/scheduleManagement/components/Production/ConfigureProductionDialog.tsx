@@ -39,7 +39,8 @@ import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { CrewCompositionBuilder } from "./CrewCompositionBuilder";
 import { EquipmentAssignmentSelector } from "./EquipmentAssignmentSelector";
 import { ProductionForecastCard } from "./ProductionForecastCard";
-import { useGetLabourers } from "@/hooks/ReactQuery/useSchedule";
+import { useGetLabourers, useGetCrews, useCreateProductionPlanning } from "@/hooks/ReactQuery/useSchedule";
+import { GetCrew } from "@/lib/types/production";
 
 const configSchema = z.object({
   activityId: z.string(),
@@ -62,6 +63,7 @@ interface ConfigureProductionDialogProps {
   activity: Activity | null;
   availableLabourers: GetLabourer[];
   availableEquipment: GetEquipment[];
+  projectId: string;
 }
 
 const productionMethods: { value: ProductionMethod; label: string; icon: any; description: string }[] = [
@@ -98,12 +100,19 @@ export const ConfigureProductionDialog = ({
   activity,
   availableLabourers,
   availableEquipment,
+  projectId,
 }: ConfigureProductionDialogProps) => {
-  const [crews, setCrews] = useState<CrewComposition[]>([]);
+  const [selectedCrewIds, setSelectedCrewIds] = useState<string[]>([]);
   const [equipmentAssignments, setEquipmentAssignments] = useState<EquipmentAssignment[]>([]);
-  const { data: labourers } = useGetLabourers({
-    limit: 50,
+  
+  const { data: crewsData, refetch: refetchCrews } = useGetCrews({
+    projectId,
+    limit: 100,
   });
+  
+  const createProductionPlanningMutation = useCreateProductionPlanning();
+
+  const crews = crewsData?.data?.result || [];
 
   const {
     control,
@@ -158,56 +167,23 @@ export const ConfigureProductionDialog = ({
   }, [method, activity, duration]);
 
   const handleFormSubmit = async (data: ConfigFormData) => {
+    // We no longer pass crews to parent onSubmit
+    // Instead, we create the production planning directly here
     onSubmit({ 
       activityId: data.activityId,
       method: data.method,
       duration: data.duration,
-      crews, 
+      crews: [], // Empty for now, will be populated from selected crews
       equipment: equipmentAssignments 
     });
     reset();
-    setCrews([]);
     setEquipmentAssignments([]);
   };
 
   const handleClose = () => {
     reset();
-    setCrews([]);
     setEquipmentAssignments([]);
     onClose();
-  };
-
-  // Crew management handlers
-  const handleAddCrew = (crew: Omit<CrewComposition, "id" | "totalCostPerHour">) => {
-    const totalCostPerHour = crew.labourers.reduce(
-      (sum, l) => sum + l.totalRate * l.quantity,
-      0
-    );
-    setCrews([...crews, { 
-      ...crew, 
-      id: `crew-${Date.now()}`,
-      totalCostPerHour 
-    }]);
-  };
-
-  const handleUpdateCrew = (id: string, updates: Partial<CrewComposition>) => {
-    setCrews(crews.map(c => {
-      if (c.id === id) {
-        const updated = { ...c, ...updates };
-        if (updates.labourers) {
-          updated.totalCostPerHour = updates.labourers.reduce(
-            (sum, l) => sum + l.totalRate * l.quantity,
-            0
-          );
-        }
-        return updated;
-      }
-      return c;
-    }));
-  };
-
-  const handleDeleteCrew = (id: string) => {
-    setCrews(crews.filter(c => c.id !== id));
   };
 
   // Equipment management handlers
@@ -381,10 +357,10 @@ export const ConfigureProductionDialog = ({
               <CrewCompositionBuilder
                 availableLabourers={availableLabourers}
                 crews={crews}
-                onAddCrew={handleAddCrew}
-                onUpdateCrew={handleUpdateCrew}
-                onDeleteCrew={handleDeleteCrew}
                 duration={duration ?? activity.duration ?? 0}
+                projectId={projectId}
+                onCrewsChange={refetchCrews}
+                activityId={activity.id}
               />
             </div>
 

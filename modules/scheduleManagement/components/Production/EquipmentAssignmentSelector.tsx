@@ -115,9 +115,9 @@ export const EquipmentAssignmentSelector: React.FC<
     return assignments.reduce((sum, assignment) => {
       // Convert price to daily rate based on pricing period
       let dailyRate = assignment.price;
-      if (assignment.pricingPeriod === EquipmentPricingPeriod.PER_WEEK) {
+      if (assignment.pricingType === EquipmentPricingPeriod.PER_WEEK) {
         dailyRate = assignment.price / 7;
-      } else if (assignment.pricingPeriod === EquipmentPricingPeriod.PER_MONTH) {
+      } else if (assignment.pricingType === EquipmentPricingPeriod.PER_MONTH) {
         dailyRate = assignment.price / 30;
       }
       return sum + dailyRate * assignment.quantity * duration;
@@ -198,15 +198,15 @@ export const EquipmentAssignmentSelector: React.FC<
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       <Badge variant="outline">
-                        ${assignment.price.toFixed(2)}/{assignment.pricingPeriod === EquipmentPricingPeriod.PER_DAY ? "day" : assignment.pricingPeriod === EquipmentPricingPeriod.PER_WEEK ? "week" : "month"}
+                        ${assignment.price.toFixed(2)}/{assignment.pricingType === EquipmentPricingPeriod.PER_DAY ? "day" : assignment.pricingType === EquipmentPricingPeriod.PER_WEEK ? "week" : "month"}
                       </Badge>
                       <span className="text-muted-foreground">
                         $
                         {(() => {
                           let dailyRate = assignment.price;
-                          if (assignment.pricingPeriod === EquipmentPricingPeriod.PER_WEEK) {
+                          if (assignment.pricingType === EquipmentPricingPeriod.PER_WEEK) {
                             dailyRate = assignment.price / 7;
-                          } else if (assignment.pricingPeriod === EquipmentPricingPeriod.PER_MONTH) {
+                          } else if (assignment.pricingType === EquipmentPricingPeriod.PER_MONTH) {
                             dailyRate = assignment.price / 30;
                           }
                           return (dailyRate * assignment.quantity * duration).toFixed(2);
@@ -278,7 +278,7 @@ export const EquipmentAssignmentSelector: React.FC<
               placeholder="Select equipment"
               options={availableEquipment.map((e) => ({
                 value: e.id,
-                label: `${e.name} - $${e.price.toFixed(2)}/${e.pricingPeriod === EquipmentPricingPeriod.PER_DAY ? "day" : e.pricingPeriod === EquipmentPricingPeriod.PER_WEEK ? "week" : "month"}`,
+                label: `${e.name} - $${Number(e.price).toFixed(2)}/${e.pricingType === EquipmentPricingPeriod.PER_DAY ? "day" : e.pricingType === EquipmentPricingPeriod.PER_WEEK ? "week" : "month"}`,
               }))}
             />
 

@@ -4,7 +4,7 @@ import { Phase, CreatePhaseDTO, Activity } from "@/lib/types/schedule";
 import { APISuccessResponse } from "../types/api";
 import { ActivityFormData } from "@/modules/scheduleManagement/components/Activity/ActivityEditableRow";
 import { PaginationResponse } from "../types/pagination";
-import { CreateEquipmentDTO, CreateLabourerDTO, GetEquipment, GetLabourer } from "../types/production";
+import { CreateEquipmentDTO, CreateLabourerDTO, GetCrew, GetEquipment, GetLabourer } from "../types/production";
 
 export const fetchPhaseById = async (id: string): Promise<Phase> => {
   const response = await api.get<Phase>(
@@ -182,3 +182,64 @@ export const createCrew = async (
   );
   return response.data;
 }
+
+export const getCrews = async (params?: {
+  cursor?: string | null;
+  limit?: number;
+  search?: string;
+  projectId?: string;
+  activityId?: string;
+}): Promise<PaginationResponse<GetCrew>> => {
+  const queryParams = new URLSearchParams();
+
+  if (params?.cursor) {
+    queryParams.append("cursor", params.cursor);
+  }
+  if (params?.limit) {
+    queryParams.append("limit", params.limit.toString());
+  }
+  if (params?.search) {
+    queryParams.append("search", params.search);
+  }
+  if (params?.projectId) {
+    queryParams.append("projectId", params.projectId);
+  }
+  if (params?.activityId) {
+    queryParams.append("activityId", params.activityId);
+  }
+  const response = await api.get<PaginationResponse<any>>(
+    API_ENDPOINTS.GET_CREWS,
+    { params: queryParams }
+  );
+  return response.data;
+};
+
+export const updateCrew = async (
+  id: string,
+  data: any
+): Promise<APISuccessResponse> => {
+  const response = await api.patch<APISuccessResponse>(
+    API_ENDPOINTS.UPDATE_CREW.replace("{id}", id),
+    data
+  );
+  return response.data;
+};
+
+export const deleteCrew = async (
+  id: string
+): Promise<APISuccessResponse> => {
+  const response = await api.delete<APISuccessResponse>(
+    API_ENDPOINTS.DELETE_CREW.replace("{id}", id)
+  );
+  return response.data;
+};
+
+export const createProductionPlanning = async (
+  data: any
+): Promise<APISuccessResponse> => {
+  const response = await api.post<APISuccessResponse>(
+    API_ENDPOINTS.CREATE_PRODUCTION_PLANNING,
+    data
+  );
+  return response.data;
+};
