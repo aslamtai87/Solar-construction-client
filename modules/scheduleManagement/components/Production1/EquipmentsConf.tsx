@@ -18,9 +18,21 @@ export interface EquipmentAssignment {
 const EquipmentsConf = ({
   duration,
   setEquipment,
+  onTotalCostChange,
+  existingEquipment,
 }: {
   duration: number;
   setEquipment: (assignments: EquipmentAssignment[]) => void;
+  onTotalCostChange?: (totalCost: number) => void;
+  existingEquipment?: Array<{
+    equipment: {
+      id: string;
+      name: string;
+      price: string;
+      pricingType: string;
+    };
+    quantity: number;
+  }>;
 }) => {
   const { selectedProject } = useProjectStore();
   const { data: equipmentData } = useGetEquipment({
@@ -44,6 +56,28 @@ const EquipmentsConf = ({
       pricingType: EquipmentPricingPeriod;
     }[]
   >([]);
+  const [editingEquipment, setEditingEquipment] = useState<{
+    equipmentId: string;
+    equipmentName: string;
+    quantity: number;
+    price: number;
+    pricingType: EquipmentPricingPeriod;
+  } | null>(null);
+
+  // Initialize with existing equipment when available
+  useEffect(() => {
+    if (existingEquipment && existingEquipment.length > 0) {
+      const mappedEquipment = existingEquipment.map((eq) => ({
+        equipmentId: eq.equipment.id,
+        equipmentName: eq.equipment.name,
+        quantity: eq.quantity,
+        price: Number(eq.equipment.price),
+        pricingType: eq.equipment.pricingType as EquipmentPricingPeriod,
+      }));
+      setAssignments(mappedEquipment);
+    }
+  }, [existingEquipment]);
+  
   useEffect(() => {
     setEquipment(
       assignments.map((assignment) => ({
@@ -63,6 +97,33 @@ const EquipmentsConf = ({
       }
       return sum + dailyRate * assignment.quantity * duration;
     }, 0);
+  };
+
+  useEffect(() => {
+    const totalCost = calculateTotalEquipmentCost();
+    if (onTotalCostChange) {
+      onTotalCostChange(totalCost);
+    }
+  }, [assignments, duration]);
+
+  const handleDeleteAssignment = (equipmentId: string) => {
+    setAssignments((prev) => prev.filter((a) => a.equipmentId !== equipmentId));
+  };
+
+  const handleEditAssignment = (assignment: {
+    equipmentId: string;
+    equipmentName: string;
+    quantity: number;
+    price: number;
+    pricingType: EquipmentPricingPeriod;
+  }) => {
+    setEditingEquipment(assignment);
+    openEquipmentDialog();
+  };
+
+  const handleCloseDialog = () => {
+    setEditingEquipment(null);
+    closeEquipmentDialog();
   };
 
   if (availableEquipment.length === 0) {
@@ -176,7 +237,7 @@ const EquipmentsConf = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      //   onClick={() => equipmentDialog.openEditDialog(assignment)}
+                      onClick={() => handleEditAssignment(assignment)}
                       type="button"
                     >
                       <Edit className="h-4 w-4" />
@@ -184,7 +245,7 @@ const EquipmentsConf = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      //   onClick={() => onDeleteAssignment(assignment.id)}
+                      onClick={() => handleDeleteAssignment(assignment.equipmentId)}
                       type="button"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -203,10 +264,39 @@ const EquipmentsConf = ({
         </CardContent>
       </Card>
 
+      {/* Equipment Cost Summary */}
+      {/* {assignments.length > 0 && (
+        <Card className="bg-secondary/5 border-secondary/20">
+          <CardContent className="pt-6">
+            <CardTitle className="mb-4 text-lg font-semibold">
+              Total Equipment Cost Summary
+            </CardTitle>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Total Equipment Units</p>
+                <p className="font-semibold text-lg">
+                  {assignments.reduce((sum, a) => sum + a.quantity, 0)} units
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">
+                  Total Cost for {duration} days
+                </p>
+                <p className="font-semibold text-lg text-primary">
+                  ${calculateTotalEquipmentCost().toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )} */}
+
       <EquipmentDialog
-        onClose={closeEquipmentDialog}
+        onClose={handleCloseDialog}
         open={equipmentDialog.open}
         setAssignments={setAssignments}
+        editData={editingEquipment || undefined}
+        existingEquipmentIds={assignments.map((a) => a.equipmentId)}
       />
     </>
   );

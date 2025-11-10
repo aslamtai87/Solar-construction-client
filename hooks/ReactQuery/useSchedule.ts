@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig, updateActivity,createEquipment, fetchEquipment, updateEquipment, createLabourer, updateLabourer, createCrew, getCrews, updateCrew, deleteCrew, createProductionPlanning } from "@/lib/api/schedule";
+import { createActivity, createPhase, fetchWorkingDaysConfig, updatePhase, updateWorkingDaysConfig, updateActivity,createEquipment, fetchEquipment, updateEquipment, deleteEquipment, createLabourer, updateLabourer, createCrew, getCrews, updateCrew, deleteCrew, createProductionPlanning, updateProductionPlanning, deleteProductionPlanning } from "@/lib/api/schedule";
 import { APISuccessResponse, ApiError } from "@/lib/types/api";
 import { Phase, CreatePhaseDTO, WorkingDaysConfig, Activity } from "@/lib/types/schedule";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api/endPoints";
@@ -197,6 +197,19 @@ export const useUpdateEquipment = () => {
   });
 };
 
+export const useDeleteEquipment = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, string>({
+    mutationFn: (id: string) => deleteEquipment(id),
+    onSuccess: (data) => {
+      toast.success(data.message || "Equipment deleted successfully");
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to delete equipment");
+    },
+  });
+};
 
 export const useGetLabourers = (params?:{
   cursor?: string | null;
@@ -251,6 +264,7 @@ export const useCreateCrew = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Crew created successfully");
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to create crew");
@@ -278,7 +292,8 @@ export const useUpdateCrew = () => {
     mutationFn: ({id, data}) => updateCrew(id, data),
     onSuccess: (data) => {
       toast.success(data.message || "Crew updated successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to update crew");
@@ -292,7 +307,8 @@ export const useDeleteCrew = () => {
     mutationFn: (id: string) => deleteCrew(id),
     onSuccess: (data) => {
       toast.success(data.message || "Crew deleted successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to delete crew");
@@ -306,10 +322,41 @@ export const useCreateProductionPlanning = () => {
     mutationFn: (data) => createProductionPlanning(data),
     onSuccess: (data) => {
       toast.success(data.message || "Production planning created successfully");
-      // Add any relevant query invalidations here
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to create production planning");
+    },
+  });
+}
+
+export const useUpdateProductionPlanning = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, { id: string; data: any }>({
+    mutationFn: ({ id, data }) => updateProductionPlanning(id, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Production planning updated successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to update production planning");
+    },
+  });
+}
+
+export const useDeleteProductionPlanning = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, string>({
+    mutationFn: (id: string) => deleteProductionPlanning(id),
+    onSuccess: (data) => {
+      toast.success(data.message || "Production planning deleted successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to delete production planning");
     },
   });
 }

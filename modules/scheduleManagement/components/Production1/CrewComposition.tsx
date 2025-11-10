@@ -29,39 +29,105 @@ const CrewComposition = ({
   setCrew,
   onTotalCostChange,
   activityId,
+  assignedCrews,
 }: {
   duration: number;
   crew: Crew[];
   setCrew: (crew: Crew[]) => void;
   onTotalCostChange?: (totalCost: number) => void;
-    activityId: string;
+  activityId: string;
+  assignedCrews?: Array<{
+    crew: {
+      id: string;
+      name: string;
+      description: string | null;
+      activityId: string | null;
+      labourers: Array<{
+        id: string;
+        quantity: number;
+        labourer: {
+          id: string;
+          name: string;
+          totalRate: string;
+        };
+      }>;
+    };
+  }>;
 }) => {
   const {
     dialog: crewDialog,
     openCreateDialog: openCrewDialog,
+    openEditDialog: openEditCrewDialog,
     closeDialog,
   } = useDialog();
   const { selectedProject } = useProjectStore();
 
-  const { data: crews } = useGetCrews({
+  // Fetch all crews for this activity (for adding new ones)
+  const { data: availableCrews } = useGetCrews({
     limit: 100,
     projectId: selectedProject?.id || "",
-    activityId: activityId
+    activityId: activityId,
   });
+
   const deleteCrewMutation = useDeleteCrew();
   const updateCrewMutation = useUpdateCrew();
 
+  // Get assigned crew IDs from production planning
+  const assignedCrewIds = assignedCrews?.map((ac) => ac.crew.id) || [];
+
+  // Get IDs of crews in the form state (selected by user)
+  const selectedCrewIds = crew.map(c => c.crewId);
+
+  // Fetch all available crews to show newly created ones
+  const allAvailableCrews = availableCrews?.data.result || [];
+
+  // Display crews that are either:
+  // 1. In the assignedCrews (from production planning) OR
+  // 2. In the crew form state (newly created/selected during this session)
+  const displayedCrews = allAvailableCrews.filter(c => 
+    selectedCrewIds.includes(c.id)
+  );
+
+  // Initialize crew state from production planning
   useEffect(() => {
-    if (crews) {
-      const crewData: Crew[] = crews.data.result.map((crewItem) => ({
-        crewId: crewItem.id,
+    if (assignedCrews && assignedCrews.length > 0) {
+      const crewData: Crew[] = assignedCrews.map((ac) => ({
+        crewId: ac.crew.id,
       }));
       setCrew(crewData);
+    } else {
+      setCrew([]);
     }
-  }, [crews, setCrew, activityId]);
+  }, [assignedCrews, setCrew]);
 
-  // Calculate total cost for all crews
-  const totalCrewCost = crews?.data.result.reduce((total, crewItem) => {
+  // When new crews are fetched and we don't have production planning,
+  // automatically add all crews to the state
+  useEffect(() => {
+    if (!assignedCrews || assignedCrews.length === 0) {
+      if (allAvailableCrews.length > 0 && crew.length === 0) {
+        const allCrewData: Crew[] = allAvailableCrews.map((c) => ({
+          crewId: c.id,
+        }));
+        setCrew(allCrewData);
+      } else if (allAvailableCrews.length > selectedCrewIds.length) {
+        // New crew was added, update the crew state
+        const newCrewIds = allAvailableCrews
+          .map(c => c.id)
+          .filter(id => !selectedCrewIds.includes(id));
+        
+        if (newCrewIds.length > 0) {
+          const updatedCrew = [
+            ...crew,
+            ...newCrewIds.map(id => ({ crewId: id }))
+          ];
+          setCrew(updatedCrew);
+        }
+      }
+    }
+  }, [allAvailableCrews, assignedCrews]);
+
+  // Calculate total cost for all assigned crews
+  const totalCrewCost = displayedCrews.reduce((total, crewItem) => {
     const crewCostPerHour = crewItem.labourers.reduce(
       (crewTotal, labourer) => {
         return (
@@ -89,20 +155,21 @@ const CrewComposition = ({
         <div>
           <h3 className="text-lg font-semibold">Crew Composition</h3>
           <p className="text-sm text-muted-foreground">
-            Build crews by assigning labourers and their quantities
+            Create and configure crews for this activity
           </p>
         </div>
         <Button onClick={() => openCrewDialog()} type="button">
           <Plus className="h-4 w-4 mr-2" />
-          Add Crew
+          Create Crew
         </Button>
       </div>
-      {crews?.data.result.length === 0 ? (
+      {displayedCrews.length === 0 ? (
         <Card>
           <CardContent className="py-8">
             <div className="flex flex-col items-center gap-2">
               <Users className="h-12 w-12 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No crews configured yet</p>
+              <p className="text-muted-foreground">No crews configured for this activity</p>
+              <p className="text-xs text-muted-foreground">Create a crew to assign labourers to this activity</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -110,13 +177,13 @@ const CrewComposition = ({
                 type="button"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Crew
+                Create First Crew
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : (
-        crews?.data.result.map((crewItem) => {
+        displayedCrews.map((crewItem) => {
           const displayTotalCost = crewItem.labourers.reduce(
             (total, labourer) => {
               return (
@@ -134,10 +201,33 @@ const CrewComposition = ({
                     {crewItem.name}
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" type="button">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      onClick={() => {
+                        openEditCrewDialog(crewItem);
+                      }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" type="button">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Are you sure you want to delete crew "${crewItem.name}"? This will remove it from the configuration and delete it permanently.`
+                          )
+                        ) {
+                          // Remove from configuration state
+                          setCrew(crew.filter(c => c.crewId !== crewItem.id));
+                          // Delete from database
+                          deleteCrewMutation.mutate(crewItem.id);
+                        }
+                      }}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -185,40 +275,31 @@ const CrewComposition = ({
       )}
 
       {/* Total Cost Summary */}
-      {crews && crews.data.result.length > 0 && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent>
-            <CardTitle className="mb-2 text-lg font-semibold">Total Crew Cost Summary</CardTitle>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Total Cost per Hour</p>
-                <p className="font-semibold text-lg">
-                  ${totalCrewCost.toFixed(2)}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Cost per Day (8hrs)</p>
-                <p className="font-semibold text-lg">
-                  ${(totalCrewCost * 8).toFixed(2)}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">
-                  Total Cost for {duration} days
-                </p>
-                <p className="font-semibold text-lg text-primary">
-                  ${totalCostForDuration.toFixed(2)}
-                </p>
-              </div>
+      {displayedCrews.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-muted">
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-xs text-muted-foreground">Total Cost/Hour</p>
+              <p className="font-semibold">${totalCrewCost.toFixed(2)}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Cost/Day (8hrs)</p>
+              <p className="font-semibold">${(totalCrewCost * 8).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total for {duration} days</p>
+              <p className="font-semibold text-primary">${totalCostForDuration.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       <CrewDialog
         open={crewDialog.open}
         onClose={closeDialog}
         duration={duration}
+        activityId={activityId}
+        editData={crewDialog.data}
       />
     </div>
   );

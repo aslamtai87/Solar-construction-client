@@ -20,10 +20,17 @@ import { Crew } from "./CrewComposition";
 import { Separator } from "@/components/ui/separator";
 import EquipmentsConf from "./EquipmentsConf";
 import { Button } from "@/components/ui/button";
-import {EquipmentAssignmentForm} from "./EquipmentDialog";
-import { useCreateProductionPlanning } from "@/hooks/ReactQuery/useSchedule";
+import { EquipmentAssignmentForm } from "./EquipmentDialog";
+import { useCreateProductionPlanning, useUpdateProductionPlanning, useDeleteCrew, useGetCrews } from "@/hooks/ReactQuery/useSchedule";
+import { Badge } from "@/components/ui/badge";
+import { useProjectStore } from "@/store/projectStore";
 
-
+enum ProductionMethod {
+  CONSTANT = "CONSTANT",
+  RAMP_UP = "RAMP_UP",
+  RAMP_DOWN = "RAMP_DOWN",
+  S_CURVE = "S_CURVE",
+}
 
 const ConfigurationDialog = ({
   open,
@@ -34,13 +41,32 @@ const ConfigurationDialog = ({
   data?: ProductionActivity;
   onClose: () => void;
 }) => {
-  enum ProductionMethod {
-    CONSTANT = "CONSTANT",
-    RAMP_UP = "RAMP_UP",
-    RAMP_DOWN = "RAMP_DOWN",
-    S_CURVE = "S_CURVE",
-  }
+  const { selectedProject } = useProjectStore();
+  const isReconfiguring = !!data?.productionPlanning;
   const originalDuration = data?.duration;
+
+  // Track crews that existed before opening this dialog
+  const [initialCrewIds, setInitialCrewIds] = React.useState<string[]>([]);
+  
+  // Fetch all crews for this activity to track new ones
+  const { data: allCrews } = useGetCrews({
+    limit: 100,
+    projectId: selectedProject?.id || "",
+    activityId: data?.id || "",
+  });
+
+  const deleteCrewMutation = useDeleteCrew();
+
+  // Store initial crew IDs when dialog opens
+  React.useEffect(() => {
+    if (open && data?.productionPlanning?.crews) {
+      const existingIds = data.productionPlanning.crews.map(c => c.crew.id);
+      setInitialCrewIds(existingIds);
+    } else if (open) {
+      setInitialCrewIds([]);
+    }
+  }, [open, data?.productionPlanning?.crews]);
+  
   const schema = z.object({
     duration: z
       .number()
@@ -48,60 +74,102 @@ const ConfigurationDialog = ({
       .refine(
         (val) => {
           if (originalDuration == null) return true;
-          return val > originalDuration;
+          return val >= originalDuration;
         },
         {
-          message: "Estimated Duration must be greater than original duration",
+          message: "Estimated Duration must be greater than or equal to original duration",
         }
       ),
-    method: z.enum(ProductionMethod),
+    method: z.nativeEnum(ProductionMethod),
     crew: z.array(
       z.object({
         crewId: z.string(),
       })
     ),
-    equipment: z.array(z.object({
-      equipmentId: z.string(),
-      quantity: z.number().min(1, "Quantity must be at least 1"),
-    }))
+    equipment: z.array(
+      z.object({
+        equipmentId: z.string(),
+        quantity: z.number().min(1, "Quantity must be at least 1"),
+      })
+    ),
   });
 
   const createProductionPlanning = useCreateProductionPlanning();
+  const updateProductionPlanning = useUpdateProductionPlanning();
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       duration: data?.productionPlanning?.duration || data?.duration || 0,
+      method: (data?.productionPlanning?.productionMethod as ProductionMethod) || ProductionMethod.CONSTANT,
     },
   });
 
+  // Reset form when dialog opens with new data
+  React.useEffect(() => {
+    if (open && data) {
+      form.reset({
+        duration: data?.productionPlanning?.duration || data?.duration || 0,
+        method: (data?.productionPlanning?.productionMethod as ProductionMethod) || ProductionMethod.CONSTANT,
+      });
+    }
+  }, [open, data, form]);
 
   const [crew, setCrew] = React.useState<Crew[]>([]);
   const [equipment, setEquipment] = React.useState<EquipmentAssignmentForm[]>([]);
   const [totalCrewCost, setTotalCrewCost] = React.useState<number>(0);
+  const [totalEquipmentCost, setTotalEquipmentCost] = React.useState<number>(0);
+
+  // Initialize equipment from existing production planning when reconfiguring
+  React.useEffect(() => {
+    if (data?.productionPlanning?.equipments && open) {
+      const existingEquipment = data.productionPlanning.equipments.map((eq) => ({
+        equipmentId: eq.equipment.id,
+        quantity: eq.quantity,
+      }));
+      setEquipment(existingEquipment);
+    } else if (!data?.productionPlanning && open) {
+      setEquipment([]);
+    }
+  }, [data?.productionPlanning, open]);
 
   React.useEffect(() => {
     form.setValue("crew", crew);
-  }, [crew]);
+  }, [crew, form]);
 
   React.useEffect(() => {
     form.setValue("equipment", equipment);
-  }, [equipment]);
+  }, [equipment, form]);
 
   const handleTotalCostChange = (cost: number) => {
     setTotalCrewCost(cost);
   };
 
+  const handleEquipmentCostChange = (cost: number) => {
+    setTotalEquipmentCost(cost);
+  };
+
+  const totalActivityCost = totalCrewCost + totalEquipmentCost;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Configure Production - {data?.name}
-          </DialogTitle>
-          <DialogDescription>
-            Set up production method, duration, assign crews, and add equipment
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-semibold">
+                {isReconfiguring ? "Reconfigure" : "Configure"} Production - {data?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Set up production method, duration, assign crews, and add equipment
+              </DialogDescription>
+            </div>
+            {isReconfiguring && (
+              <Badge variant="secondary" className="ml-2">
+                Reconfiguring
+              </Badge>
+            )}
+          </div>
         </DialogHeader>
 
         <Alert>
@@ -128,27 +196,43 @@ const ConfigurationDialog = ({
               <div>
                 <p className="text-muted-foreground">Total Activity Cost</p>
                 <p className="font-semibold text-primary">
-                  ${totalCrewCost.toFixed(2)}
+                  ${totalActivityCost.toFixed(2)}
                 </p>
               </div>
             </div>
           </AlertDescription>
         </Alert>
 
-        <form className="space-y-4" onSubmit={form.handleSubmit((values) => {
-          createProductionPlanning.mutate({
-            activityId: data?.id || "",
-            duration: values.duration,
-            method: values.method,
-            crew: crew,
-            equipment: equipment,
-            
-          });
-          onClose();
-        })}>
+        <form
+          className="space-y-4"
+          onSubmit={form.handleSubmit((values) => {
+            const planningData = {
+              projectId: selectedProject?.id || "",
+              activityId: data?.id || "",
+              duration: values.duration,
+              productionMethod: values.method,
+              crews: crew,
+              equipments: equipment,
+              unitsPerDay: Math.ceil(
+                (data?.targetUnit || 0) / values.duration
+              ),
+            };
+
+            if (isReconfiguring && data?.productionPlanning?.id) {
+              updateProductionPlanning.mutate({
+                id: data.productionPlanning.id,
+                data: planningData,
+              });
+            } else {
+              createProductionPlanning.mutate(planningData);
+            }
+            onClose();
+          })}
+        >
           <FormFieldWrapper
             name="duration"
             label="Duration (days)"
+            type="number"
             placeholder="e.g., Standard, Accelerated, Custom"
             description="Change this if you want to adjust the estimated duration for planning purposes."
             control={form.control}
@@ -178,15 +262,38 @@ const ConfigurationDialog = ({
             setCrew={setCrew}
             onTotalCostChange={handleTotalCostChange}
             activityId={data?.id || ""}
+            assignedCrews={data?.productionPlanning?.crews}
           />
 
           <EquipmentsConf
             duration={form.watch("duration") || data?.duration || 0}
             setEquipment={setEquipment}
+            onTotalCostChange={handleEquipmentCostChange}
+            existingEquipment={data?.productionPlanning?.equipments}
           />
           <DialogFooter>
-            <Button variant={"outline"}>Cancel</Button>
-            <Button type="submit">Save Configuration</Button>
+            <Button 
+              variant={"outline"} 
+              type="button" 
+              onClick={() => {
+                // When canceling, delete any crews that were created during this session
+                // but weren't part of the original production planning
+                const currentCrewIds = allCrews?.data.result.map(c => c.id) || [];
+                const newCrewIds = currentCrewIds.filter(id => !initialCrewIds.includes(id));
+                
+                // Delete orphan crews (created but not saved in production planning)
+                newCrewIds.forEach(crewId => {
+                  deleteCrewMutation.mutate(crewId);
+                });
+                
+                onClose();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">
+              {isReconfiguring ? "Update Configuration" : "Save Configuration"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

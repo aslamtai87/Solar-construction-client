@@ -196,6 +196,7 @@ export interface CreateLabourerDTO {
 
 export interface CreateCrewDTO {
   projectId: string;
+  activityId?: string;
   name: string;
   description?: string;
   labourers: {

@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus } from "lucide-react";
 import { useProjectStore } from "@/store/projectStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import {
   Table,
@@ -28,16 +28,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCreateCrew } from "@/hooks/ReactQuery/useSchedule";
+import { useCreateCrew, useUpdateCrew } from "@/hooks/ReactQuery/useSchedule";
 
 export const CrewDialog = ({
   open,
   onClose,
   duration,
+  activityId,
+  editData,
 }: {
   open: boolean;
   onClose: () => void;
   duration: number;
+  activityId: string;
+  editData?: {
+    id: string;
+    name: string;
+    description: string | null;
+    labourers: Array<{
+      id: string;
+      quantity: number;
+      labourer: {
+        id: string;
+        name: string;
+        totalRate: string;
+      };
+    }>;
+  };
 }) => {
   const { selectedProject } = useProjectStore();
   const {
@@ -55,7 +72,7 @@ export const CrewDialog = ({
 
   const labourerSelectionSchema = z.object({
     labourerId: z.string().min(1, "Please select a labourer"),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
+    quantity: z.number("Enter a valid input").min(1, "Quantity must be at least 1"),
   });
 
   type CrewFormData = z.infer<typeof crewSchema>;
@@ -66,6 +83,7 @@ export const CrewDialog = ({
     defaultValues: {
       name: "",
     },
+    mode: "onSubmit",
   });
 
   const labourerForm = useForm<LabourerSelectionFormData>({
@@ -84,6 +102,32 @@ export const CrewDialog = ({
     LabourerSelection[]
   >([]);
   const { mutate: createCrew } = useCreateCrew();
+  const { mutate: updateCrew } = useUpdateCrew();
+
+  // Initialize with edit data if provided
+  useEffect(() => {
+    if (editData && open) {
+      crewForm.reset({
+        name: editData.name,
+      });
+      const labourers = editData.labourers.map((l) => ({
+        labourerId: l.labourer.id,
+        quantity: l.quantity,
+      }));
+      setSelectedLabourers(labourers);
+    } else if (!editData && open) {
+      crewForm.reset({ name: "" });
+      setSelectedLabourers([]);
+    }
+  }, [editData, open, crewForm]);
+
+  // Filter out already selected labourers from dropdown
+  const availableLabourerOptions = (availableLabourers?.data.result ?? [])
+    .filter((labourer) => !selectedLabourers.some((sl) => sl.labourerId === labourer.id))
+    .map((labourer) => ({
+      value: labourer.id,
+      label: `${labourer.name} - $${Number(labourer.totalRate).toFixed(2)}/hr`,
+    }));
 
   const handleAddLabourerSubmit = (data: LabourerSelectionFormData) => {
     // Check if labourer already added
@@ -142,10 +186,11 @@ export const CrewDialog = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Crew</DialogTitle>
+          <DialogTitle>{editData ? "Edit Crew" : "Add New Crew"}</DialogTitle>
           <DialogDescription>
-            Create a crew by giving it a name and adding labourers with their
-            quantities
+            {editData
+              ? "Update crew name and modify labourer assignments"
+              : "Create a crew by giving it a name and adding labourers with their quantities"}
           </DialogDescription>
         </DialogHeader>
         {availableLabourers?.data.result.length === 0 ? (
@@ -156,17 +201,36 @@ export const CrewDialog = ({
           </Alert>
         ) : (
           <form
-            onSubmit={crewForm.handleSubmit((data) => {
-              createCrew({
-                ...data,
-                projectId: selectedProject?.id || "",
-                labourers: selectedLabourers,
-              });
-              onClose();
-              crewForm.reset();
-              labourerForm.reset();
-              setSelectedLabourers([]);
-            })}
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              crewForm.handleSubmit((data) => {
+                if (editData) {
+                  // Update existing crew
+                  updateCrew({
+                    id: editData.id,
+                    data: {
+                      ...data,
+                      projectId: selectedProject?.id || "",
+                      activityId: activityId,
+                      labourers: selectedLabourers,
+                    },
+                  });
+                } else {
+                  // Create new crew
+                  createCrew({
+                    ...data,
+                    projectId: selectedProject?.id || "",
+                    activityId: activityId,
+                    labourers: selectedLabourers,
+                  });
+                }
+                onClose();
+                crewForm.reset();
+                labourerForm.reset();
+                setSelectedLabourers([]);
+              })(e);
+            }}
             className="space-y-6"
           >
             {/* Crew Name */}
@@ -205,14 +269,7 @@ export const CrewDialog = ({
                       control={labourerForm.control}
                       label="Labourer Type"
                       placeholder="Select labourer..."
-                      options={(availableLabourers?.data.result ?? []).map(
-                        (labourer) => ({
-                          value: labourer.id,
-                          label: `${labourer.name} - $${Number(
-                            labourer.totalRate
-                          ).toFixed(2)}/hr`,
-                        })
-                      )}
+                      options={availableLabourerOptions}
                     />
 
                     <FormFieldWrapper
@@ -365,7 +422,7 @@ export const CrewDialog = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={selectedLabourers.length === 0}>
-                Add Crew
+                {editData ? "Update Crew" : "Add Crew"}
               </Button>
             </DialogFooter>
           </form>

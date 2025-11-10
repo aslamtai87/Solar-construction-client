@@ -243,3 +243,23 @@ export const createProductionPlanning = async (
   );
   return response.data;
 };
+
+export const updateProductionPlanning = async (
+  id: string,
+  data: any
+): Promise<APISuccessResponse> => {
+  const response = await api.patch<APISuccessResponse>(
+    API_ENDPOINTS.UPDATE_PRODUCTION_PLANNING.replace("{id}", id),
+    data
+  );
+  return response.data;
+};
+
+export const deleteProductionPlanning = async (
+  id: string
+): Promise<APISuccessResponse> => {
+  const response = await api.delete<APISuccessResponse>(
+    API_ENDPOINTS.DELETE_PRODUCTION_PLANNING.replace("{id}", id)
+  );
+  return response.data;
+};

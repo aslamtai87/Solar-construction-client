@@ -4,10 +4,13 @@ import { useProjectStore } from "@/store/projectStore";
 import { useCursorPagination } from "@/hooks/useCursorPagination";
 import { useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Settings } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDialog } from "@/hooks/useDialog";
 import ConfigurationDialog from "./ConfigurationDialog";
+import { useDeleteProductionPlanning } from "@/hooks/ReactQuery/useSchedule";
+import { Badge } from "@/components/ui/badge";
+import DeleteDialog from "@/components/global/DeleteDialog";
 
 export interface ProductionActivity {
   id: string;
@@ -120,6 +123,13 @@ const ActivityList = () => {
     search: debouncedSearch || undefined,
   });
   const { dialog: ConfigurationDialogComponent, closeDialog: CloseConfigurationDialog, openEditDialog: openConfigurationDialog } = useDialog();
+  const {
+    dialog: deleteDialog,
+    closeDialog: closeDeleteDialog,
+    openEditDialog: openDeleteDialog,
+  } = useDialog();
+  const deleteProductionPlanning = useDeleteProductionPlanning();
+  
   const columns = [
     {
       key: "name",
@@ -154,7 +164,13 @@ const ActivityList = () => {
       header: "Estimated Duration",
       render: (item: ProductionActivity) => (
         <div className="px-6 py-4">
-          {item.productionPlanning?.duration || "-"}
+          {item.productionPlanning?.duration ? (
+            <span className="font-medium">
+              {item.productionPlanning.duration} days
+            </span>
+          ) : (
+            "-"
+          )}
         </div>
       ),
     },
@@ -163,7 +179,62 @@ const ActivityList = () => {
       header: "Production Method",
       render: (item: ProductionActivity) => (
         <div className="px-6 py-4">
-          {item.productionPlanning?.productionMethod || "-"}
+          {item.productionPlanning?.productionMethod ? (
+            <Badge variant="outline">
+              {item.productionPlanning.productionMethod
+                .split("_")
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                )
+                .join(" ")}
+            </Badge>
+          ) : (
+            "-"
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "Crews",
+      header: "Crews",
+      render: (item: ProductionActivity) => (
+        <div className="px-6 py-4">
+          {item.productionPlanning?.crews?.length ? (
+            <Badge variant="secondary">
+              {item.productionPlanning.crews.length} crew(s)
+            </Badge>
+          ) : (
+            "-"
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "Equipment",
+      header: "Equipment",
+      render: (item: ProductionActivity) => (
+        <div className="px-6 py-4">
+          {item.productionPlanning?.equipments?.length ? (
+            <Badge variant="secondary">
+              {item.productionPlanning.equipments.length} item(s)
+            </Badge>
+          ) : (
+            "-"
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "Status",
+      header: "Status",
+      render: (item: ProductionActivity) => (
+        <div className="px-6 py-4">
+          {item.productionPlanning ? (
+            <Badge variant="default">Configured</Badge>
+          ) : (
+            <Badge variant="secondary">Not Configured</Badge>
+          )}
         </div>
       ),
     },
@@ -172,15 +243,27 @@ const ActivityList = () => {
       header: "Actions",
       render: (item: ProductionActivity) => {
         return (
-          <div className="px-6 py-4 text-center min-w-[150px]">
-            <Button
-              size="sm"
-              variant="default"
-              onClick={() => openConfigurationDialog(item)}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configure
-            </Button>
+          <div className="px-6 py-4 text-center min-w-[200px]">
+            <div className="flex gap-2 justify-center">
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => openConfigurationDialog(item)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                {item.productionPlanning ? "Reconfigure" : "Configure"}
+              </Button>
+              {item.productionPlanning && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => openDeleteDialog(item)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
           </div>
         );
       },
@@ -212,7 +295,23 @@ const ActivityList = () => {
         hasNextPage={hasPrevPage(activities?.data.pagination)}
         hasPreviousPage={hasPreviousPage}
       />
-        <ConfigurationDialog open={ConfigurationDialogComponent.open} onClose={CloseConfigurationDialog} data={ConfigurationDialogComponent.data} />
+      <ConfigurationDialog
+        open={ConfigurationDialogComponent.open}
+        onClose={CloseConfigurationDialog}
+        data={ConfigurationDialogComponent.data}
+      />
+      <DeleteDialog
+        open={deleteDialog.open}
+        onClose={closeDeleteDialog}
+        onConfirm={() => {
+          if (deleteDialog.data?.productionPlanning?.id) {
+            deleteProductionPlanning.mutate(deleteDialog.data.productionPlanning.id);
+          }
+          closeDeleteDialog();
+        }}
+        title="Delete Production Planning"
+        description={`Are you sure you want to delete the production planning for "${deleteDialog.data?.name}"? This will remove all crew and equipment assignments.`}
+      />
     </div>
   );
 };
