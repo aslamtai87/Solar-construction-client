@@ -137,30 +137,28 @@ export const EquipmentManagement = () => {
       key: "price",
       header: "Price",
       render: (item: GetEquipment) => (
-        <div className="px-6 py-4 text-right">
+        <div className="px-6 py-4 ">
           <Badge variant="secondary">${item.price}</Badge>
         </div>
       ),
-      className: "text-right",
     },
     {
       key: "pricingType",
       header: "Pricing Period",
       render: (item: GetEquipment) => (
-        <div className="px-6 py-4 text-center">
+        <div className="px-6 py-4">
           <Badge variant="outline">
             {pricingPeriodLabels[item.pricingType as EquipmentPricingPeriod]}
           </Badge>
         </div>
       ),
-      className: "text-center",
     },
     {
       key: "actions",
       header: "Actions",
       render: (item: GetEquipment) => (
-        <div className="px-6 py-4 text-center">
-          <div className="flex items-center justify-center gap-2">
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"

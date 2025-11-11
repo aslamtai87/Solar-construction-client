@@ -86,6 +86,8 @@ export const getWeatherData = async (
     const condition = getWeatherCondition(weatherCode);
     const icon = getWeatherIcon(weatherCode);
 
+    console.log("Weather Data:", data);
+
     return {
       condition,
       temperature: Math.round(data.current.temperature_2m),
@@ -104,6 +106,7 @@ export const getDailyConditions = async (): Promise<DailyConditions> => {
   try {
     const location = await getCurrentLocation();
     const weather = await getWeatherData(location.latitude, location.longitude);
+    console.log("Daily Conditions:", { weather, location });
 
     return {
       weather,

@@ -1,7 +1,7 @@
 import React from "react";
 import { TabsContent, TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-import { EquipmentManagement } from "@/modules/scheduleManagement/components/Production/EquipmentManagementTab";
-import { LabourerManagement } from "@/modules/scheduleManagement/components/Production/LabourerManagement";
+import { EquipmentManagement } from "@/modules/scheduleManagement/components/Production1/EquipmentManagementTab";
+import { LabourerManagement } from "@/modules/scheduleManagement/components/Production1/LabourerManagement";
 import ActivityList  from "@/modules/scheduleManagement/components/Production1/ActivityList";
 
 const ProductionPlanningPage = () => {

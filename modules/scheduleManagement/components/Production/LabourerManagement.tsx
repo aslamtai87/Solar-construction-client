@@ -176,34 +176,31 @@ export const LabourerManagement = () => {
       key: "baseRate",
       header: "Base Rate ($/hr)",
       render: (item: GetLabourer) => (
-        <div className="px-6 py-4 text-right">${Number(item.baseRate).toFixed(2)}</div>
+        <div className="py-4 px-6">${Number(item.baseRate).toFixed(2)}</div>
       ),
-      className: "text-right",
     },
     {
       key: "fringeRate",
       header: "Fringe ($/hr)",
       render: (item: GetLabourer) => (
-        <div className="px-6 py-4 text-right">${Number(item.fringeRate).toFixed(2)}</div>
+        <div className="py-4 px-6">${Number(item.fringeRate).toFixed(2)}</div>
       ),
-      className: "text-right",
     },
     {
       key: "totalRate",
       header: "Total ($/hr)",
       render: (item: GetLabourer) => (
-        <div className="px-6 py-4 text-right">
+        <div className="py-4 px-6">
           <Badge variant="secondary">${Number(item.totalRate).toFixed(2)}</Badge>
         </div>
       ),
-      className: "text-right",
     },
     {
       key: "actions",
       header: "Actions",
       render: (item: GetLabourer) => (
-        <div className="px-6 py-4 text-center">
-          <div className="flex items-center justify-center gap-2">
+        <div className="py-4 px-4">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(item)}>
               <Edit className="h-4 w-4" />
             </Button>
