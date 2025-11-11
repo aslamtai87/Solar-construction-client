@@ -211,7 +211,6 @@ export const CrewDialog = ({
                     id: editData.id,
                     data: {
                       ...data,
-                      projectId: selectedProject?.id || "",
                       activityId: activityId,
                       labourers: selectedLabourers,
                     },

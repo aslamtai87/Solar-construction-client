@@ -75,56 +75,30 @@ const CrewComposition = ({
   // Get assigned crew IDs from production planning
   const assignedCrewIds = assignedCrews?.map((ac) => ac.crew.id) || [];
 
-  // Get IDs of crews in the form state (selected by user)
-  const selectedCrewIds = crew.map(c => c.crewId);
-
   // Fetch all available crews to show newly created ones
   const allAvailableCrews = availableCrews?.data.result || [];
 
-  // Display crews that are either:
-  // 1. In the assignedCrews (from production planning) OR
-  // 2. In the crew form state (newly created/selected during this session)
-  const displayedCrews = allAvailableCrews.filter(c => 
-    selectedCrewIds.includes(c.id)
-  );
+  // Display logic:
+  // - If reconfiguring (has assignedCrews): Show only crews from production planning
+  // - If fresh configuration (no assignedCrews): Show ALL crews for this activity
+  const displayedCrews = assignedCrews && assignedCrews.length > 0
+    ? assignedCrews.map(ac => ac.crew) // Reconfiguring: show only assigned
+    : allAvailableCrews; // Fresh: show all crews for this activity
 
-  // Initialize crew state from production planning
+  // Get IDs of displayed crews for the form state
+  const displayedCrewIds = displayedCrews.map(c => c.id);
+
+  // Initialize crew state based on displayed crews
   useEffect(() => {
-    if (assignedCrews && assignedCrews.length > 0) {
-      const crewData: Crew[] = assignedCrews.map((ac) => ({
-        crewId: ac.crew.id,
+    if (displayedCrews.length > 0) {
+      const crewData: Crew[] = displayedCrews.map((c) => ({
+        crewId: c.id,
       }));
       setCrew(crewData);
     } else {
       setCrew([]);
     }
-  }, [assignedCrews, setCrew]);
-
-  // When new crews are fetched and we don't have production planning,
-  // automatically add all crews to the state
-  useEffect(() => {
-    if (!assignedCrews || assignedCrews.length === 0) {
-      if (allAvailableCrews.length > 0 && crew.length === 0) {
-        const allCrewData: Crew[] = allAvailableCrews.map((c) => ({
-          crewId: c.id,
-        }));
-        setCrew(allCrewData);
-      } else if (allAvailableCrews.length > selectedCrewIds.length) {
-        // New crew was added, update the crew state
-        const newCrewIds = allAvailableCrews
-          .map(c => c.id)
-          .filter(id => !selectedCrewIds.includes(id));
-        
-        if (newCrewIds.length > 0) {
-          const updatedCrew = [
-            ...crew,
-            ...newCrewIds.map(id => ({ crewId: id }))
-          ];
-          setCrew(updatedCrew);
-        }
-      }
-    }
-  }, [allAvailableCrews, assignedCrews]);
+  }, [displayedCrews.length, assignedCrews]); // Watch length and assignedCrews changes
 
   // Calculate total cost for all assigned crews
   const totalCrewCost = displayedCrews.reduce((total, crewItem) => {
@@ -218,7 +192,7 @@ const CrewComposition = ({
                       onClick={() => {
                         if (
                           window.confirm(
-                            `Are you sure you want to delete crew "${crewItem.name}"? This will remove it from the configuration and delete it permanently.`
+                            `Are you sure you want to delete crew "${crewItem.name}"? This will permanently delete it.`
                           )
                         ) {
                           // Remove from configuration state

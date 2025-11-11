@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import EquipmentsConf from "./EquipmentsConf";
 import { Button } from "@/components/ui/button";
 import { EquipmentAssignmentForm } from "./EquipmentDialog";
-import { useCreateProductionPlanning, useUpdateProductionPlanning, useDeleteCrew, useGetCrews } from "@/hooks/ReactQuery/useSchedule";
+import { useCreateProductionPlanning, useUpdateProductionPlanning } from "@/hooks/ReactQuery/useSchedule";
 import { Badge } from "@/components/ui/badge";
 import { useProjectStore } from "@/store/projectStore";
 
@@ -44,28 +44,6 @@ const ConfigurationDialog = ({
   const { selectedProject } = useProjectStore();
   const isReconfiguring = !!data?.productionPlanning;
   const originalDuration = data?.duration;
-
-  // Track crews that existed before opening this dialog
-  const [initialCrewIds, setInitialCrewIds] = React.useState<string[]>([]);
-  
-  // Fetch all crews for this activity to track new ones
-  const { data: allCrews } = useGetCrews({
-    limit: 100,
-    projectId: selectedProject?.id || "",
-    activityId: data?.id || "",
-  });
-
-  const deleteCrewMutation = useDeleteCrew();
-
-  // Store initial crew IDs when dialog opens
-  React.useEffect(() => {
-    if (open && data?.productionPlanning?.crews) {
-      const existingIds = data.productionPlanning.crews.map(c => c.crew.id);
-      setInitialCrewIds(existingIds);
-    } else if (open) {
-      setInitialCrewIds([]);
-    }
-  }, [open, data?.productionPlanning?.crews]);
   
   const schema = z.object({
     duration: z
@@ -119,6 +97,15 @@ const ConfigurationDialog = ({
   const [equipment, setEquipment] = React.useState<EquipmentAssignmentForm[]>([]);
   const [totalCrewCost, setTotalCrewCost] = React.useState<number>(0);
   const [totalEquipmentCost, setTotalEquipmentCost] = React.useState<number>(0);
+
+  // Reset crew and equipment state when dialog opens/closes or activity changes
+  React.useEffect(() => {
+    if (!open) {
+      // Reset when dialog closes
+      setCrew([]);
+      setEquipment([]);
+    }
+  }, [open]);
 
   // Initialize equipment from existing production planning when reconfiguring
   React.useEffect(() => {
@@ -275,19 +262,7 @@ const ConfigurationDialog = ({
             <Button 
               variant={"outline"} 
               type="button" 
-              onClick={() => {
-                // When canceling, delete any crews that were created during this session
-                // but weren't part of the original production planning
-                const currentCrewIds = allCrews?.data.result.map(c => c.id) || [];
-                const newCrewIds = currentCrewIds.filter(id => !initialCrewIds.includes(id));
-                
-                // Delete orphan crews (created but not saved in production planning)
-                newCrewIds.forEach(crewId => {
-                  deleteCrewMutation.mutate(crewId);
-                });
-                
-                onClose();
-              }}
+              onClick={onClose}
             >
               Cancel
             </Button>
