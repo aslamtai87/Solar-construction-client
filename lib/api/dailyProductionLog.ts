@@ -17,23 +17,23 @@ import {
 // API Endpoints
 const ENDPOINTS = {
   // Labourer Time Logs
-  LABOURER_TIME_LOGS: "/daily-production/labourer-logs",
-  LABOURER_TIME_LOG_BY_ID: (id: string) => `/daily-production/labourer-logs/${id}`,
-  LABOURER_TIME_LOGS_BY_PROJECT: (projectId: string) => `/daily-production/labourer-logs/project/${projectId}`,
+  LABOURER_TIME_LOGS: "/production-logs/labourer-logs",
+  LABOURER_TIME_LOG_BY_ID: (id: string) => `/production-logs/labourer-logs/${id}`,
+  LABOURER_TIME_LOGS_BY_PROJECT: (projectId: string) => `/production-logs/labourer-logs/project/${projectId}`,
   
   // Equipment Logs
-  EQUIPMENT_LOGS: "/daily-production/equipment-logs",
-  EQUIPMENT_LOG_BY_ID: (id: string) => `/daily-production/equipment-logs/${id}`,
-  EQUIPMENT_LOGS_BY_PROJECT: (projectId: string) => `/daily-production/equipment-logs/project/${projectId}`,
+  EQUIPMENT_LOGS: "/production-logs/equipment-logs",
+  EQUIPMENT_LOG_BY_ID: (id: string) => `/production-logs/equipment-logs/${id}`,
+  EQUIPMENT_LOGS_BY_PROJECT: (projectId: string) => `/production-logs/equipment-logs/project/${projectId}`,
   
   // Activity Production Logs
-  ACTIVITY_LOGS: "/daily-production/activity-logs",
-  ACTIVITY_LOG_BY_ID: (id: string) => `/daily-production/activity-logs/${id}`,
-  ACTIVITY_LOGS_BY_PROJECT: (projectId: string) => `/daily-production/activity-logs/project/${projectId}`,
+  ACTIVITY_LOGS: "/production-logs/activity-logs",
+  ACTIVITY_LOG_BY_ID: (id: string) => `/production-logs/activity-logs/${id}`,
+  ACTIVITY_LOGS_BY_PROJECT: (projectId: string) => `/production-logs/activity-logs/project/${projectId}`,
   
   // Summary
   DAILY_PRODUCTION_SUMMARY: (projectId: string, date: string) => 
-    `/daily-production/summary/${projectId}/${date}`,
+    `/production-logs/summary/${projectId}/${date}`,
 };
 
 // ================= LABOURER TIME LOG API =================

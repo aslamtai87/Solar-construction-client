@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Clock, Plus } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,47 +18,90 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { TimeLogEditableRow, TimeLogData } from "./TimeLogEditableRow";
+import { useGetStaffs } from "@/hooks/ReactQuery/useStaffs";
 
 interface TimeLog {
   id: string;
   date: string;
   entryTime: string;
   exitTime: string;
+  totalHours?: number;
+  loggedByRole: "labourer" | "contractor";
 }
 
-interface LabourerTimeHistoryProps {
-  logs: TimeLog[];
-  currentUserName: string;
-  labourerId: string;
-  onLogTime: (date: string, entryTime: string, exitTime: string) => void;
-  onUpdateLog?: (id: string, entryTime: string, exitTime: string) => void;
-  onDeleteLog?: (id: string) => void;
-}
-
-export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
-  logs,
-  currentUserName,
-  labourerId,
-  onLogTime,
-  onUpdateLog,
-  onDeleteLog,
-}) => {
+export const LabourerTimeHistory = () => {
   const today = format(new Date(), "yyyy-MM-dd");
+  const yesterday = format(new Date(Date.now() - 86400000), "yyyy-MM-dd");
+  const twoDaysAgo = format(new Date(Date.now() - 172800000), "yyyy-MM-dd");
+
+  const [logs, setTimeLogs] = useState<TimeLog[]>([
+    {
+      id: "log-001",
+      date: twoDaysAgo,
+      entryTime: "07:30",
+      exitTime: "16:00",
+      totalHours: 8.5,
+      loggedByRole: "labourer",
+    },
+    {
+      id: "log-002",
+      date: yesterday,
+      entryTime: "08:00",
+      exitTime: "17:00",
+      totalHours: 9,
+      loggedByRole: "labourer",
+    },
+  ]);
+  const handleLabourerLogTime = (
+    date: string,
+    entryTime: string,
+    exitTime: string
+  ) => {
+    const existingLog = logs.find((log) => log.date === date);
+
+    // Calculate total hours
+    const [entryHour, entryMinute] = entryTime.split(":").map(Number);
+    const [exitHour, exitMinute] = exitTime.split(":").map(Number);
+    const totalMinutes =
+      exitHour * 60 + exitMinute - (entryHour * 60 + entryMinute);
+    const totalHours = totalMinutes / 60;
+
+    if (existingLog) {
+      setTimeLogs(
+        logs.map((log) =>
+          log.id === existingLog.id
+            ? { ...log, entryTime, exitTime, totalHours }
+            : log
+        )
+      );
+    } else {
+      const newLog: TimeLog = {
+        id: `log-${Date.now()}`,
+        date,
+        entryTime,
+        exitTime,
+        totalHours,
+        loggedByRole: "labourer",
+      };
+      setTimeLogs([...logs, newLog]);
+    }
+  };
+  const currentUserName = "John Smith";
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   // Check if today's log already exists
-  const todayLog = logs.find(log => log.date === today);
+  const todayLog = logs.find((log) => log.date === today);
   const canCreateNew = !todayLog && !isCreating;
 
   const handleSave = (data: any) => {
     if (isCreating) {
-      onLogTime(today, data.entryTime, data.exitTime);
+      handleLabourerLogTime(today, data.entryTime, data.exitTime);
       setIsCreating(false);
-    } else if (editingId && onUpdateLog) {
-      onUpdateLog(editingId, data.entryTime, data.exitTime);
+    } else if (editingId) {
+      handleLabourerLogTime(editingId, data.entryTime, data.exitTime);
       setEditingId(null);
     }
   };
@@ -72,9 +121,9 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
 
   const handleDelete = (id: string, logDate: string) => {
     // Only allow deleting today's log
-    if (logDate === today && onDeleteLog) {
-      onDeleteLog(id);
-    }
+    // if (logDate === today &) {
+    //   onDeleteLog(id);
+    // }
   };
 
   const handleAddNew = () => {
@@ -92,7 +141,9 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
             <Clock className="h-5 w-5 text-primary" />
             <div>
               <CardTitle className="text-lg">My Time Logs</CardTitle>
-              <CardDescription className="text-sm">View and manage your work hours</CardDescription>
+              <CardDescription className="text-sm">
+                View and manage your work hours
+              </CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -110,7 +161,9 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
               onClick={handleAddNew}
               size="sm"
               disabled={!canCreateNew || editingId !== null}
-              title={todayLog ? "Today's log already exists" : "Log time for today"}
+              title={
+                todayLog ? "Today's log already exists" : "Log time for today"
+              }
             >
               <Plus className="h-4 w-4 mr-1" />
               Log Time
@@ -138,7 +191,7 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
               {logs.map((log) => {
                 const timeLogData: TimeLogData = {
                   id: log.id,
-                  labourerId: labourerId,
+                  labourerId: "001",
                   labourerName: currentUserName,
                   date: log.date,
                   entryTime: log.entryTime,
@@ -146,9 +199,9 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
                 };
 
                 const isToday = log.date === today;
-                const canEditLog = isToday && onUpdateLog;
-                const canDeleteLog = isToday && onDeleteLog;
-                
+                const canEditLog = isToday;
+                const canDeleteLog = isToday;
+
                 return (
                   <TimeLogEditableRow
                     key={log.id}
@@ -157,8 +210,16 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
                     mode={editingId === log.id ? "edit" : "view"}
                     onSave={handleSave}
                     onCancel={handleCancel}
-                    onEdit={canEditLog ? () => handleEdit(log.id, log.date) : undefined}
-                    onDelete={canDeleteLog ? () => handleDelete(log.id, log.date) : undefined}
+                    onEdit={
+                      canEditLog
+                        ? () => handleEdit(log.id, log.date)
+                        : undefined
+                    }
+                    onDelete={
+                      canDeleteLog
+                        ? () => handleDelete(log.id, log.date)
+                        : undefined
+                    }
                     showLabourerSelect={false}
                     showDate={true}
                     isLabourer={true}
@@ -171,7 +232,7 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
                 <TimeLogEditableRow
                   timeLog={{
                     id: undefined,
-                    labourerId: labourerId,
+                    labourerId: "001",
                     labourerName: currentUserName,
                     date: today,
                     entryTime: "",
@@ -193,4 +254,3 @@ export const LabourerTimeHistory: React.FC<LabourerTimeHistoryProps> = ({
     </Card>
   );
 };
-

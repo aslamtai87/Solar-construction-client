@@ -275,33 +275,7 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
   };
 
   // Handlers for labourer's time log
-  const handleLabourerLogTime = (date: string, entryTime: string, exitTime: string) => {
-    const existingLog = timeLogs.find(log => log.date === date);
 
-    // Calculate total hours
-    const [entryHour, entryMinute] = entryTime.split(":").map(Number);
-    const [exitHour, exitMinute] = exitTime.split(":").map(Number);
-    const totalMinutes = (exitHour * 60 + exitMinute) - (entryHour * 60 + entryMinute);
-    const totalHours = totalMinutes / 60;
-
-    if (existingLog) {
-      setTimeLogs(timeLogs.map(log =>
-        log.id === existingLog.id
-          ? { ...log, entryTime, exitTime, totalHours }
-          : log
-      ));
-    } else {
-      const newLog: TimeLog = {
-        id: `log-${Date.now()}`,
-        date,
-        entryTime,
-        exitTime,
-        totalHours,
-        loggedByRole: "labourer",
-      };
-      setTimeLogs([...timeLogs, newLog]);
-    }
-  };
 
   // Handlers for contractor managing all labourers
   const handleAddLabourerLog = (log: Omit<LabourerTimeLog, "id" | "totalHours">) => {
@@ -432,13 +406,9 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
           </TabsList>
 
           <TabsContent value="labourer" className="space-y-4 mt-4">
-            <LabourerTimeHistory
-              logs={timeLogs}
-              currentUserName={currentUserName}
-              labourerId={currentUserId}
-              onLogTime={handleLabourerLogTime}
-            />
+            <LabourerTimeHistory />
           </TabsContent>
+
 
           <TabsContent value="contractor" className="space-y-4 mt-4">
             <ContractorLogsHistory

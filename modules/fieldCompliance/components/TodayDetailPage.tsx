@@ -1,17 +1,15 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LabourerTimeEntryDialog } from "./LabourerTimeEntryDialog";
 import { ContractorLabourerManagement } from "./ContractorLabourerManagement";
 import { EnhancedEquipmentLog } from "./EnhancedEquipmentLog";
 import { EnhancedActivityLog } from "./EnhancedActivityLog";
 import { WeatherLocationDisplay } from "./WeatherLocationDisplay";
 import { format } from "date-fns";
 import type { DailyConditions } from "@/lib/services/weatherLocation";
+import {useRouter} from "next/navigation"
+import { Button } from "@/components/ui/button";
 
 interface Equipment {
   id: string;
@@ -132,10 +130,17 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   onDeleteActivityLog,
 }) => {
   const isToday = format(new Date(), "yyyy-MM-dd") === selectedDate;
-  const dateDisplay = isToday ? "Today" : format(new Date(selectedDate), "MMMM dd, yyyy");
+  const dateDisplay = isToday ? "Today" : 
+  format(new Date(selectedDate), "MMMM dd, yyyy");
+  const router = useRouter()
 
   return (
     <div className="space-y-4">
+      <div>
+        <Button onClick={()=> router.back}>
+          Back
+        </Button>
+      </div>
       {/* Weather and Location (for contractor) */}
       {userRole === "contractor" && weatherData && (
         <WeatherLocationDisplay
