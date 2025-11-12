@@ -263,7 +263,7 @@ export const useCreateCrew = () => {
     mutationFn: (data) => createCrew(data),
     onSuccess: (data) => {
       toast.success(data.message || "Crew created successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CREWS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREWS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVITIES] });
     },
     onError: (error) => {
