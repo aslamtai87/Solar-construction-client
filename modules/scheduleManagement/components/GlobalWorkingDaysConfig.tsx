@@ -78,9 +78,6 @@ export const GlobalWorkingDaysConfig = ({
               <SelectItem value={WorkingDaysType.ALL_DAYS}>
                 {getWorkingDaysLabel(WorkingDaysType.ALL_DAYS)}
               </SelectItem>
-              <SelectItem value={WorkingDaysType.WEEKENDS_ONLY}>
-                {getWorkingDaysLabel(WorkingDaysType.WEEKENDS_ONLY)}
-              </SelectItem>
               <SelectItem value={WorkingDaysType.CUSTOM}>
                 {getWorkingDaysLabel(WorkingDaysType.CUSTOM)}
               </SelectItem>
