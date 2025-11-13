@@ -20,9 +20,9 @@ export const loginUser = async (
   }
 };
 
-export const getUserProfile = async (): Promise<UserProfile> => {
+export const getUserProfile = async (): Promise<{data:UserProfile}> => {
   try {
-    const response = await api.get<UserProfile>(API_ENDPOINTS.USER_PROFILE);
+    const response = await api.get<{data:UserProfile}>(API_ENDPOINTS.USER_PROFILE);
     return response.data;
   } catch (error) {
     console.error("Get User Profile Error:", error);

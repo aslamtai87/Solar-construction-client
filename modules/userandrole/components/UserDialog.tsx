@@ -9,15 +9,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { CreateUserSchema, CreateUser } from '@/lib/validation/userAndRole';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +17,8 @@ import { FormSelectField } from '@/components/global/Form/FormSelectField';
 import { useCreateStaff, useUpdateStaff } from '@/hooks/ReactQuery/useStaffs';
 import { useGetRoles } from '@/hooks/ReactQuery/useAuth';
 import { StaffUser } from '@/lib/types/user';
+import { useGetLabourers } from '@/hooks/ReactQuery/useSchedule';
+import { useProjectStore } from '@/store/projectStore';
 
 interface UserDialogProps {
   open: boolean;
@@ -45,6 +38,11 @@ const UserDialog: React.FC<UserDialogProps> = ({
   const { mutate: createStaff } = useCreateStaff();
   const { mutate: updateStaff } = useUpdateStaff(userData?.id || '');
   const { data: rolesData } = useGetRoles(null, 100); // Get all roles
+  const { selectedProject } = useProjectStore();
+  const { data: labourersData } = useGetLabourers({
+    limit: 100,
+    projectId: selectedProject?.id || '',
+  }); // Get all labourers
 
   const form = useForm<CreateUser>({
     resolver: zodResolver(CreateUserSchema),
@@ -64,6 +62,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
         lastName: userData.lastName,
         email: userData.email,
         roleId: userData.userRoles?.[0]?.role?.id || '',
+        labourerId: userData.labourerProfile?.id || '',
       });
     } else {
       form.reset({
@@ -89,6 +88,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
         firstName: data.firstName,
         lastName: data.lastName,
         roleId: data.roleId,
+        labourerId: data.labourerId,
       }, {
         onSuccess: () => {
           onClose();
@@ -125,6 +125,17 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 label: role.name,
               })) || []}
               placeholder="Select a role"
+            />
+            <FormSelectField
+              name='labourerId'
+              control={form.control}
+              label='Labourer'
+              options={labourersData?.data?.result?.map((labourer) => ({
+                value: labourer.id,
+                label: labourer.name,
+              })) || []}
+              placeholder="Select a labourer"
+              description='Select this if staff is a labourer else leave empty'
             />
           </div>
           <DialogFooter className="gap-2">

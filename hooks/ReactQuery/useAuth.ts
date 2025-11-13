@@ -21,6 +21,7 @@ import {
   LoginFormData,
   Roles,
   RoleByIdResponse,
+  UserProfile,
 } from "@/lib/types/auth";
 import { SignupFormData } from "@/lib/types/auth";
 import { toast } from "sonner";
@@ -115,7 +116,7 @@ export const useLogout = () => {
 };
 
 export const useGetUserProfile = (enabled: boolean = true) => {
-  return useQuery({
+  return useQuery<{data:UserProfile | null}>({
     queryKey: [QUERY_KEYS.USER_PROFILE],
     queryFn: () => getUserProfile(),
     retry: false, 

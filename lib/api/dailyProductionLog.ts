@@ -12,7 +12,10 @@ import {
   UpdateActivityProductionLogDTO,
   DailyProductionLogSummary,
   DailyProductionLogFilters,
+  UpdateProductionLogDto,
+  DailyProductionLog
 } from "@/lib/types/dailyProductionLog";
+import { PaginationResponse } from "../types/pagination";
 
 // API Endpoints
 const ENDPOINTS = {
@@ -34,27 +37,74 @@ const ENDPOINTS = {
   // Summary
   DAILY_PRODUCTION_SUMMARY: (projectId: string, date: string) => 
     `/production-logs/summary/${projectId}/${date}`,
+
+  // Get production log id
+  GET_PRODUCTION_LOG_ID: "/production-logs/logs/validate-today-log",
+  
+  // Get production logs list
+  PRODUCTION_LOGS_LIST: "/production-logs/logs",
+};
+
+
+// Update production log APIs
+
+export const updateProductionLog = async (
+  id: string,
+  data: UpdateProductionLogDto
+): Promise<APISuccessResponse> => {
+  const response = await api.patch<APISuccessResponse>(
+    `/production-logs/logs/${id}`,
+    data
+  );
+  return response.data;
+}
+
+// ================= GET PRODUCTION LOG ID =================
+
+export const getProductionLogId = async (
+  projectId: string,
+  timeZone: string
+): Promise<{data: DailyProductionLog}> => {
+  const response = await api.get<{data: DailyProductionLog}>(
+    ENDPOINTS.GET_PRODUCTION_LOG_ID,
+    {
+      params: { projectId, timeZone },
+    }
+  );
+  return response.data;
+};
+
+// ================= GET PRODUCTION LOGS LIST =================
+
+export const getProductionLogs = async (
+  projectId: string
+): Promise<PaginationResponse<DailyProductionLog>> => {
+  const response = await api.get<PaginationResponse<DailyProductionLog>>(
+    ENDPOINTS.PRODUCTION_LOGS_LIST,
+    {
+      params: { projectId },
+    }
+  );
+  return response.data;
 };
 
 // ================= LABOURER TIME LOG API =================
 
 export const getLabourerTimeLogs = async (
-  filters: DailyProductionLogFilters
-): Promise<LabourerTimeLog[]> => {
+  filters: Partial<DailyProductionLogFilters>
+): Promise<PaginationResponse<LabourerTimeLog>> => {
   const params = new URLSearchParams();
-  if (filters.date) params.append("date", filters.date);
-  if (filters.startDate) params.append("startDate", filters.startDate);
-  if (filters.endDate) params.append("endDate", filters.endDate);
   if (filters.labourerId) params.append("labourerId", filters.labourerId);
-
-  const response = await api.get<{ data: LabourerTimeLog[] }>(
-    `${ENDPOINTS.LABOURER_TIME_LOGS_BY_PROJECT(filters.projectId)}?${params.toString()}`
+  if (filters.workerId) params.append("workerId", filters.workerId);
+  if (filters.productionLogId) params.append("productionLogId", filters.productionLogId);
+  const response = await api.get<PaginationResponse<LabourerTimeLog>>(
+    `${ENDPOINTS.LABOURER_TIME_LOGS}?${params.toString()}`
   );
-  return response.data.data;
+  return response.data;
 };
 
 export const getLabourerTimeLogById = async (
-  id: string
+  id: string,
 ): Promise<LabourerTimeLog> => {
   const response = await api.get<{ data: LabourerTimeLog }>(
     ENDPOINTS.LABOURER_TIME_LOG_BY_ID(id)
@@ -63,11 +113,12 @@ export const getLabourerTimeLogById = async (
 };
 
 export const createLabourerTimeLog = async (
-  data: CreateLabourerTimeLogDTO
+  data: CreateLabourerTimeLogDTO,
+  logId: string
 ): Promise<APISuccessResponse> => {
   const response = await api.post<APISuccessResponse>(
     ENDPOINTS.LABOURER_TIME_LOGS,
-    data
+    { ...data, productionLogId: logId}
   );
   return response.data;
 };

@@ -16,6 +16,7 @@ export interface UpdateStaff {
   lastName?: string;
   roleId?: string;
   status?: string;
+  labourerId?: string;
 }
 
 export interface StaffUser {
@@ -33,6 +34,10 @@ export interface StaffUser {
   lastLoginAt: null;
   createdAt: string;
   userRoles: UserRole[];
+  labourerProfile?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface StaffUserByIdResponse {

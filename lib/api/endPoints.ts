@@ -70,6 +70,7 @@ export const API_ENDPOINTS = {
   UPDATE_PRODUCTION_PLANNING: '/production-planning/{id}',
   DELETE_PRODUCTION_PLANNING: '/production-planning/{id}',
 
+
 };
 
 
@@ -103,4 +104,13 @@ export const QUERY_KEYS = {
   EQUIPMENT: ['production-planning', 'equipment'],
   LABOURERS: ['production-planning', 'labourers'],
   CREWS: ['production-planning', 'crews'],
+
+
+  //  production-logging
+  LABOURER_TIME_LOGS: ['production-logging', 'labourer-time-logs'],
+  EQUIPMENT_LOGS: ['production-logging', 'equipment-logs'],
+  ACTIVITY_PRODUCTION_LOGS: ['production-logging', 'activity-production-logs'],
+  DAILY_PRODUCTION_SUMMARY: ['production-logging', 'daily-production-summary'],
+  PRODUCTION_LOG_ID: ['production-logging', 'production-log-id'],
+  PRODUCTION_LOGS: ['production-logging', 'production-logs'],
 };

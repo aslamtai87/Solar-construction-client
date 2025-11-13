@@ -1,29 +1,40 @@
-// Daily Production Log Types
-
-// Labourer Time Log (for labourers to log their entry/exit times)
 export interface LabourerTimeLog {
   id: string;
-  labourerId: string; // Reference to User ID
-  labourerName: string;
-  labourerType?: string; // Type from Labourer master data
-  projectId: string;
-  date: string; // ISO date string (YYYY-MM-DD)
-  entryTime: string; // HH:mm format
-  exitTime?: string; // HH:mm format (optional if they haven't left yet)
-  totalHours?: number; // Calculated from entry and exit
-  loggedBy: string; // User ID of who logged it (labourer or contractor)
-  loggedByRole: "labourer" | "contractor";
-  notes?: string;
+  productionLogId: string;
+  workerId: string;
+  entryTime: string;
+  exitTime: string;
+  duration: number;
+  notes: null;
   createdAt: string;
   updatedAt: string;
+  worker: {
+    id: string;
+    fullName: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    labourerProfile: {
+      id: string;
+      name: string;
+      rateType: string;
+      totalRate: string;
+    };
+  };
+  productionLog: {
+    id: string;
+    date: string;
+    projectId: string;
+    project: {
+      id: string;
+      projectName: string;
+      projectNumber: string;
+    };
+  };
 }
 
 export interface CreateLabourerTimeLogDTO {
-  labourerId?: string; // Optional because contractor can log for others
-  labourerName?: string; // For custom entry by contractor
-  labourerType?: string;
-  projectId: string;
-  date: string;
+  workerId: string;
   entryTime: string;
   exitTime?: string;
   notes?: string;
@@ -52,11 +63,20 @@ export interface EquipmentLog {
   updatedAt: string;
 }
 
+export interface UpdateProductionLogDto {
+  weatherCondition: string;
+  temperature: number;
+  humidity: number;
+  windSpeed: number;
+  location: string;
+  notes: string;
+}
+
 export interface CreateEquipmentLogDTO {
   equipmentId: string;
-  operator: string;
+  operator?: string;
   operatorId?: string;
-  projectId: string;
+  productionLogId: string;
   date: string;
   quantity: number;
   hoursUsed?: number;
@@ -128,6 +148,29 @@ export interface DailyProductionLogFilters {
   startDate?: string; // For date range
   endDate?: string; // For date range
   labourerId?: string; // Filter by specific labourer
+  workerId?: string; // Filter by specific worker (user ID)
   equipmentId?: string; // Filter by specific equipment
   activityId?: string; // Filter by specific activity
+  productionLogId?: string; // Filter by specific production log
+}
+
+export interface DailyProductionLog {
+  id: string;
+  projectId: string;
+  companyAccessId?: string;
+  date: string;
+  weatherCondition: string | null;
+  temperature: number | null;
+  humidity: number | null;
+  windSpeed: number | null;
+  location: string | null;
+  notes: string | null;
+  createdById?: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    activityLogs: number;
+    labourerLogs: number;
+    equipmentLogs: number;
+  };
 }

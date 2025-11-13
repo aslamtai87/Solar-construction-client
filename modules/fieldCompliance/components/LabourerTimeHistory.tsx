@@ -16,121 +16,97 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { TimeLogEditableRow, TimeLogData } from "./TimeLogEditableRow";
-import { useGetStaffs } from "@/hooks/ReactQuery/useStaffs";
+import { useLabourerTimeLogs, useCreateLabourerLog, useUpdateLabourerLog, useProductionLogId} from "@/hooks/ReactQuery/useProductionLog";
+import { useGetUserProfile } from "@/hooks/ReactQuery/useAuth";
+import {
+  CreateLabourerTimeLogDTO,
+  LabourerTimeLog,
+} from "@/lib/types/dailyProductionLog";
+import { Badge } from "@/components/ui/badge";
+import { useProjectStore } from "@/store/projectStore";
 
-interface TimeLog {
-  id: string;
-  date: string;
+// Define TimeLogFormData type to match TimeLogEditableRow expectations
+interface TimeLogFormData {
+  labourerId: string;
+  labourerName?: string;
   entryTime: string;
   exitTime: string;
-  totalHours?: number;
-  loggedByRole: "labourer" | "contractor";
 }
 
 export const LabourerTimeHistory = () => {
+  const { data: userProfile } = useGetUserProfile();
+  const { selectedProject } = useProjectStore();
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+  // Get today's production log ID
+  const { data: productionLogData } = useProductionLogId(
+    selectedProject?.id || "",
+    timeZone
+  );
+  const productionLogId = productionLogData?.data?.id;
+  
+  // Fetch labourer time logs using workerId
+  const { data: labourerLogsData } = useLabourerTimeLogs({
+    productionLogId: productionLogId,
+    workerId: userProfile?.data?.id,
+  });
+
+  const logs: LabourerTimeLog[] = labourerLogsData?.data?.result || [];
+  const currentUserId = userProfile?.data?.id || "";
+  
+  const [isCreating, setIsCreating] = useState(false);
+  const { mutate: handleLabourerLogTime } = useCreateLabourerLog();
+  
   const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(new Date(Date.now() - 86400000), "yyyy-MM-dd");
-  const twoDaysAgo = format(new Date(Date.now() - 172800000), "yyyy-MM-dd");
+  
+  // Check if today's log exists
+  const todayLog = logs.find(log => {
+    const logDate = format(new Date(log.createdAt), "yyyy-MM-dd");
+    return logDate === today;
+  });
+  const hasTodayLog = !!todayLog;
 
-  const [logs, setTimeLogs] = useState<TimeLog[]>([
-    {
-      id: "log-001",
-      date: twoDaysAgo,
-      entryTime: "07:30",
-      exitTime: "16:00",
-      totalHours: 8.5,
-      loggedByRole: "labourer",
-    },
-    {
-      id: "log-002",
-      date: yesterday,
-      entryTime: "08:00",
-      exitTime: "17:00",
-      totalHours: 9,
-      loggedByRole: "labourer",
-    },
-  ]);
-  const handleLabourerLogTime = (
-    date: string,
-    entryTime: string,
-    exitTime: string
-  ) => {
-    const existingLog = logs.find((log) => log.date === date);
-
-    // Calculate total hours
-    const [entryHour, entryMinute] = entryTime.split(":").map(Number);
-    const [exitHour, exitMinute] = exitTime.split(":").map(Number);
-    const totalMinutes =
-      exitHour * 60 + exitMinute - (entryHour * 60 + entryMinute);
-    const totalHours = totalMinutes / 60;
-
-    if (existingLog) {
-      setTimeLogs(
-        logs.map((log) =>
-          log.id === existingLog.id
-            ? { ...log, entryTime, exitTime, totalHours }
-            : log
-        )
-      );
-    } else {
-      const newLog: TimeLog = {
-        id: `log-${Date.now()}`,
-        date,
-        entryTime,
-        exitTime,
-        totalHours,
-        loggedByRole: "labourer",
-      };
-      setTimeLogs([...logs, newLog]);
+  // Helper function to format ISO time to 12-hour format for display
+  const formatTimeDisplay = (isoTime: string): string => {
+    try {
+      const date = new Date(isoTime);
+      return format(date, "h:mm a"); // e.g., "3:30 PM"
+    } catch {
+      return isoTime;
     }
   };
-  const currentUserName = "John Smith";
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
-  // Check if today's log already exists
-  const todayLog = logs.find((log) => log.date === today);
-  const canCreateNew = !todayLog && !isCreating;
+  // Helper function to convert time (HH:mm) to ISO 8601 datetime string
+  const timeToISO = (time: string, date: string = today): string => {
+    // time is in HH:mm format, date is in yyyy-MM-dd format
+    // Return ISO 8601 format: yyyy-MM-ddTHH:mm:ss.sssZ
+    return `${date}T${time}:00.000Z`;
+  };
 
-  const handleSave = (data: any) => {
+  const handleSave = (data: TimeLogFormData) => {
     if (isCreating) {
-      handleLabourerLogTime(today, data.entryTime, data.exitTime);
+      // Format times to ISO 8601 for creation
+      const formattedData: CreateLabourerTimeLogDTO = {
+        workerId: currentUserId,
+        entryTime: timeToISO(data.entryTime),
+        exitTime: data.exitTime ? timeToISO(data.exitTime) : undefined,
+        notes: undefined,
+      };
+      
+      handleLabourerLogTime(formattedData);
       setIsCreating(false);
-    } else if (editingId) {
-      handleLabourerLogTime(editingId, data.entryTime, data.exitTime);
-      setEditingId(null);
     }
   };
 
   const handleCancel = () => {
     setIsCreating(false);
-    setEditingId(null);
-  };
-
-  const handleEdit = (id: string, logDate: string) => {
-    // Only allow editing today's log
-    if (logDate === today) {
-      setEditingId(id);
-      setIsCreating(false);
-    }
-  };
-
-  const handleDelete = (id: string, logDate: string) => {
-    // Only allow deleting today's log
-    // if (logDate === today &) {
-    //   onDeleteLog(id);
-    // }
   };
 
   const handleAddNew = () => {
-    if (canCreateNew) {
-      setIsCreating(true);
-      setEditingId(null);
-    }
+    setIsCreating(true);
   };
 
   return (
@@ -152,7 +128,7 @@ export const LabourerTimeHistory = () => {
                 {logs.length} {logs.length === 1 ? "entry" : "entries"}
               </Badge>
             )}
-            {todayLog && (
+            {hasTodayLog && (
               <span className="text-xs text-muted-foreground">
                 Today's log recorded
               </span>
@@ -160,9 +136,9 @@ export const LabourerTimeHistory = () => {
             <Button
               onClick={handleAddNew}
               size="sm"
-              disabled={!canCreateNew || editingId !== null}
+              disabled={isCreating || hasTodayLog}
               title={
-                todayLog ? "Today's log already exists" : "Log time for today"
+                hasTodayLog ? "Today's log already exists" : "Log time for today"
               }
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -191,49 +167,33 @@ export const LabourerTimeHistory = () => {
               {logs.map((log) => {
                 const timeLogData: TimeLogData = {
                   id: log.id,
-                  labourerId: "001",
-                  labourerName: currentUserName,
-                  date: log.date,
-                  entryTime: log.entryTime,
-                  exitTime: log.exitTime,
+                  labourerId: log.workerId,
+                  date: log.productionLog?.date || today,
+                  entryTime: formatTimeDisplay(log.entryTime),
+                  exitTime: formatTimeDisplay(log.exitTime),
                 };
-
-                const isToday = log.date === today;
-                const canEditLog = isToday;
-                const canDeleteLog = isToday;
 
                 return (
                   <TimeLogEditableRow
                     key={log.id}
                     timeLog={timeLogData}
                     labourers={[]}
-                    mode={editingId === log.id ? "edit" : "view"}
+                    mode="view"
                     onSave={handleSave}
                     onCancel={handleCancel}
-                    onEdit={
-                      canEditLog
-                        ? () => handleEdit(log.id, log.date)
-                        : undefined
-                    }
-                    onDelete={
-                      canDeleteLog
-                        ? () => handleDelete(log.id, log.date)
-                        : undefined
-                    }
                     showLabourerSelect={false}
                     showDate={true}
                     isLabourer={true}
-                    canEdit={!!canEditLog}
-                    canDelete={!!canDeleteLog}
+                    canEdit={false}
+                    canDelete={false}
                   />
                 );
               })}
               {isCreating && (
                 <TimeLogEditableRow
                   timeLog={{
-                    id: undefined,
-                    labourerId: "001",
-                    labourerName: currentUserName,
+                    labourerId: currentUserId,
+                    labourerName: "", // Not sent to API, just for UI
                     date: today,
                     entryTime: "",
                     exitTime: "",

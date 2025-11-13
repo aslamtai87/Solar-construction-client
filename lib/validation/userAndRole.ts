@@ -5,6 +5,7 @@ const CreateUserSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters").max(100),
   lastName: z.string().min(2, "Last name must be at least 2 characters").max(100),
   roleId: z.string().min(1, "Role is required"),
+  labourerId: z.string().optional(),
 });
 
 type CreateUser = z.infer<typeof CreateUserSchema>;

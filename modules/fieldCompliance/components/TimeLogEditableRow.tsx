@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -47,7 +47,7 @@ type TimeLogFormData = z.infer<typeof timeLogFormSchema>;
 export interface TimeLogData {
   id?: string;
   labourerId: string;
-  labourerName: string;
+  labourerName?: string;
   labourerType?: string;
   date?: string;
   entryTime: string;
@@ -89,6 +89,7 @@ export const TimeLogEditableRow = ({
     watch,
     setValue,
     setError,
+    reset,
     formState: { errors },
   } = useForm<TimeLogFormData>({
     resolver: zodResolver(timeLogFormSchema),
@@ -106,6 +107,18 @@ export const TimeLogEditableRow = ({
           exitTime: "",
         },
   });
+
+  // Reset form when timeLog changes or mode changes to edit
+  useEffect(() => {
+    if (timeLog && (mode === "edit" || mode === "create")) {
+      reset({
+        labourerId: timeLog.labourerId || "",
+        labourerName: timeLog.labourerName || "",
+        entryTime: timeLog.entryTime || "",
+        exitTime: timeLog.exitTime || "",
+      });
+    }
+  }, [timeLog, mode, reset]);
 
   const selectedLabourerId = watch("labourerId");
 
@@ -132,8 +145,43 @@ export const TimeLogEditableRow = ({
 
   const calculateHours = (entry: string, exit: string) => {
     if (!entry || !exit) return "-";
+    
+    // Check if times are in display format (e.g., "3:30 PM")
+    if (entry.includes("AM") || entry.includes("PM")) {
+      // Parse 12-hour format
+      const parseTime = (timeStr: string) => {
+        const [time, period] = timeStr.split(" ");
+        let [hours, minutes] = time.split(":").map(Number);
+        if (period === "PM" && hours !== 12) hours += 12;
+        if (period === "AM" && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+      };
+      
+      const entryMinutes = parseTime(entry);
+      const exitMinutes = parseTime(exit);
+      const diffMinutes = exitMinutes - entryMinutes;
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      return `${hours}h ${minutes}m`;
+    }
+    
+    // Check if times are in ISO format
+    if (entry.includes("T")) {
+      const entryDate = new Date(entry);
+      const exitDate = new Date(exit);
+      const diffMs = exitDate.getTime() - entryDate.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      return `${hours}h ${minutes}m`;
+    }
+    
+    // HH:mm format (24-hour)
     const [entryHours, entryMinutes] = entry.split(":").map(Number);
     const [exitHours, exitMinutes] = exit.split(":").map(Number);
+    if (isNaN(entryHours) || isNaN(entryMinutes) || isNaN(exitHours) || isNaN(exitMinutes)) {
+      return "-";
+    }
     const entryTotalMinutes = entryHours * 60 + entryMinutes;
     const exitTotalMinutes = exitHours * 60 + exitMinutes;
     const diffMinutes = exitTotalMinutes - entryTotalMinutes;
@@ -230,11 +278,20 @@ export const TimeLogEditableRow = ({
             {labourers.find((l) => l.value === selectedLabourerId)?.type || "-"}
           </TableCell>
         </>
-      ) : null}
-      
-      {/* Hidden input for labourerId when not showing select */}
-      {!showLabourerSelect && timeLog?.labourerId && (
-        <input type="hidden" {...register("labourerId")} value={timeLog.labourerId} />
+      ) : (
+        <>
+          {/* Only show worker name/type cells if not in labourer mode */}
+          {!isLabourer && (
+            <>
+              <TableCell className="font-medium">{timeLog?.labourerName}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {timeLog?.labourerType || "-"}
+              </TableCell>
+            </>
+          )}
+          {/* Hidden input to preserve labourerId */}
+          <input type="hidden" {...register("labourerId")} value={timeLog?.labourerId} />
+        </>
       )}
       
       <TableCell className="min-w-[150px]">
