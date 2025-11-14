@@ -18,11 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormFieldWrapper } from "@/components/global/Form/FormFieldWrapper";
 import { GetLabourer } from "@/lib/types/production";
-import { useGetLabourers, useCreateLabourer, useUpdateLabourers } from "@/hooks/ReactQuery/useSchedule";
+import { useGetLabourers, useCreateLabourer, useUpdateLabourers, useDeleteLabourer } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
 import { GenericTable } from "@/components/global/Table/GenericTable";
 import { useCursorPagination } from "@/hooks/useCursorPagination";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useDialog } from "@/hooks/useDialog";
+import DeleteDialog from "@/components/global/DeleteDialog";
 
 const labourerSeparateSchema = z.object({
   type: z.string().min(1, "Labourer name is required"),
@@ -64,6 +66,8 @@ export const LabourerManagement = () => {
   });
   const { mutate: onAddLabourer } = useCreateLabourer();
   const { mutate: onUpdateLabourer } = useUpdateLabourers();
+  const { mutate: onDeleteLabourer } = useDeleteLabourer();
+  const { dialog: deleteDialog, openEditDialog: openDeleteDialog, closeDialog } = useDialog<GetLabourer>();
 
   const separateForm = useForm<LabourerSeparateForm>({
     resolver: zodResolver(labourerSeparateSchema),
@@ -204,7 +208,7 @@ export const LabourerManagement = () => {
             <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(item)}>
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => {}}>
+            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item)}>
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
@@ -256,8 +260,8 @@ export const LabourerManagement = () => {
             <TabsContent value="separate" className="space-y-4">
               <form onSubmit={separateForm.handleSubmit(handleSubmitSeparate)} className="space-y-4">
                 <FormFieldWrapper name="type" control={separateForm.control} label="Labourer Type" placeholder="e.g., Electrician, Installer, Foreman" />
-                <FormFieldWrapper name="baseRate" control={separateForm.control} label="Base Rate ($/hr)" type="number" placeholder="25.00" min={0.01} />
-                <FormFieldWrapper name="fringeRate" control={separateForm.control} label="Fringe Rate ($/hr)" type="number" placeholder="5.00" min={0} description="Benefits, insurance, etc." />
+                <FormFieldWrapper name="baseRate" control={separateForm.control} label="Base Rate ($/hr)" type="number" placeholder="25.00" />
+                <FormFieldWrapper name="fringeRate" control={separateForm.control} label="Fringe Rate ($/hr)" type="number" placeholder="5.00" description="Benefits, insurance, etc." />
 
                 <div className="rounded-lg bg-muted p-3">
                   <div className="flex justify-between items-center">
@@ -276,7 +280,7 @@ export const LabourerManagement = () => {
             <TabsContent value="total" className="space-y-4">
               <form onSubmit={totalForm.handleSubmit(handleSubmitTotal)} className="space-y-4">
                 <FormFieldWrapper name="type" control={totalForm.control} label="Labourer Type" placeholder="e.g., Electrician, Installer, Foreman" />
-                <FormFieldWrapper name="totalRate" control={totalForm.control} label="Total Rate ($/hr)" type="number" placeholder="30.00" min={0.01} description="Total hourly rate including all costs" />
+                <FormFieldWrapper name="totalRate" control={totalForm.control} label="Total Rate ($/hr)" type="number" placeholder="30.00" description="Total hourly rate including all costs" />
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
@@ -287,6 +291,17 @@ export const LabourerManagement = () => {
           </Tabs>
         </DialogContent>
       </Dialog>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onClose={closeDialog}
+        onConfirm={() => {
+          onDeleteLabourer(deleteDialog.data?.id!);
+          closeDialog();
+        }}
+        title="Delete Labourer Type"
+        description="Are you sure you want to delete this labourer type? This action cannot be undone."
+      />
     </div>
   );
 };

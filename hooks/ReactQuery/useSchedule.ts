@@ -163,7 +163,7 @@ export const useCreateEquipment = () => {
     mutationFn: (data) => createEquipment(data),
     onSuccess: (data) => {
       toast.success(data.message || "Equipment created successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EQUIPMENT] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to create equipment");
@@ -189,7 +189,7 @@ export const useUpdateEquipment = () => {
     mutationFn: ({id, data}) => updateEquipment(id, data),
     onSuccess: (data) => {
       toast.success(data.message || "Equipment updated successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EQUIPMENT] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to update equipment");
@@ -203,7 +203,7 @@ export const useDeleteEquipment = () => {
     mutationFn: (id: string) => deleteEquipment(id),
     onSuccess: (data) => {
       toast.success(data.message || "Equipment deleted successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EQUIPMENT });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EQUIPMENT] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to delete equipment");
@@ -235,7 +235,7 @@ export const useCreateLabourer = () => {
     mutationFn: (data) => createLabourer(data),
     onSuccess: (data) => {
       toast.success(data.message || "Labourer created successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LABOURERS] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to create labourer");
@@ -249,13 +249,30 @@ export const useUpdateLabourers = () => {
     mutationFn: ({id, data}) => updateLabourer(id, data),
     onSuccess: (data) => {
       toast.success(data.message || "Labourer updated successfully");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LABOURERS });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LABOURERS] });
     },
     onError: (error) => {
       toast.error(error.response?.data.message || "Failed to update labourer");
     },
   });
 }
+
+export const useDeleteLabourer = () => {
+  const queryClient = useQueryClient();
+  return useMutation<APISuccessResponse, ApiError, string>({
+    mutationFn: (id: string) =>
+      api.delete(`${API_ENDPOINTS.DELETE_LABOURER.replace("{id}", id)}`),
+    onSuccess: (data) => {
+      toast.success(data.message || "Labourer deleted successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LABOURERS] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.message || "Failed to delete labourer");
+    },
+  });
+}
+
+
 
 export const useCreateCrew = () => {
   const queryClient = useQueryClient();

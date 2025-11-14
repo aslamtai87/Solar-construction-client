@@ -295,14 +295,7 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
           </TabsContent>
 
           <TabsContent value="activities" className="space-y-4 mt-4">
-            <EnhancedActivityLog
-              activities={activities}
-              productionConfigs={productionConfigs}
-              existingLogs={activityLogs}
-              onAddLog={onAddActivityLog}
-              onUpdateLog={onUpdateActivityLog}
-              onDeleteLog={onDeleteActivityLog}
-            />
+            <EnhancedActivityLog />
           </TabsContent>
         </Tabs>
       )}

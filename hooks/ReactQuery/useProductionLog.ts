@@ -10,7 +10,12 @@ import {
   deleteLabourerTimeLog,
   getEquipmentLogs,
   updateEquipmentLog,
-  deleteEquipmentLog,   
+  deleteEquipmentLog,
+  getActivityProductionLogs,
+  createActivityProductionLog,
+  updateActivityProductionLog,
+  deleteActivityProductionLog,
+  getCrewAndForecastedDateForActivity,
 } from "@/lib/api/dailyProductionLog";
 import { useProjectStore } from "@/store/projectStore";
 import {
@@ -19,11 +24,15 @@ import {
   CreateEquipmentLogDTO,
   UpdateProductionLogDto,
   DailyProductionLog,
+  ActivityProductionLog,
+  CreateActivityProductionLogDTO,
+  GetActivityCrew,
 } from "@/lib/types/dailyProductionLog";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
 import { PaginationResponse } from "@/lib/types/pagination";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/types/api";
+import { useGetActivity } from "./useSchedule";
 
 export const useProductionLogId = (projectId: string, timeZone: string) => {
   return useQuery<{ data: DailyProductionLog }>({
@@ -205,8 +214,7 @@ export const useGetEquipmentLogs = (productionLogId: string) => {
     queryFn: () => getEquipmentLogs({ productionLogId }),
     enabled: !!productionLogId,
   });
-}
-
+};
 
 export const useUpdateProductionLog = () => {
   const queryClient = useQueryClient();
@@ -218,12 +226,110 @@ export const useUpdateProductionLog = () => {
       data: UpdateProductionLogDto;
       id: string;
     }) => {
-      updateProductionLog(id, data);
+      return updateProductionLog(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.PRODUCTION_LOG_ID],
       });
+    },
+  });
+};
+
+export const useActivityProductionLogs = (filters: {
+  productionLogId?: string;
+  projectId?: string;
+  activityId?: string;
+}) => {
+  const safeFilters = {
+    ...filters,
+    projectId: filters.projectId ?? "",
+  };
+  return useQuery<PaginationResponse<ActivityProductionLog>>({
+    queryKey: [
+      QUERY_KEYS.ACTIVITY_PRODUCTION_LOGS,
+      filters.productionLogId,
+      safeFilters.projectId,
+      filters.activityId,
+    ],
+    queryFn: () => getActivityProductionLogs(safeFilters),
+    enabled: !!filters.productionLogId,
+  });
+};
+
+export const useCreateActivityProductionLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateActivityProductionLogDTO) => {
+      return createActivityProductionLog(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ACTIVITY_PRODUCTION_LOGS],
+      });
+      toast.success("Activity production log created successfully");
+    },
+    onError: (error: ApiError) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to create activity production log"
+      );
+    },
+  });
+};
+
+export const useGetActivityCrew = (activityId: string) => {
+  return useQuery<GetActivityCrew>({
+    queryKey: ["ActivityPerDay", activityId],
+    queryFn: () => getCrewAndForecastedDateForActivity(activityId),
+    enabled: !!activityId,
+  });
+};
+
+export const useUpdateActivityProductionLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: CreateActivityProductionLogDTO;
+    }) => {
+      return updateActivityProductionLog(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ACTIVITY_PRODUCTION_LOGS],
+      });
+      toast.success("Activity production log updated successfully");
+    },
+    onError: (error: ApiError) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to update activity production log"
+      );
+    },
+  });
+};
+
+export const useDeleteActivityProductionLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return deleteActivityProductionLog(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ACTIVITY_PRODUCTION_LOGS],
+      });
+      toast.success("Activity production log deleted successfully");
+    },
+    onError: (error: ApiError) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to delete activity production log"
+      );
     },
   });
 };

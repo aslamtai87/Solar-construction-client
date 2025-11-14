@@ -26,11 +26,14 @@ import {
   useUpdateEquipment,
   useCreateEquipment,
   useGetEquipment,
+  useDeleteEquipment,
 } from "@/hooks/ReactQuery/useSchedule";
 import { useProjectStore } from "@/store/projectStore";
 import { GenericTable } from "@/components/global/Table/GenericTable";
 import { useCursorPagination } from "@/hooks/useCursorPagination";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useDialog } from "@/hooks/useDialog";
+import DeleteDialog from "@/components/global/DeleteDialog";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
@@ -67,6 +70,8 @@ export const EquipmentManagement = () => {
 
   const { mutate: onAddEquipment } = useCreateEquipment();
   const { mutate: onUpdateEquipment } = useUpdateEquipment();
+  const { mutate: onDeleteEquipment } = useDeleteEquipment();
+  const { dialog: deleteDialog, openEditDialog: openDeleteDialog, closeDialog } = useDialog<GetEquipment>();
   const { data: equipmentData, isLoading } = useGetEquipment({
     limit: 10,
     projectId: selectedProject?.id || "",
@@ -169,7 +174,7 @@ export const EquipmentManagement = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => item.id}
+              onClick={() => openDeleteDialog(item)}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
@@ -235,7 +240,6 @@ export const EquipmentManagement = () => {
                 label="Price ($)"
                 type="number"
                 placeholder="150.00"
-                min={0.01}
               />
 
               <FormSelectField
@@ -267,6 +271,17 @@ export const EquipmentManagement = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onClose={closeDialog}
+        onConfirm={() => {
+          onDeleteEquipment(deleteDialog.data?.id!);
+          closeDialog();
+        }}
+        title="Delete Equipment"
+        description="Are you sure you want to delete this equipment? This action cannot be undone."
+      />
     </div>
   );
 };

@@ -12,9 +12,11 @@ import {
   UpdateActivityProductionLogDTO,
   DailyProductionLogFilters,
   UpdateProductionLogDto,
-  DailyProductionLog
+  DailyProductionLog,
+  GetActivityCrew
 } from "@/lib/types/dailyProductionLog";
 import { PaginationResponse } from "../types/pagination";
+import { act } from "react";
 
 // API Endpoints
 const ENDPOINTS = {
@@ -200,27 +202,25 @@ export const deleteEquipmentLog = async (
 
 export const getActivityProductionLogs = async (
   filters: DailyProductionLogFilters
-): Promise<ActivityProductionLog[]> => {
+): Promise<PaginationResponse<ActivityProductionLog>> => {
   const params = new URLSearchParams();
-  if (filters.date) params.append("date", filters.date);
-  if (filters.startDate) params.append("startDate", filters.startDate);
-  if (filters.endDate) params.append("endDate", filters.endDate);
+  if (filters.productionLogId) params.append("productionLogId", filters.productionLogId);
+  if (filters.projectId) params.append("projectId", filters.projectId);
   if (filters.activityId) params.append("activityId", filters.activityId);
-
-  const response = await api.get<{ data: ActivityProductionLog[] }>(
-    `${ENDPOINTS.ACTIVITY_LOGS_BY_PROJECT(filters.projectId)}?${params.toString()}`
+  const response = await api.get<PaginationResponse<ActivityProductionLog>>(
+    `${ENDPOINTS.ACTIVITY_LOGS}?${params.toString()}`
   );
-  return response.data.data;
+  return response.data;
 };
 
-export const getActivityProductionLogById = async (
-  id: string
-): Promise<ActivityProductionLog> => {
-  const response = await api.get<{ data: ActivityProductionLog }>(
-    ENDPOINTS.ACTIVITY_LOG_BY_ID(id)
-  );
-  return response.data.data;
-};
+// export const getActivityProductionLogById = async (
+//   id: string
+// ): Promise<ActivityProductionLog> => {
+//   const response = await api.get<{ data: ActivityProductionLog }>(
+//     ENDPOINTS.ACTIVITY_LOG_BY_ID(id)
+//   );
+//   return response.data.data;
+// };
 
 export const createActivityProductionLog = async (
   data: CreateActivityProductionLogDTO
@@ -231,6 +231,15 @@ export const createActivityProductionLog = async (
   );
   return response.data;
 };
+
+export const getCrewAndForecastedDateForActivity = async (
+  activityId: string
+): Promise<GetActivityCrew> => {
+  const response = await api.get<{ data: GetActivityCrew }>(
+    `/production-logs/activity-logs/activity/${activityId}/crews`
+  );
+  return response.data.data;
+}
 
 export const updateActivityProductionLog = async (
   id: string,

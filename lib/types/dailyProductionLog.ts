@@ -101,35 +101,77 @@ export interface UpdateEquipmentLogDTO {
 // Activity Production Log (for logging actual production against forecasted activities)
 export interface ActivityProductionLog {
   id: string;
+  productionLogId: string;
   activityId: string;
-  activityName: string;
-  projectId: string;
-  date: string; // ISO date string (YYYY-MM-DD)
-  forecastedUnits: number; // From production configuration
-  actualUnitsPerCrew: { [crewId: string]: number }; // Actual units produced per crew
-  totalActualUnits: number; // Sum of all crew actual units
-  crews: ActivityLogCrew[]; // Crews assigned to this activity
-  variance: number; // actualUnits - forecastedUnits
-  variancePercentage: number; // (variance / forecastedUnits) * 100
-  notes?: string;
-  loggedBy: string; // User ID of contractor
+  name: null;
+  forecastedUnits: number;
+  actualUnits: number;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  activity: {
+    id: string;
+    name: string;
+    targetUnit: number;
+    startDate: string;
+    endDate: string;
+    duration: number;
+  };
+  productionLog: {
+    id: string;
+    date: string;
+    projectId: string;
+    project: {
+      id: string;
+      projectName: string;
+      projectNumber: string;
+    };
+  };
+  crewAllocations: CrewAllocation[];
+  _count: {
+    crewAllocations: number;
+  };
+}
+
+interface CrewAllocation {
+  id: string;
+  crewId: string;
+  actualUnits: number;
+  crew: {
+    id: string;
+    name: string;
+    description: null;
+    _count: {
+      labourers: number;
+    };
+  };
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ActivityLogCrew {
+export interface CreateActivityProductionLogDTO {
+  productionLogId: string;
+  activityId: string;
+  notes: string;
+  name: string;
+  forecastedUnits: number;
+  crews: Crew[];
+}
+interface Crew {
   crewId: string;
-  crewName: string;
-  forecastedUnits: number; // Forecasted for this crew
-  actualUnits: number; // Actual produced by this crew
+  actualUnits: number;
 }
 
-export interface CreateActivityProductionLogDTO {
+export interface GetActivityCrew {
   activityId: string;
-  projectId: string;
-  date: string;
-  actualUnitsPerCrew: { [crewId: string]: number };
-  notes?: string;
+  activityName: string;
+  unitsPerDay: string;
+  crews: ActivityCrew[];
+}
+
+interface ActivityCrew {
+  id: string;
+  name: string;
 }
 
 export interface UpdateActivityProductionLogDTO {
