@@ -25,8 +25,8 @@ import * as z from "zod";
 
 const equipmentLogFormSchema = z.object({
   equipmentId: z.string().min(1, "Equipment is required"),
-  operatorId: z.string().min(1, "Operator is required"),
   quantity: z.number().min(1, "Quantity must be at least 1"),
+  notes: z.string().optional(),
 });
 
 type EquipmentLogFormData = z.infer<typeof equipmentLogFormSchema>;
@@ -35,17 +35,15 @@ export interface EquipmentLogData {
   tempId?: string;
   equipmentId: string;
   equipmentName: string;
-  operatorId?: string;
-  operator: string;
   quantity: number;
+  notes?: string;
 }
 
 interface EquipmentLogEditableRowProps {
   equipmentLog?: EquipmentLogData;
   equipment: { value: string; label: string }[];
-  operators: { value: string; label: string }[];
   mode: "view" | "edit" | "create";
-  onSave: (data: EquipmentLogFormData & { equipmentName: string; operator: string }) => void;
+  onSave: (data: EquipmentLogFormData & { equipmentName: string }) => void;
   onCancel: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -54,7 +52,6 @@ interface EquipmentLogEditableRowProps {
 export const EquipmentLogEditableRow = ({
   equipmentLog,
   equipment,
-  operators,
   mode,
   onSave,
   onCancel,
@@ -72,24 +69,22 @@ export const EquipmentLogEditableRow = ({
     defaultValues: equipmentLog
       ? {
           equipmentId: equipmentLog.equipmentId,
-          operatorId: equipmentLog.operatorId || "",
           quantity: equipmentLog.quantity,
+          notes: equipmentLog.notes || "",
         }
       : {
           equipmentId: "",
-          operatorId: "",
           quantity: 1,
+          notes: "",
         },
   });
 
   const onSubmit = (data: EquipmentLogFormData) => {
     const selectedEquipment = equipment.find((eq) => eq.value === data.equipmentId);
-    const selectedOperator = operators.find((op) => op.value === data.operatorId);
     
     onSave({
       ...data,
       equipmentName: selectedEquipment?.label || "",
-      operator: selectedOperator?.label || "",
     });
   };
 
@@ -97,11 +92,13 @@ export const EquipmentLogEditableRow = ({
     return (
       <TableRow className="hover:bg-muted/50">
         <TableCell className="font-medium">{equipmentLog.equipmentName}</TableCell>
-        <TableCell>{equipmentLog.operator}</TableCell>
         <TableCell className="text-center">
           <Badge variant="outline" className="text-xs">
             {equipmentLog.quantity}
           </Badge>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">
+          {equipmentLog.notes || "-"}
         </TableCell>
         <TableCell className="text-center">
           <DropdownMenu>
@@ -150,27 +147,6 @@ export const EquipmentLogEditableRow = ({
         )}
       </TableCell>
 
-      <TableCell className="min-w-[200px]">
-        <Select
-          value={watch("operatorId")}
-          onValueChange={(value) => setValue("operatorId", value)}
-        >
-          <SelectTrigger className={errors.operatorId ? "border-destructive" : ""}>
-            <SelectValue placeholder="Select operator" />
-          </SelectTrigger>
-          <SelectContent>
-            {operators.map((op) => (
-              <SelectItem key={op.value} value={op.value}>
-                {op.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.operatorId && (
-          <p className="text-xs text-destructive mt-1">{errors.operatorId.message}</p>
-        )}
-      </TableCell>
-
       <TableCell className="min-w-[120px]">
         <Input
           {...register("quantity", {
@@ -186,6 +162,18 @@ export const EquipmentLogEditableRow = ({
         />
         {errors.quantity && (
           <p className="text-xs text-destructive mt-1">{errors.quantity.message}</p>
+        )}
+      </TableCell>
+
+      <TableCell className="min-w-[200px]">
+        <Input
+          {...register("notes")}
+          type="text"
+          placeholder="Optional notes"
+          className={errors.notes ? "border-destructive" : ""}
+        />
+        {errors.notes && (
+          <p className="text-xs text-destructive mt-1">{errors.notes.message}</p>
         )}
       </TableCell>
 

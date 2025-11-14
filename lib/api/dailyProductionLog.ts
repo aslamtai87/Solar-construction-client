@@ -10,7 +10,6 @@ import {
   ActivityProductionLog,
   CreateActivityProductionLogDTO,
   UpdateActivityProductionLogDTO,
-  DailyProductionLogSummary,
   DailyProductionLogFilters,
   UpdateProductionLogDto,
   DailyProductionLog
@@ -146,18 +145,15 @@ export const deleteLabourerTimeLog = async (
 // ================= EQUIPMENT LOG API =================
 
 export const getEquipmentLogs = async (
-  filters: DailyProductionLogFilters
-): Promise<EquipmentLog[]> => {
+  filters: Partial<DailyProductionLogFilters>
+): Promise<PaginationResponse<EquipmentLog>> => {
   const params = new URLSearchParams();
-  if (filters.date) params.append("date", filters.date);
-  if (filters.startDate) params.append("startDate", filters.startDate);
-  if (filters.endDate) params.append("endDate", filters.endDate);
-  if (filters.equipmentId) params.append("equipmentId", filters.equipmentId);
+  if (filters.productionLogId) params.append("productionLogId", filters.productionLogId);
 
-  const response = await api.get<{ data: EquipmentLog[] }>(
-    `${ENDPOINTS.EQUIPMENT_LOGS_BY_PROJECT(filters.projectId)}?${params.toString()}`
+  const response = await api.get<PaginationResponse<EquipmentLog>>(
+    `${ENDPOINTS.EQUIPMENT_LOGS}?${params.toString()}`
   );
-  return response.data.data;
+  return response.data;
 };
 
 export const getEquipmentLogById = async (
@@ -170,11 +166,12 @@ export const getEquipmentLogById = async (
 };
 
 export const createEquipmentLog = async (
-  data: CreateEquipmentLogDTO
+  data: CreateEquipmentLogDTO,
+  logId: string
 ): Promise<APISuccessResponse> => {
   const response = await api.post<APISuccessResponse>(
     ENDPOINTS.EQUIPMENT_LOGS,
-    data
+    { ...data, productionLogId: logId }
   );
   return response.data;
 };
@@ -257,12 +254,12 @@ export const deleteActivityProductionLog = async (
 
 // ================= SUMMARY API =================
 
-export const getDailyProductionSummary = async (
-  projectId: string,
-  date: string
-): Promise<DailyProductionLogSummary> => {
-  const response = await api.get<{ data: DailyProductionLogSummary }>(
-    ENDPOINTS.DAILY_PRODUCTION_SUMMARY(projectId, date)
-  );
-  return response.data.data;
-};
+// export const getDailyProductionSummary = async (
+//   projectId: string,
+//   date: string
+// ): Promise<DailyProductionLogSummary> => {
+//   const response = await api.get<{ data: DailyProductionLogSummary }>(
+//     ENDPOINTS.DAILY_PRODUCTION_SUMMARY(projectId, date)
+//   );
+//   return response.data.data;
+// };

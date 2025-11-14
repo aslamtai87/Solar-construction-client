@@ -3,7 +3,13 @@
 import React, { useState } from "react";
 import { Wrench, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,42 +18,51 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { EquipmentLogEditableRow, EquipmentLogData } from "./EquipmentLogEditableRow";
+import {
+  EquipmentLogEditableRow,
+  EquipmentLogData,
+} from "./EquipmentLogEditableRow";
+import { format } from "date-fns";
+import { useGetEquipment } from "@/hooks/ReactQuery/useSchedule";
+import {
+  useGetEquipmentLogs,
+  useCreateEquipmentLog,
+  useUpdateEquipmentLog,
+  useDeleteEquipmentLog,
+  useProductionLogId,
+} from "@/hooks/ReactQuery/useProductionLog";
+import { useProjectStore } from "@/store/projectStore";
+import { CreateEquipmentLogDTO } from "@/lib/types/dailyProductionLog";
 
-interface Equipment {
-  id: string;
-  name: string;
-  price: number;
-  pricingPeriod: string;
-}
-
-interface EquipmentLogRow {
-  tempId: string;
-  equipmentId: string;
-  equipmentName: string;
-  operator: string;
-  operatorId?: string;
-  quantity: number;
-}
-
-interface EnhancedEquipmentLogProps {
-  equipment: Equipment[];
-  operators: { value: string; label: string }[];
-  existingLogs: EquipmentLogRow[];
-  onSave: (logs: Omit<EquipmentLogRow, 'tempId' | 'equipmentName'>[]) => void;
-}
-
-export const EnhancedEquipmentLog: React.FC<EnhancedEquipmentLogProps> = ({
-  equipment,
-  operators,
-  existingLogs,
-  onSave,
-}) => {
-  const [logs, setLogs] = useState<EquipmentLogData[]>(
-    existingLogs.map((log) => ({ ...log }))
-  );
+export const EnhancedEquipmentLog = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { selectedProject } = useProjectStore();
+
+  // Get production log ID
+  const { data: productionLogData } = useProductionLogId(
+    selectedProject?.id || "",
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+  const productionLogId = productionLogData?.data?.id || "";
+
+  // Get equipment options
+  const { data: equipmentData } = useGetEquipment({
+    projectId: selectedProject?.id || "",
+    search: searchQuery,
+    limit: 100,
+  });
+  const equipment = equipmentData?.data?.result || [];
+
+  // Get existing equipment logs
+  const { data: equipmentLogsData } = useGetEquipmentLogs(productionLogId);
+  const logs = equipmentLogsData?.data?.result || [];
+
+  // Mutations
+  const { mutate: createLog } = useCreateEquipmentLog();
+  const { mutate: updateLog } = useUpdateEquipmentLog();
+  const { mutate: deleteLog } = useDeleteEquipmentLog();
 
   const equipmentOptions = equipment.map((eq) => ({
     value: eq.id,
@@ -56,31 +71,20 @@ export const EnhancedEquipmentLog: React.FC<EnhancedEquipmentLogProps> = ({
 
   const handleSave = (data: any) => {
     if (isCreating) {
-      const newLog: EquipmentLogData = {
-        tempId: `temp-${Date.now()}`,
+      const formattedData: CreateEquipmentLogDTO = {
         equipmentId: data.equipmentId,
-        equipmentName: data.equipmentName,
-        operatorId: data.operatorId,
-        operator: data.operator,
+        productionLogId: productionLogId,
         quantity: data.quantity,
+        notes: data.notes,
       };
-      setLogs([...logs, newLog]);
+      createLog(formattedData);
       setIsCreating(false);
     } else if (editingId) {
-      setLogs(
-        logs.map((log) =>
-          log.tempId === editingId
-            ? {
-                ...log,
-                equipmentId: data.equipmentId,
-                equipmentName: data.equipmentName,
-                operatorId: data.operatorId,
-                operator: data.operator,
-                quantity: data.quantity,
-              }
-            : log
-        )
-      );
+      const formattedData = {
+        quantity: data.quantity,
+        notes: data.notes,
+      };
+      updateLog({ id: editingId, data: formattedData });
       setEditingId(null);
     }
   };
@@ -96,23 +100,12 @@ export const EnhancedEquipmentLog: React.FC<EnhancedEquipmentLogProps> = ({
   };
 
   const handleDelete = (id: string) => {
-    setLogs(logs.filter((log) => log.tempId !== id));
+    deleteLog(id);
   };
 
   const handleAddNew = () => {
     setIsCreating(true);
     setEditingId(null);
-  };
-
-  const handleSaveAll = () => {
-    const logsToSave = logs.map((log) => ({
-      equipmentId: log.equipmentId,
-      operator: log.operator,
-      operatorId: log.operatorId,
-      quantity: log.quantity,
-    }));
-    onSave(logsToSave);
-    setLogs([]);
   };
 
   return (
@@ -124,7 +117,7 @@ export const EnhancedEquipmentLog: React.FC<EnhancedEquipmentLogProps> = ({
             <div>
               <CardTitle className="text-lg">Equipment Logs</CardTitle>
               <CardDescription className="text-sm">
-                Record equipment usage for today
+                Manage equipment usage - {format(new Date(), "MMMM dd, yyyy")}
               </CardDescription>
             </div>
           </div>
@@ -151,49 +144,49 @@ export const EnhancedEquipmentLog: React.FC<EnhancedEquipmentLogProps> = ({
             No equipment logged yet. Click "Add Equipment" to get started.
           </div>
         ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Equipment</TableHead>
-                  <TableHead>Operator</TableHead>
-                  <TableHead className="text-center">Quantity</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Equipment</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((log) => {
+                const isEditing = editingId === log.id;
+                const equipmentLogData: EquipmentLogData = {
+                  tempId: log.id,
+                  equipmentId: log.equipmentId,
+                  equipmentName: log.equipment?.name || "N/A",
+                  quantity: log.quantity,
+                  notes: log.notes || undefined,
+                };
+
+                return (
                   <EquipmentLogEditableRow
-                    key={log.tempId}
-                    equipmentLog={log}
+                    key={log.id}
+                    equipmentLog={equipmentLogData}
                     equipment={equipmentOptions}
-                    operators={operators}
-                    mode={editingId === log.tempId ? "edit" : "view"}
+                    mode={isEditing ? "edit" : "view"}
                     onSave={handleSave}
                     onCancel={handleCancel}
-                    onEdit={() => handleEdit(log.tempId!)}
-                    onDelete={() => handleDelete(log.tempId!)}
+                    onEdit={() => handleEdit(log.id)}
+                    onDelete={() => handleDelete(log.id)}
                   />
-                ))}
-                {isCreating && (
-                  <EquipmentLogEditableRow
-                    equipment={equipmentOptions}
-                    operators={operators}
-                    mode="create"
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                  />
-                )}
-              </TableBody>
-            </Table>
-            {logs.length > 0 && !isCreating && !editingId && (
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleSaveAll} size="sm">
-                  Save All Equipment Logs
-                </Button>
-              </div>
-            )}
-          </>
+                );
+              })}
+              {isCreating && (
+                <EquipmentLogEditableRow
+                  equipment={equipmentOptions}
+                  mode="create"
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                />
+              )}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
     </Card>

@@ -8,11 +8,13 @@ import { EnhancedActivityLog } from "./EnhancedActivityLog";
 import { WeatherLocationDisplay } from "./WeatherLocationDisplay";
 import { format } from "date-fns";
 import type { DailyConditions } from "@/lib/services/weatherLocation";
+import { getDailyConditions } from "@/lib/services/weatherLocation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useUpdateProductionLog, useProductionLogId } from "@/hooks/ReactQuery/useProductionLog";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 interface Equipment {
   id: string;
@@ -86,21 +88,12 @@ interface TodayDetailPageProps {
   userRole: "labourer" | "contractor";
   currentUserId: string;
   currentUserName: string;
-  
-  // Data
-  labourerLogs: LabourerTimeLog[];
-  labourers: LabourerOption[];
-  equipmentLogs: EquipmentLogRow[];
   activityLogs: ActivityLogEntry[];
-  equipment: Equipment[];
-  operators: Operator[];
   activities: ActivityData[];
   productionConfigs: ProductionConfig[];
-  weatherData: DailyConditions | null;
   
   // Handlers
   onBack: () => void;
-  onSaveEquipmentLogs: (logs: Omit<EquipmentLogRow, 'tempId' | 'equipmentName'>[]) => void;
   onAddActivityLog: (log: Omit<ActivityLogEntry, 'id' | 'activityName' | 'totalForecasted' | 'totalActual' | 'variance' | 'variancePercentage'>) => void;
   onUpdateActivityLog: (id: string, log: Partial<ActivityLogEntry>) => void;
   onDeleteActivityLog: (id: string) => void;
@@ -109,15 +102,10 @@ interface TodayDetailPageProps {
 export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   selectedDate,
   userRole,
-  equipmentLogs,
   activityLogs,
-  equipment,
-  operators,
   activities,
   productionConfigs,
-  weatherData,
   onBack,
-  onSaveEquipmentLogs,
   onAddActivityLog,
   onUpdateActivityLog,
   onDeleteActivityLog,
@@ -129,70 +117,92 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   const searchParams = useSearchParams();
   const { selectedProject } = useProjectStore();
   
-  // Get current tab from URL params or default to 'labour'
-  const currentTab = searchParams.get('tab') || 'labour';
+  const [displayWeather, setDisplayWeather] = useState<DailyConditions | null>(null);
+  const [currentTab, setCurrentTab] = useState(searchParams.get('tab') || 'labour');
   
   const productionLogQuery = useProductionLogId(
     selectedProject?.id || "",
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
   
+  const productionLog = productionLogQuery.data?.data;
   const { mutate: updateProductionLog } = useUpdateProductionLog();
+
+  // Handle tab change with URL params
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    router.push(`?${params.toString()}`);
+  };
+
+  // Helper function to get weather icon
+  const getWeatherIcon = (condition: string) => {
+    const lowerCondition = condition.toLowerCase();
+    if (lowerCondition.includes('sunny') || lowerCondition.includes('clear')) return '☀️';
+    if (lowerCondition.includes('cloud')) return '☁️';
+    if (lowerCondition.includes('rain')) return '🌧️';
+    if (lowerCondition.includes('snow')) return '❄️';
+    if (lowerCondition.includes('storm')) return '⛈️';
+    return '🌤️';
+  };
   
-  // State to store displayed weather data (from production log or live data)
-  const [displayWeather, setDisplayWeather] = useState<DailyConditions | null>(null);
-  
-  // Check if production log already has weather data
+  // Check if production log has weather data, if yes use it, otherwise fetch live
   useEffect(() => {
-    if (productionLogQuery.data?.data) {
-      const productionLog = productionLogQuery.data.data;
-      
-      // If production log has weather data, use it
-      if (productionLog.weatherCondition && productionLog.temperature) {
-        setDisplayWeather({
-          weather: {
-            condition: productionLog.weatherCondition,
-            temperature: productionLog.temperature,
-            humidity: productionLog.humidity || 0,
-            windSpeed: productionLog.windSpeed || 0,
-            icon: getWeatherIcon(productionLog.weatherCondition),
-          },
-          location: {
-            latitude: 0,
-            longitude: 0,
-            address: productionLog.location || undefined,
-          },
-          timestamp: productionLog.updatedAt,
-        });
-      } else if (weatherData) {
-        // If no weather data in production log, use live weather data
-        setDisplayWeather(weatherData);
+    const fetchWeather = async () => {
+      if (productionLog) {
+        // If production log has weather, use that
+        if (productionLog.weatherCondition && productionLog.temperature) {
+          setDisplayWeather({
+            weather: {
+              condition: productionLog.weatherCondition,
+              temperature: productionLog.temperature,
+              humidity: productionLog.humidity || 0,
+              windSpeed: productionLog.windSpeed || 0,
+              icon: getWeatherIcon(productionLog.weatherCondition),
+            },
+            location: {
+              address: productionLog.location || "",
+              latitude: 0,
+              longitude: 0,
+            },
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          // Otherwise fetch live weather
+          try {
+            const liveWeather = await getDailyConditions();
+            setDisplayWeather(liveWeather);
+          } catch (error) {
+            console.error("Failed to fetch weather:", error);
+          }
+        }
       }
-    }
-  }, [productionLogQuery.data, weatherData]);
+    };
+    
+    fetchWeather();
+  }, [productionLog]);
   
-  // Auto-save weather data only if not already present in production log
+  // Auto-save weather data only if it doesn't exist in production log
   useEffect(() => {
-    if (weatherData && productionLogQuery.data?.data && userRole === "contractor") {
-      const productionLog = productionLogQuery.data.data;
-      
+    if (displayWeather && productionLog?.id && userRole === "contractor") {
       // Only save if weather data doesn't exist yet
       if (!productionLog.weatherCondition && !productionLog.temperature) {
         updateProductionLog({
           id: productionLog.id,
           data: {
-            weatherCondition: weatherData.weather.condition,
-            temperature: weatherData.weather.temperature,
-            humidity: weatherData.weather.humidity,
-            windSpeed: weatherData.weather.windSpeed,
-            location: weatherData.location.address || 
-              `${weatherData.location.latitude.toFixed(4)}, ${weatherData.location.longitude.toFixed(4)}`,
+            weatherCondition: displayWeather.weather.condition,
+            temperature: displayWeather.weather.temperature,
+            humidity: displayWeather.weather.humidity,
+            windSpeed: displayWeather.weather.windSpeed,
+            location: displayWeather.location.address || 
+              `${displayWeather.location.latitude.toFixed(4)}, ${displayWeather.location.longitude.toFixed(4)}`,
             notes: productionLog.notes || "",
           },
         });
       }
     }
-  }, [weatherData, productionLogQuery.data?.data, userRole, updateProductionLog]);
+  }, [displayWeather, productionLog?.id, productionLog?.weatherCondition, productionLog?.temperature, userRole, updateProductionLog]);
   
   const handleWeatherUpdate = (data: {
     weatherCondition: string;
@@ -212,34 +222,44 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
         ...data,
         notes: productionLogQuery.data.data.notes || "",
       },
+    }, {
+      onSuccess: () => {
+        toast.success("Weather updated successfully");
+        // Update display weather as well
+        setDisplayWeather(prev => prev ? {
+          ...prev,
+          weather: {
+            ...prev.weather,
+            condition: data.weatherCondition,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            windSpeed: data.windSpeed,
+            icon: getWeatherIcon(data.weatherCondition),
+          },
+          location: {
+            ...prev.location,
+            address: data.location,
+          },
+        } : null);
+      },
+      onError: () => {
+        toast.error("Failed to update weather");
+      },
     });
-  };
-  
-  const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    router.push(`?${params.toString()}`);
-  };
-  
-  // Helper function to get weather icon from condition string
-  const getWeatherIcon = (condition: string): string => {
-    const conditionLower = condition.toLowerCase();
-    if (conditionLower.includes('sun') || conditionLower.includes('clear')) return '☀️';
-    if (conditionLower.includes('cloud')) return '☁️';
-    if (conditionLower.includes('rain')) return '🌧️';
-    if (conditionLower.includes('storm')) return '⛈️';
-    if (conditionLower.includes('snow')) return '❄️';
-    if (conditionLower.includes('fog') || conditionLower.includes('mist')) return '🌫️';
-    return '🌤️';
   };
 
   return (
     <div className="space-y-4">
-      <div>
-        <Button onClick={onBack}>
+      <div className="flex items-center gap-4">
+        <Button onClick={onBack} variant="ghost" size="sm">
+          <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
+        <h2 className="text-xl font-semibold">
+          Production Log - {dateDisplay}
+        </h2>
       </div>
+
       {/* Weather and Location (for contractor) */}
       {userRole === "contractor" && displayWeather && (
         <WeatherLocationDisplay
@@ -271,12 +291,7 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
           </TabsContent>
 
           <TabsContent value="equipment" className="space-y-4 mt-4">
-            <EnhancedEquipmentLog
-              equipment={equipment}
-              operators={operators}
-              existingLogs={equipmentLogs}
-              onSave={onSaveEquipmentLogs}
-            />
+            <EnhancedEquipmentLog/>
           </TabsContent>
 
           <TabsContent value="activities" className="space-y-4 mt-4">

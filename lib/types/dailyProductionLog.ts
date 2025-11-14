@@ -46,21 +46,35 @@ export interface UpdateLabourerTimeLogDTO {
   notes?: string;
 }
 
-// Equipment Log (for contractors to log daily equipment usage)
 export interface EquipmentLog {
   id: string;
-  equipmentId: string; // Reference to Equipment master data
-  equipmentName: string;
-  operator: string; // Name of operator (can be custom or from list)
-  operatorId?: string; // Optional reference to User ID if selected from list
-  projectId: string;
-  date: string; // ISO date string (YYYY-MM-DD)
-  quantity: number; // Number of units of this equipment used
-  hoursUsed?: number; // Optional: hours the equipment was used
-  notes?: string;
-  loggedBy: string; // User ID of contractor
+  productionLogId: string;
+  equipmentId: string;
+  operatorName: null;
+  quantity: number;
+  startTime: null;
+  endTime: null;
+  hoursUsed: null;
+  notes: null;
   createdAt: string;
   updatedAt: string;
+  equipment: {
+    id: string;
+    name: string;
+    description: string;
+    price: string;
+    pricingType: string;
+  };
+  productionLog: {
+    id: string;
+    date: string;
+    projectId: string;
+    project: {
+      id: string;
+      projectName: string;
+      projectNumber: string;
+    };
+  };
 }
 
 export interface UpdateProductionLogDto {
@@ -74,20 +88,13 @@ export interface UpdateProductionLogDto {
 
 export interface CreateEquipmentLogDTO {
   equipmentId: string;
-  operator?: string;
-  operatorId?: string;
   productionLogId: string;
-  date: string;
   quantity: number;
-  hoursUsed?: number;
   notes?: string;
 }
 
 export interface UpdateEquipmentLogDTO {
-  operator?: string;
-  operatorId?: string;
   quantity?: number;
-  hoursUsed?: number;
   notes?: string;
 }
 

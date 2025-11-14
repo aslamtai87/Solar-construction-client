@@ -6,7 +6,6 @@ import { LabourerTimeHistory } from "./components/LabourerTimeHistory";
 import { ContractorLogsHistory } from "./components/ContractorLogsHistory";
 import { TodayDetailPage } from "./components/TodayDetailPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DailyConditions } from "@/lib/services/weatherLocation";
 
 // Types matching component interfaces
 
@@ -57,9 +56,6 @@ interface DailyLogSummary {
 }
 
 export const DailyProductionLogWithNavigation: React.FC = () => {
-  const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(new Date(Date.now() - 86400000), "yyyy-MM-dd");
-  const twoDaysAgo = format(new Date(Date.now() - 172800000), "yyyy-MM-dd");
 
   // Navigation state
   const [viewMode, setViewMode] = useState<"list" | "detail">("list");
@@ -72,52 +68,6 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
   const currentUserId = "user-001";
   const currentUserName = "John Smith";
   const userRole: "labourer" | "contractor" = activeTab; // Simulating different roles per tab
-
-  // Weather and Location
-  const [weatherData, setWeatherData] = useState<DailyConditions | null>(null);
-  const [loadingWeather, setLoadingWeather] = useState(false);
-
-  // Fake data - Labourer time logs (for contractor's view of all labourers)
-  const [labourerLogs, setLabourerLogs] = useState<LabourerTimeLog[]>([
-    {
-      id: "lab-log-001",
-      labourerId: "user-002",
-      labourerName: "Mike Johnson",
-      labourerType: "Electrician",
-      entryTime: "07:30",
-      exitTime: "16:00",
-      totalHours: 8.5,
-    },
-    {
-      id: "lab-log-002",
-      labourerId: "user-003",
-      labourerType: "Welder",
-      labourerName: "Sarah Williams",
-      entryTime: "08:00",
-      exitTime: "17:00",
-      totalHours: 9,
-    },
-  ]);
-
-  // Fake labourers list
-  const labourers = [
-    { value: "user-002", label: "Mike Johnson" },
-    { value: "user-003", label: "Sarah Williams" },
-    { value: "user-004", label: "Tom Brown" },
-    { value: "user-005", label: "Emma Davis" },
-  ];
-
-  // Fake data - Equipment logs
-  const [equipmentLogs, setEquipmentLogs] = useState<EquipmentLogRow[]>([
-    {
-      tempId: "eq-log-001",
-      equipmentId: "eq-1",
-      equipmentName: "Excavator",
-      operator: "Mike Johnson",
-      operatorId: "user-002",
-      quantity: 2,
-    },
-  ]);
 
   // Fake data - Activity logs
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([
@@ -200,22 +150,6 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
     setSelectedDate(null);
   };
 
-  const handleSaveEquipmentLogs = (
-    logs: Omit<EquipmentLogRow, "tempId" | "equipmentName">[]
-  ) => {
-    const newLogs = logs.map((log) => {
-      const eq = equipment.find((e) => e.id === log.equipmentId);
-      return {
-        tempId: `eq-log-${Date.now()}-${Math.random()}`,
-        equipmentId: log.equipmentId,
-        equipmentName: eq?.name || "",
-        operator: log.operator,
-        operatorId: log.operatorId,
-        quantity: log.quantity,
-      };
-    });
-    setEquipmentLogs([...equipmentLogs, ...newLogs]);
-  };
 
   const handleAddActivityLog = (
     logData: Omit<
@@ -328,17 +262,10 @@ export const DailyProductionLogWithNavigation: React.FC = () => {
           userRole={userRole}
           currentUserId={currentUserId}
           currentUserName={currentUserName}
-          labourerLogs={labourerLogs}
-          labourers={labourers}
-          equipmentLogs={equipmentLogs}
           activityLogs={activityLogs}
-          equipment={equipment}
-          operators={operators}
           activities={activities}
           productionConfigs={productionConfigs}
-          weatherData={weatherData}
           onBack={handleBack}
-          onSaveEquipmentLogs={handleSaveEquipmentLogs}
           onAddActivityLog={handleAddActivityLog}
           onUpdateActivityLog={handleUpdateActivityLog}
           onDeleteActivityLog={handleDeleteActivityLog}
