@@ -60,12 +60,23 @@ export interface UpdateLabourerTimeLogDTO {
   labourerActivities?: LabourerActivity[];
 }
 
+export interface EquipmentActivity {
+  id: string;
+  activityId: string;
+  quantity: number;
+  activity?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface EquipmentLog {
   id: string;
   productionLogId: string;
   equipmentId: string;
   operatorName: null;
   quantity: number;
+  isQuantityShared: boolean;
   startTime: null;
   endTime: null;
   hoursUsed: null;
@@ -89,6 +100,7 @@ export interface EquipmentLog {
       projectNumber: string;
     };
   };
+  equipmentActivities?: EquipmentActivity[];
 }
 
 export interface UpdateProductionLogDto {
@@ -104,12 +116,22 @@ export interface CreateEquipmentLogDTO {
   equipmentId: string;
   productionLogId: string;
   quantity: number;
+  isQuantityShared: boolean;
   notes?: string;
+  equipmentActivities: {
+    activityId: string;
+    quantity: number;
+  }[];
 }
 
 export interface UpdateEquipmentLogDTO {
   quantity?: number;
+  isQuantityShared?: boolean;
   notes?: string;
+  equipmentActivities?: {
+    activityId: string;
+    quantity: number;
+  }[];
 }
 
 // Activity Production Log (for logging actual production against forecasted activities)
