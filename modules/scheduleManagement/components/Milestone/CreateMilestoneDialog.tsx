@@ -131,7 +131,7 @@ export const CreateMilestoneDialog = ({
               placeholder="Select a phase..."
               description="Choose which phase this milestone belongs to"
               options={phases.map((phase) => ({
-                label: phase.title,
+                label: phase.name,
                 value: phase.id,
               }))}
             />

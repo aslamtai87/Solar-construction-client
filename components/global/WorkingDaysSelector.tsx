@@ -60,9 +60,6 @@ export function WorkingDaysSelector<TFieldValues extends FieldValues>({
                   <SelectItem value={WorkingDaysType.ALL_DAYS}>
                     {getWorkingDaysLabel(WorkingDaysType.ALL_DAYS)} (Mon-Sun)
                   </SelectItem>
-                  <SelectItem value={WorkingDaysType.WEEKENDS_ONLY}>
-                    {getWorkingDaysLabel(WorkingDaysType.WEEKENDS_ONLY)} (Sat-Sun)
-                  </SelectItem>
                   <SelectItem value={WorkingDaysType.CUSTOM}>
                     {getWorkingDaysLabel(WorkingDaysType.CUSTOM)}
                   </SelectItem>

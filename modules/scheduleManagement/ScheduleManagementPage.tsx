@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import PhaseTable from "./components/Phase/PhaseTable";
 import ActivityTableNew from "./components/Activity/ActivityTableNew";
-import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
+// import ActivityExcelUpload from "./components/Activity/ActivityExcelUpload";
 import MilestoneDisplay from "./components/Milestone/MilestoneDisplay";
 import {
   Activity,

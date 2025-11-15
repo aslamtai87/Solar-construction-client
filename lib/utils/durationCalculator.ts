@@ -54,10 +54,6 @@ function isWorkingDay(date: Date, config: WorkingDaysConfig): boolean {
       // Monday to Friday (1-5)
       return dayOfWeek >= 1 && dayOfWeek <= 5;
 
-    case WorkingDaysType.WEEKENDS_ONLY:
-      // Saturday or Sunday (0, 6)
-      return dayOfWeek === 0 || dayOfWeek === 6;
-
     case WorkingDaysType.CUSTOM:
       // Monday to Friday
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
@@ -98,8 +94,6 @@ export function getWorkingDaysLabel(type: WorkingDaysType): string {
       return "All Days";
     case WorkingDaysType.WEEKDAYS_ONLY:
       return "Weekdays Only";
-    case WorkingDaysType.WEEKENDS_ONLY:
-      return "Weekends Only";
     case WorkingDaysType.CUSTOM:
       return "Custom";
     default:
@@ -118,8 +112,6 @@ export function getWorkingDaysDescription(config: WorkingDaysConfig): string {
       return "Monday - Sunday";
     case WorkingDaysType.WEEKDAYS_ONLY:
       return "Monday - Friday";
-    case WorkingDaysType.WEEKENDS_ONLY:
-      return "Saturday - Sunday";
     case WorkingDaysType.CUSTOM:
       const days = ["Monday - Friday"];
       if (config.includeSaturday) days.push("Saturday");

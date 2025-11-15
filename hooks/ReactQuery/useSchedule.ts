@@ -103,10 +103,11 @@ export const useGetActivity = (params?: {
   limit?: number;
   search?: string;
   projectId?: string;
+  phaseId?: string;
   includeProductionPlanning?: boolean;
 }) => {
   return useQuery<PaginationResponse<Activity>>({
-    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.projectId, params?.includeProductionPlanning],
+    queryKey: [QUERY_KEYS.ACTIVITIES, params?.cursor, params?.limit, params?.search, params?.projectId, params?.phaseId, params?.includeProductionPlanning],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       
@@ -124,6 +125,9 @@ export const useGetActivity = (params?: {
       }
       if (params?.includeProductionPlanning) {
         queryParams.append('includeProductionPlanning', 'true');
+      }
+      if (params?.phaseId) {
+        queryParams.append('phaseId', params.phaseId);
       }
       
       const response = await api.get<PaginationResponse<Activity>>(

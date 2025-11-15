@@ -34,8 +34,17 @@ export default function AuthGuard({
   
   useEffect(() => {
     if (!isLoading && requireAuth) {
-      if (userProfile) {
-        setUserProfile(userProfile);
+      if (userProfile?.data) {
+        setUserProfile({
+          id: userProfile.data?.id,
+          fullName: userProfile.data?.fullName,
+          email: userProfile.data?.email,
+          status: userProfile.data?.status,
+          companyName: userProfile.data?.companyName,
+          companyType: userProfile.data?.companyType,
+          updatedAt: userProfile.data?.updatedAt,
+          createdAt: userProfile.data?.createdAt,
+        });
       } else {
         clearUserProfile();
       }
