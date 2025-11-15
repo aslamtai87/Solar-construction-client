@@ -119,3 +119,60 @@ export interface UpdateMilestoneDTO {
 //   activities: Activity[];
 //   milestones: Milestone[];
 // }
+
+export interface ScheduleTracker {
+  id: string;
+  activityNo: number;
+  name: string;
+  status: null;
+  startDate: string;
+  endDate: string;
+  phase: Phase;
+  crews: Crew[];
+  units: Units;
+  duration: Duration;
+  productivity: Productivity;
+  cost: Cost;
+}
+
+interface Cost {
+  estimatedPerUnit: number;
+  actualPerUnit: number;
+  variance: number;
+  totalEquipmentCost: number;
+  totalLabourCost: number;
+  totalCost: number;
+}
+
+interface Productivity {
+  targetRate: number;
+  actualRate: number;
+  efficiency: number;
+}
+
+interface Duration {
+  planned: number;
+  actual: number;
+  variance: number;
+}
+
+interface Units {
+  target: number;
+  completed: number;
+  remaining: number;
+  completionPercentage: number;
+}
+
+interface Crew {
+  id: string;
+  name: string;
+  description: null;
+  labourers: Labourer[];
+}
+
+interface Labourer {
+  name: string;
+  quantity: number;
+  rateType: string;
+  totalRate: number;
+}

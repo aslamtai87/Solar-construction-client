@@ -90,7 +90,7 @@ export const ViewProductionLogDialog: React.FC<ViewProductionLogDialogProps> = (
                 </div>
                 <div>
                   <p className="text-muted-foreground">Temperature</p>
-                  <p className="font-medium">{productionLog.temperature}°C</p>
+                  <p className="font-medium">{productionLog.temperature}F</p>
                 </div>
                 {productionLog.humidity && (
                   <div>

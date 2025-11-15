@@ -31,6 +31,15 @@ export interface LabourerTimeLog {
       projectNumber: string;
     };
   };
+  labourerActivities?: {
+    id: string;
+    activityId: string;
+    hoursWorked: number;
+    activity?: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 export interface CreateLabourerTimeLogDTO {
@@ -38,12 +47,17 @@ export interface CreateLabourerTimeLogDTO {
   entryTime: string;
   exitTime?: string;
   notes?: string;
+  labourerActivities: LabourerActivity[];
 }
-
+interface LabourerActivity {
+  activityId: string;
+  hoursWorked: number;
+}
 export interface UpdateLabourerTimeLogDTO {
   entryTime?: string;
   exitTime?: string;
   notes?: string;
+  labourerActivities?: LabourerActivity[];
 }
 
 export interface EquipmentLog {

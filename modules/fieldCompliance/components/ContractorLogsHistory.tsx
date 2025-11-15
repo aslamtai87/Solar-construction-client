@@ -149,7 +149,7 @@ export const ContractorLogsHistory: React.FC<ContractorLogsHistoryProps> = ({
                             {log.weatherCondition && log.temperature ? (
                               <div className="flex items-center gap-2 text-sm">
                                 <Cloud className="h-4 w-4 text-muted-foreground" />
-                                <span>{log.temperature}°C</span>
+                                <span>{log.temperature}F</span>
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-muted-foreground">{log.weatherCondition}</span>
                               </div>

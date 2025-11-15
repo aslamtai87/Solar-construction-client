@@ -14,9 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { Activity, Phase, WorkingDaysConfig } from "@/lib/types/schedule";
 import ActivityEditableRow from "./ActivityEditableRow";
-import { useCreateActivity, useGetActivity } from "@/hooks/ReactQuery/useSchedule";
+import { useCreateActivity, useGetActivity, useDeleteActivity } from "@/hooks/ReactQuery/useSchedule";
 import { ActivityFormData } from "./ActivityEditableRow";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useDialog } from "@/hooks/useDialog";
+import DeleteDialog from "@/components/global/DeleteDialog";
 import CursorPagination from "@/components/global/Table/CursorPagination";
 import {
   Select,
@@ -25,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {useUpdateActivity} from "@/hooks/ReactQuery/useSchedule";
+import { useUpdateActivity } from "@/hooks/ReactQuery/useSchedule";
 
 
 interface ActivityTableNewProps {
@@ -44,12 +46,15 @@ export const ActivityTableNew = ({
   const [cursor, setCursor] = useState<string | null>(null);
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 2;
+  const limit = 10;
 
   const debouncedSearch = useDebounce(searchQuery, 500);
   
   const createActivityMutation = useCreateActivity();
   const updateActivityMutation = useUpdateActivity();
+  const deleteActivityMutation = useDeleteActivity();
+  
+  const { dialog: deleteDialog, openEditDialog: openDeleteDialog, closeDialog: closeDeleteDialog } = useDialog<Activity>();
 
   const { data: activitiesData, isLoading } = useGetActivity({
     cursor: cursor,
@@ -71,9 +76,17 @@ export const ActivityTableNew = ({
     setEditingActivityId(null);
   };
 
-  const handleDeleteActivity = (activityId: string) => {
-    if (confirm("Are you sure you want to delete this activity?")) {
-      console.log("Deleting activity with ID:", activityId);
+  const handleDeleteActivity = (activity: Activity) => {
+    openDeleteDialog(activity);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteDialog.data?.id) {
+      deleteActivityMutation.mutate(deleteDialog.data.id, {
+        onSuccess: () => {
+          closeDeleteDialog();
+        },
+      });
     }
   };
 
@@ -230,7 +243,7 @@ export const ActivityTableNew = ({
                   onSave={(data) => handleUpdateActivity(activity.id, data)}
                   onCancel={() => setEditingActivityId(null)}
                   onEdit={() => setEditingActivityId(activity.id)}
-                  onDelete={() => handleDeleteActivity(activity.id)}
+                  onDelete={() => handleDeleteActivity(activity)}
                 />
               ))}
             </TableBody>
@@ -251,6 +264,15 @@ export const ActivityTableNew = ({
           currentItems={pagination?.noOfOutput}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onClose={closeDeleteDialog}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Activity"
+        description={`Are you sure you want to delete "${deleteDialog.data?.name}"? This action cannot be undone.`}
+      />
     </div>
   );
 };

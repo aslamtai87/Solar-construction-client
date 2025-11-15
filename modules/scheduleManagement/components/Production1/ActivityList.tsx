@@ -116,7 +116,7 @@ const ActivityList = () => {
     hasPreviousPage,
   } = useCursorPagination();
   const { data: activities, isLoading } = useGetActivity({
-    limit: 2,
+    limit: 10,
     projectId: selectedProject?.id || "",
     includeProductionPlanning: true,
     cursor: cursor || undefined,

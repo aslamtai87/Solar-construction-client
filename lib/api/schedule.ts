@@ -1,10 +1,16 @@
 import { API_ENDPOINTS } from "./endPoints";
 import api from "./api";
-import { Phase, CreatePhaseDTO, Activity } from "@/lib/types/schedule";
+import { Phase, CreatePhaseDTO, Activity, ScheduleTracker } from "@/lib/types/schedule";
 import { APISuccessResponse } from "../types/api";
 import { ActivityFormData } from "@/modules/scheduleManagement/components/Activity/ActivityEditableRow";
 import { PaginationResponse } from "../types/pagination";
-import { CreateEquipmentDTO, CreateLabourerDTO, GetCrew, GetEquipment, GetLabourer } from "../types/production";
+import {
+  CreateEquipmentDTO,
+  CreateLabourerDTO,
+  GetCrew,
+  GetEquipment,
+  GetLabourer,
+} from "../types/production";
 
 export const fetchPhaseById = async (id: string): Promise<Phase> => {
   const response = await api.get<Phase>(
@@ -61,6 +67,13 @@ export const updateActivity = async (
   const response = await api.patch<APISuccessResponse>(
     API_ENDPOINTS.UPDATE_ACTIVITY.replace("{id}", id),
     data
+  );
+  return response.data;
+};
+
+export const deleteActivity = async (id: string): Promise<APISuccessResponse> => {
+  const response = await api.delete<APISuccessResponse>(
+    API_ENDPOINTS.DELETE_ACTIVITY.replace("{id}", id)
   );
   return response.data;
 };
@@ -144,9 +157,12 @@ export const deleteEquipment = async (
   return response.data;
 };
 
-
-export const getLabourers = async (): Promise<PaginationResponse<GetLabourer>> => {
-  const response = await api.get<PaginationResponse<GetLabourer>>(API_ENDPOINTS.GET_LABOURERS);
+export const getLabourers = async (): Promise<
+  PaginationResponse<GetLabourer>
+> => {
+  const response = await api.get<PaginationResponse<GetLabourer>>(
+    API_ENDPOINTS.GET_LABOURERS
+  );
   return response.data;
 };
 
@@ -155,11 +171,10 @@ export const createLabourer = async (
 ): Promise<APISuccessResponse> => {
   const response = await api.post<APISuccessResponse>(
     API_ENDPOINTS.CREATE_LABOURER,
-    {...data,rateType: "HOURLY"}
+    { ...data, rateType: "HOURLY" }
   );
   return response.data;
 };
-
 
 export const updateLabourer = async (
   id: string,
@@ -170,18 +185,15 @@ export const updateLabourer = async (
     data
   );
   return response.data;
-}
+};
 
-
-export const createCrew = async (
-  data: any
-): Promise<APISuccessResponse> => {
+export const createCrew = async (data: any): Promise<APISuccessResponse> => {
   const response = await api.post<APISuccessResponse>(
     API_ENDPOINTS.CREATE_CREW,
     data
   );
   return response.data;
-}
+};
 
 export const getCrews = async (params?: {
   cursor?: string | null;
@@ -225,9 +237,7 @@ export const updateCrew = async (
   return response.data;
 };
 
-export const deleteCrew = async (
-  id: string
-): Promise<APISuccessResponse> => {
+export const deleteCrew = async (id: string): Promise<APISuccessResponse> => {
   const response = await api.delete<APISuccessResponse>(
     API_ENDPOINTS.DELETE_CREW.replace("{id}", id)
   );
@@ -260,6 +270,37 @@ export const deleteProductionPlanning = async (
 ): Promise<APISuccessResponse> => {
   const response = await api.delete<APISuccessResponse>(
     API_ENDPOINTS.DELETE_PRODUCTION_PLANNING.replace("{id}", id)
+  );
+  return response.data;
+};
+
+export const activityTracker = async (params: {
+  startDate?: string;
+  endDate?: string;
+  phaseId?: string;
+  search?: string;
+  projectId?: string;
+  cursor?: string;
+  limit?: number;
+}): Promise<PaginationResponse<ScheduleTracker>> => {
+  const queryParams = new URLSearchParams();
+  if (params?.startDate) {
+    queryParams.append("startDate", params.startDate);
+  }
+  if (params?.endDate) {
+    queryParams.append("endDate", params.endDate);
+  }
+  if (params?.phaseId) {
+    queryParams.append("phaseId", params.phaseId);
+  }
+  if (params?.search) {
+    queryParams.append("search", params.search);
+  }
+  if (params?.projectId) {
+    queryParams.append("projectId", params.projectId);
+  }
+  const response = await api.get<PaginationResponse<ScheduleTracker>>(
+    `/schedule-management/tracker?${queryParams.toString()}`
   );
   return response.data;
 };

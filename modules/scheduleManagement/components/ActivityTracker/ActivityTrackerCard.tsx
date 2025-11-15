@@ -43,6 +43,9 @@ interface ActivityTrackerCardProps {
       estimated: number;
       actual: number;
       variance: number;
+      totalLabourCost?: number;
+      totalEquipmentCost?: number;
+      totalCost?: number;
     };
     dependencies?: string;
   };
@@ -92,10 +95,10 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
         className="p-2 px-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-start md:items-center gap-2 md:gap-4 flex-wrap md:flex-nowrap">
           {/* Expand Icon */}
           <button
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
@@ -109,7 +112,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
           </button>
 
           {/* Status Icon */}
-          <div className={cn("flex items-center justify-center w-8 h-8 rounded-full",
+          <div className={cn("flex items-center justify-center w-8 h-8 rounded-full shrink-0",
             activity.status === "completed" && " text-green-600",
             activity.status === "in progress" && " text-blue-600",
             activity.status === "delayed" && " text-red-600",
@@ -119,9 +122,9 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
           </div>
 
           {/* Activity Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <h3 className="font-semibold text-base truncate">
+          <div className="flex-1 min-w-0 w-full md:w-auto">
+            <div className="flex items-center gap-2 md:gap-3 mb-1 flex-wrap">
+              <h3 className="font-semibold text-sm md:text-base truncate">
                 {activity.name}
               </h3>
               <Badge
@@ -134,14 +137,14 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
                 {activity.phase}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
-                <span>{activity.crew}</span>
+                <span className="truncate">{activity.crew}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>
+                <span className="text-xs">
                   {activity.startDate} → {activity.endDate}
                 </span>
               </div>
@@ -149,15 +152,15 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
           </div>
 
           {/* Metrics */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto justify-between md:justify-end mt-2 md:mt-0">
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-1">Progress</div>
-              <div className="font-semibold">
+              <div className="font-semibold text-sm md:text-base">
                 {activity.progress.current.toLocaleString()} /{" "}
                 {activity.progress.total.toLocaleString()}
               </div>
               {/* Progress Bar */}
-              <div className="w-32 h-2 bg-gray-200 rounded-full mt-1 overflow-hidden">
+              <div className="w-20 md:w-32 h-2 bg-gray-200 rounded-full mt-1 overflow-hidden">
                 <div
                   className={cn(
                     "h-full transition-all",
@@ -168,22 +171,13 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
                   style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                 />
               </div>
-              {/* <div
-                className={cn(
-                  "text-xs mt-1",
-                  activity.outputVariance >= 0 ? "text-green-600" : "text-red-600"
-                )}
-              >
-                {activity.outputVariance >= 0 ? "↗" : "↘"}{" "}
-                {Math.abs(activity.outputVariance)}%
-              </div> */}
             </div>
 
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-1">
                 Output/Day
               </div>
-              <div className="font-semibold">{activity.outputPerDay}</div>
+              <div className="font-semibold text-sm md:text-base">{activity.outputPerDay}</div>
               <div
                 className={cn(
                   "text-xs mt-1",
@@ -191,7 +185,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
                 )}
               >
                 {activity.outputVariance >= 0 ? "↗" : "↘"}{" "}
-                {Math.abs(activity.outputVariance)}%
+                {Math.abs(activity.outputVariance).toFixed(1)}%
               </div>
             </div>
 
@@ -199,7 +193,7 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
               <div className="text-xs text-muted-foreground mb-1">
                 Cost/Unit
               </div>
-              <div className="font-semibold">${activity.costPerUnit}</div>
+              <div className="font-semibold text-sm md:text-base">${activity.costPerUnit}</div>
               <div
                 className={cn(
                   "text-xs mt-1",
@@ -216,8 +210,35 @@ export const ActivityTrackerCard: React.FC<ActivityTrackerCardProps> = ({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="border-t bg-gray-50/50 p-6">
-          <div className="grid grid-cols-4 gap-6">
+        <div className="border-t bg-gray-50/50 p-4 md:p-6">
+          {/* Total Cost Summary */}
+          {activity.cost.totalCost !== undefined && (
+            <div className="mb-6 p-4 bg-white rounded-lg border">
+              <h4 className="font-semibold text-sm mb-3">Total Cost Breakdown</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Labour Cost</div>
+                  <div className="text-lg font-bold text-blue-600">
+                    ${(activity.cost.totalLabourCost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Equipment Cost</div>
+                  <div className="text-lg font-bold text-orange-600">
+                    ${(activity.cost.totalEquipmentCost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Total Cost</div>
+                  <div className="text-lg font-bold text-purple-600">
+                    ${(activity.cost.totalCost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {/* Duration */}
             <div>
               <h4 className="font-semibold text-sm mb-3">Duration</h4>

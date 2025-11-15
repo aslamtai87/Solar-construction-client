@@ -415,7 +415,7 @@ export const EnhancedActivityLog = () => {
               <Label className="text-sm font-medium">Activity</Label>
               <SearchableSelect
                 options={activityOptions}
-                value={selectedActivityId}
+                value={isCustomActivity ? activitySearchQuery : selectedActivityId}
                 placeholder="Select or type custom activity..."
                 searchPlaceholder="Search activities..."
                 onChange={(value) => {
@@ -429,9 +429,11 @@ export const EnhancedActivityLog = () => {
                     form.setValue("activityId", value);
                     form.setValue("activityName", selectedActivity?.name || "");
                     setSelectedActivityId(value);
+                    setActivitySearchQuery(selectedActivity?.name || "");
                     setIsCustomActivity(false);
                   } else {
                     handleCustomActivityInput(value);
+                    setActivitySearchQuery(value);
                   }
                 }}
                 onSearchChange={setActivitySearchQuery}

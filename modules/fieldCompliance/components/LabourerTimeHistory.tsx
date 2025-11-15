@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Edit, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,29 +12,36 @@ import {
 import {
   Table,
   TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { TimeLogEditableRow, TimeLogData } from "./TimeLogEditableRow";
-import { useLabourerTimeLogs, useCreateLabourerLog, useUpdateLabourerLog, useProductionLogId} from "@/hooks/ReactQuery/useProductionLog";
+import { TimeLogDialog } from "./TimeLogDialog";
+import DeleteDialog from "@/components/global/DeleteDialog";
+import { 
+  useLabourerTimeLogs, 
+  useCreateLabourerLog, 
+  useUpdateLabourerLog, 
+  useDeleteLabourerLog,
+  useProductionLogId
+} from "@/hooks/ReactQuery/useProductionLog";
 import { useGetUserProfile } from "@/hooks/ReactQuery/useAuth";
 import {
   CreateLabourerTimeLogDTO,
+  UpdateLabourerTimeLogDTO,
   LabourerTimeLog,
 } from "@/lib/types/dailyProductionLog";
 import { Badge } from "@/components/ui/badge";
 import { useProjectStore } from "@/store/projectStore";
-
-// Define TimeLogFormData type to match TimeLogEditableRow expectations
-interface TimeLogFormData {
-  labourerId: string;
-  labourerName?: string;
-  entryTime: string;
-  exitTime: string;
-}
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const LabourerTimeHistory = () => {
   const { data: userProfile } = useGetUserProfile();
@@ -56,9 +63,29 @@ export const LabourerTimeHistory = () => {
 
   const logs: LabourerTimeLog[] = labourerLogsData?.data?.result || [];
   const currentUserId = userProfile?.data?.id || "";
+  const currentUserName = userProfile?.data?.fullName || "";
   
-  const [isCreating, setIsCreating] = useState(false);
-  const { mutate: handleLabourerLogTime } = useCreateLabourerLog();
+  // Create worker option for the current user
+  const currentUserWorker = [
+    {
+      value: currentUserId,
+      label: currentUserName,
+      type: "Labourer",
+    },
+  ];
+  
+  // Dialog state management
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [editingLog, setEditingLog] = useState<LabourerTimeLog | undefined>();
+  
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<LabourerTimeLog | undefined>();
+  
+  const { mutate: createLog } = useCreateLabourerLog();
+  const { mutate: updateLog } = useUpdateLabourerLog();
+  const { mutate: deleteLog } = useDeleteLabourerLog();
   
   const today = format(new Date(), "yyyy-MM-dd");
   
@@ -81,32 +108,90 @@ export const LabourerTimeHistory = () => {
 
   // Helper function to convert time (HH:mm) to ISO 8601 datetime string
   const timeToISO = (time: string, date: string = today): string => {
-    // time is in HH:mm format, date is in yyyy-MM-dd format
-    // Return ISO 8601 format: yyyy-MM-ddTHH:mm:ss.sssZ
     return `${date}T${time}:00.000Z`;
   };
 
-  const handleSave = (data: TimeLogFormData) => {
-    if (isCreating) {
-      // Format times to ISO 8601 for creation
-      const formattedData: CreateLabourerTimeLogDTO = {
-        workerId: currentUserId,
-        entryTime: timeToISO(data.entryTime),
-        exitTime: data.exitTime ? timeToISO(data.exitTime) : undefined,
-        notes: undefined,
-      };
-      
-      handleLabourerLogTime(formattedData);
-      setIsCreating(false);
+  // Helper function to convert ISO string to HH:mm format
+  const isoToTime = (isoString: string): string => {
+    const date = new Date(isoString);
+    const hours = date.getUTCHours().toString().padStart(2, "0");
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  // Calculate duration in hours
+  const calculateDuration = (entryTime: string, exitTime: string): string => {
+    try {
+      const entry = new Date(entryTime);
+      const exit = new Date(exitTime);
+      const diffMs = exit.getTime() - entry.getTime();
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    } catch {
+      return "N/A";
     }
   };
 
-  const handleCancel = () => {
-    setIsCreating(false);
+  const handleOpenCreateDialog = () => {
+    setDialogMode("create");
+    setEditingLog(undefined);
+    setDialogOpen(true);
   };
 
-  const handleAddNew = () => {
-    setIsCreating(true);
+  const handleOpenEditDialog = (log: LabourerTimeLog) => {
+    setDialogMode("edit");
+    setEditingLog(log);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingLog(undefined);
+  };
+
+  const handleSave = (data: {
+    workerId: string;
+    entryTime: string;
+    exitTime: string;
+    activities: Array<{ activityId: string; hoursWorked: number }>;
+  }) => {
+    if (dialogMode === "create") {
+      const formattedData: CreateLabourerTimeLogDTO = {
+        workerId: currentUserId,
+        entryTime: timeToISO(data.entryTime),
+        exitTime: timeToISO(data.exitTime),
+        labourerActivities: data.activities.map((act) => ({
+          activityId: act.activityId,
+          hoursWorked: act.hoursWorked,
+        })),
+      };
+      createLog(formattedData);
+    } else if (dialogMode === "edit" && editingLog) {
+      const formattedData: UpdateLabourerTimeLogDTO = {
+        entryTime: timeToISO(data.entryTime),
+        exitTime: timeToISO(data.exitTime),
+        labourerActivities: data.activities.map((act) => ({
+          activityId: act.activityId,
+          hoursWorked: act.hoursWorked,
+        })),
+      };
+      updateLog({ id: editingLog.id, data: formattedData });
+    }
+    handleCloseDialog();
+  };
+
+  const handleOpenDeleteDialog = (log: LabourerTimeLog) => {
+    setLogToDelete(log);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (logToDelete) {
+      deleteLog(logToDelete.id);
+      setDeleteDialogOpen(false);
+      setLogToDelete(undefined);
+    }
   };
 
   return (
@@ -134,9 +219,9 @@ export const LabourerTimeHistory = () => {
               </span>
             )}
             <Button
-              onClick={handleAddNew}
+              onClick={handleOpenCreateDialog}
               size="sm"
-              disabled={isCreating || hasTodayLog}
+              disabled={hasTodayLog}
               title={
                 hasTodayLog ? "Today's log already exists" : "Log time for today"
               }
@@ -148,7 +233,7 @@ export const LabourerTimeHistory = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {logs.length === 0 && !isCreating ? (
+        {logs.length === 0 ? (
           <div className="text-center text-muted-foreground py-8 text-sm">
             No time logs yet. Click "Log Time" to record your work hours.
           </div>
@@ -160,57 +245,123 @@ export const LabourerTimeHistory = () => {
                 <TableHead>Entry Time</TableHead>
                 <TableHead>Exit Time</TableHead>
                 <TableHead>Duration</TableHead>
+                <TableHead>Activities</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {logs.map((log) => {
-                const timeLogData: TimeLogData = {
-                  id: log.id,
-                  labourerId: log.workerId,
-                  date: log.productionLog?.date || today,
-                  entryTime: formatTimeDisplay(log.entryTime),
-                  exitTime: formatTimeDisplay(log.exitTime),
-                };
-
+                const activityCount = log.labourerActivities?.length || 0;
+                
                 return (
-                  <TimeLogEditableRow
-                    key={log.id}
-                    timeLog={timeLogData}
-                    labourers={[]}
-                    mode="view"
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                    showLabourerSelect={false}
-                    showDate={true}
-                    isLabourer={true}
-                    canEdit={false}
-                    canDelete={false}
-                  />
+                  <TableRow key={log.id}>
+                    <TableCell className="text-sm">
+                      {format(new Date(log.createdAt), "MMM dd, yyyy")}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatTimeDisplay(log.entryTime)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatTimeDisplay(log.exitTime)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {calculateDuration(log.entryTime, log.exitTime)}
+                    </TableCell>
+                    <TableCell>
+                      {activityCount > 0 ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge variant="secondary" className="text-xs">
+                                {activityCount} {activityCount === 1 ? "activity" : "activities"}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs space-y-1">
+                                {log.labourerActivities?.map((act, idx) => (
+                                  <div key={idx}>
+                                    {act.activity?.name}: {act.hoursWorked}h
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No activities</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenEditDialog(log)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenDeleteDialog(log)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-              {isCreating && (
-                <TimeLogEditableRow
-                  timeLog={{
-                    labourerId: currentUserId,
-                    labourerName: "", // Not sent to API, just for UI
-                    date: today,
-                    entryTime: "",
-                    exitTime: "",
-                  }}
-                  labourers={[]}
-                  mode="create"
-                  onSave={handleSave}
-                  onCancel={handleCancel}
-                  showLabourerSelect={false}
-                  showDate={true}
-                  isLabourer={true}
-                />
-              )}
             </TableBody>
           </Table>
         )}
       </CardContent>
+      
+      {/* Time Log Dialog */}
+      <TimeLogDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onSave={handleSave}
+        mode={dialogMode}
+        workers={currentUserWorker}
+        initialData={
+          editingLog
+            ? {
+                workerId: editingLog.workerId,
+                entryTime: isoToTime(editingLog.entryTime),
+                exitTime: isoToTime(editingLog.exitTime),
+                activities:
+                  editingLog.labourerActivities?.map((act) => ({
+                    activityId: act.activityId,
+                    hoursWorked: act.hoursWorked,
+                  })) || [],
+              }
+            : {
+                workerId: currentUserId,
+                entryTime: "",
+                exitTime: "",
+                activities: [],
+              }
+        }
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Time Log"
+        description={
+          logToDelete
+            ? `Are you sure you want to delete the time log for ${format(
+                new Date(logToDelete.createdAt),
+                "MMM dd, yyyy"
+              )}? This action cannot be undone.`
+            : ""
+        }
+      />
     </Card>
   );
 };

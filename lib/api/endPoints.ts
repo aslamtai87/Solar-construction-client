@@ -113,4 +113,7 @@ export const QUERY_KEYS = {
   DAILY_PRODUCTION_SUMMARY: ['production-logging', 'daily-production-summary'],
   PRODUCTION_LOG_ID: ['production-logging', 'production-log-id'],
   PRODUCTION_LOGS: ['production-logging', 'production-logs'],
+
+  // schedule tracker
+  SCHEDULE_TRACKER: ['schedule-management', 'schedule-tracker'],
 };
