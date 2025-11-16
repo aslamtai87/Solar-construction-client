@@ -70,6 +70,8 @@ export const API_ENDPOINTS = {
   UPDATE_PRODUCTION_PLANNING: '/production-planning/{id}',
   DELETE_PRODUCTION_PLANNING: '/production-planning/{id}',
 
+  // daily production tracking
+  DAILY_PRODUCTION_EXECUTIVE_VIEW: '/schedule-management/daily-production/executive-view',
 
 };
 
@@ -116,4 +118,7 @@ export const QUERY_KEYS = {
 
   // schedule tracker
   SCHEDULE_TRACKER: ['schedule-management', 'schedule-tracker'],
+
+  // daily production tracking
+  DAILY_PRODUCTION_EXECUTIVE_VIEW: ['schedule-management', 'daily-production-executive-view'],
 };

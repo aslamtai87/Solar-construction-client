@@ -1,4 +1,10 @@
-import { ActivityProduction, CrewProduction } from "./types";
+import { 
+  ActivityProduction, 
+  CrewProduction,
+  ActivityProductionData,
+  ActivitySummary,
+  CrewSummary
+} from "./types";
 
 export const getVariance = (forecasted: number, actual: number) => {
   const variance = actual - forecasted;
@@ -70,3 +76,44 @@ export const getCrewChartData = (
     };
   });
 };
+
+// Transform API response directly to ActivitySummary format for charts
+export const transformApiDataToActivityChart = (
+  activities: ActivityProductionData[]
+): ActivitySummary[] => {
+  return activities.map((activity) => ({
+    id: activity.activityId,
+    name: activity.activityName,
+    forecasted: activity.forecasted,
+    actual: activity.actual,
+    variance: activity.variance,
+    percentVariance: activity.variancePercentage.toFixed(1),
+  }));
+};
+
+// Transform API response to CrewSummary format for crew charts
+export const transformApiDataToCrewChart = (
+  activityId: string,
+  activities: ActivityProductionData[]
+): CrewSummary[] => {
+  const activity = activities.find((a) => a.activityId === activityId);
+  if (!activity) return [];
+
+  return activity.crews.map((crew) => ({
+    name: crew.crewName,
+    forecasted: crew.forecasted,
+    actual: crew.actual,
+    variance: crew.variance,
+    percentVariance: crew.variancePercentage.toFixed(1),
+  }));
+};
+
+// Get activity name by ID
+export const getActivityNameById = (
+  activityId: string,
+  activities: ActivityProductionData[]
+): string => {
+  const activity = activities.find((a) => a.activityId === activityId);
+  return activity?.activityName || "";
+};
+
