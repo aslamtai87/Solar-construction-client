@@ -63,7 +63,7 @@ export interface UpdateLabourerTimeLogDTO {
 export interface EquipmentActivity {
   id: string;
   activityId: string;
-  quantity: number;
+  qty: number;
   activity?: {
     id: string;
     name: string;

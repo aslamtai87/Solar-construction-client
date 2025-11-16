@@ -29,7 +29,7 @@ import {
   useProductionLogId,
 } from "@/hooks/ReactQuery/useProductionLog";
 import { useProjectStore } from "@/store/projectStore";
-import { CreateEquipmentLogDTO, UpdateEquipmentLogDTO } from "@/lib/types/dailyProductionLog";
+import { CreateEquipmentLogDTO, EquipmentActivity, UpdateEquipmentLogDTO } from "@/lib/types/dailyProductionLog";
 import { EquipmentLogDialog } from "./EquipmentLogDialog";
 import DeleteDialog from "@/components/global/DeleteDialog";
 import {
@@ -43,7 +43,8 @@ export const EnhancedEquipmentLog = () => {
   // Dialog state management
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
-  const [editingLog, setEditingLog] = useState<any>(null);
+  const [editingLog, setEditingLog] = useState<any | null>(null);
+  console.log("Editing log:", editingLog);
   
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -88,12 +89,13 @@ export const EnhancedEquipmentLog = () => {
     }));
 
   // Calculate total quantity based on isQuantityShared
-  const calculateTotalQuantity = (activities: any[], isQuantityShared: boolean): number => {
+  const calculateTotalQuantity = (activities: EquipmentActivity[], isQuantityShared: boolean): number => {
+    console.log("Calculating total quantity for activities:", activities, "isQuantityShared:", isQuantityShared);
     if (activities.length === 0) return 0;
     if (isQuantityShared) {
-      return Math.max(...activities.map((act: any) => act.quantity));
+      return Math.max(...activities.map((act: EquipmentActivity) => act.qty));
     }
-    return activities.reduce((sum: number, act: any) => sum + act.quantity, 0);
+    return activities.reduce((sum: number, act: EquipmentActivity) => sum + act.qty, 0);
   };
 
   const handleSave = (data: any) => {
@@ -312,9 +314,9 @@ export const EnhancedEquipmentLog = () => {
                 isQuantityShared: editingLog.isQuantityShared,
                 notes: editingLog.notes || "",
                 activities:
-                  editingLog.equipmentActivities?.map((act: any) => ({
+                  editingLog.equipmentActivities?.map((act: EquipmentActivity) => ({
                     activityId: act.activityId,
-                    quantity: act.quantity,
+                    quantity: act.qty,
                   })) || [],
               }
             : undefined

@@ -136,10 +136,12 @@ export const useGetGroupedPermissions = () => {
 };
 
 export const useCreateRole = () => {
+  const queryClient = useQueryClient();
   return useMutation<APISuccessResponse, ApiError, CreateRole>({
     mutationFn: (data) => createRole(data),
     onSuccess: (data) => {
       toast.success(data.message || "Role created successfully");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROLE] });
     },
     onError: (error: ApiError) => {
       const errorMessage = error.response?.data.message || "Create role failed";

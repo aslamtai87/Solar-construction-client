@@ -198,7 +198,7 @@ export const EnhancedActivityLog = () => {
   const handleCustomActivityInput = (customName: string) => {
     setIsCustomActivity(true);
     setSelectedActivityId("");
-    form.setValue("activityId", "");
+    // form.setValue("activityId", "");
     form.setValue("activityName", customName);
     form.setValue("forecastedUnits", 0);
     form.setValue("actualUnits", 0);
@@ -209,32 +209,35 @@ export const EnhancedActivityLog = () => {
   const onFormSubmit = (data: ActivityLogFormData) => {
     if (!productionLogId) return;
 
-    let crews: { crewId: string; actualUnits: number }[] = [];
-    let forecastedUnits = 0;
-    let activityId = "";
+    let payload: any;
 
-    // For scheduled activities with crews
-    if (!isCustomActivity && data.crewActuals) {
-      crews = Object.entries(data.crewActuals).map(([crewId, actualUnits]) => ({
-        crewId,
-        actualUnits,
-      }));
-      forecastedUnits = data.forecastedUnits; // Use forecasted from API
-      activityId = data.activityId || ""; // Send activityId for scheduled activities
-    } else if (isCustomActivity) {
-      // For custom activities, no forecast (will show "-" in table)
-      forecastedUnits = 0;
-      activityId = ""; // Empty activityId for custom activities
+    // For custom activities: send actualUnits, forecastedUnits (same as actual), name, and notes
+    if (isCustomActivity) {
+      payload = {
+        productionLogId,
+        name: data.activityName,
+        forecastedUnits: data.actualUnits,
+        actualUnits: data.actualUnits,
+        notes: data.notes || "",
+      };
+    } else {
+      // For scheduled activities: send activityId, forecastedUnits, and crews
+      const crews = data.crewActuals
+        ? Object.entries(data.crewActuals).map(([crewId, actualUnits]) => ({
+            crewId,
+            actualUnits,
+          }))
+        : [];
+
+      payload = {
+        productionLogId,
+        activityId: data.activityId || "",
+        name: data.activityName,
+        forecastedUnits: data.forecastedUnits,
+        crews,
+        notes: data.notes || "",
+      };
     }
-
-    const payload = {
-      productionLogId,
-      activityId,
-      name: data.activityName,
-      forecastedUnits,
-      crews,
-      notes: data.notes || "",
-    };
 
     if (dialog.mode === "edit" && dialog.data) {
       updateActivityLog(
@@ -403,7 +406,9 @@ export const EnhancedActivityLog = () => {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg">
-              {dialog.mode === "edit" ? "Edit Activity" : "Add Activity"}
+              {dialog.mode === "edit" 
+                ? `Edit Activity: ${form.watch("activityName") || "Activity"}`
+                : "Add Activity"}
             </DialogTitle>
           </DialogHeader>
           <form
@@ -452,9 +457,14 @@ export const EnhancedActivityLog = () => {
             {/* Custom Activity: Simple Units Covered */}
             {isCustomActivity && (
               <div className="space-y-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-xs text-blue-600 font-medium">
-                  Custom Activity
-                </p>
+                <div>
+                  <p className="text-xs text-blue-600 font-medium">
+                    Custom Activity
+                  </p>
+                  <p className="text-sm font-semibold text-blue-800 mt-1">
+                    {form.watch("activityName") || "Unnamed Activity"}
+                  </p>
+                </div>
                 <FormFieldWrapper
                   control={form.control}
                   name="actualUnits"

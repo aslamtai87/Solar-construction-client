@@ -97,8 +97,6 @@ const CreateProject = ({
   const createProjectMutation = useCreateProjects();
 
   const onSubmit = (data: ProjectValidationType) => {
-    console.log("Form Data:", data);
-    console.log("Uploaded Files:", data.documents);
     createProjectMutation.mutate({
       projectNumber: data.projectNumber,
       projectName: data.projectName,
@@ -121,6 +119,7 @@ const CreateProject = ({
       },
       projectDocumentation: data.documents || [],
     });
+    onClose();
   };
 
   console.log(form.watch("projectState"));

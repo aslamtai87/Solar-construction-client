@@ -27,12 +27,14 @@ import {
   ActivityProductionLog,
   CreateActivityProductionLogDTO,
   GetActivityCrew,
+  EquipmentLog,
 } from "@/lib/types/dailyProductionLog";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
 import { PaginationResponse } from "@/lib/types/pagination";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/types/api";
 import { useGetActivity } from "./useSchedule";
+import { Equipment } from "@/lib/types/production";
 
 export const useProductionLogId = (projectId: string, timeZone: string) => {
   return useQuery<{ data: DailyProductionLog }>({
@@ -209,7 +211,7 @@ export const useDeleteEquipmentLog = () => {
 };
 
 export const useGetEquipmentLogs = (productionLogId: string) => {
-  return useQuery<PaginationResponse<any>>({
+  return useQuery<PaginationResponse<EquipmentLog>>({
     queryKey: [QUERY_KEYS.EQUIPMENT_LOGS, productionLogId],
     queryFn: () => getEquipmentLogs({ productionLogId }),
     enabled: !!productionLogId,

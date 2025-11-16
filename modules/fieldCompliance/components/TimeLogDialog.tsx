@@ -83,6 +83,10 @@ export const TimeLogDialog = ({
     { activityId: string; hoursWorked: number }[]
   >(initialData?.activities || []);
   const [activitySearchQuery, setActivitySearchQuery] = useState("");
+  // Store hours and minutes separately for each activity
+  const [activityTimes, setActivityTimes] = useState<
+    { hours: number; minutes: number }[]
+  >([]);
 
   const { data: activitiesResponse } = useGetActivity({
     projectId: selectedProject?.id || "",
@@ -108,6 +112,14 @@ export const TimeLogDialog = ({
         activities: initialData.activities || [],
       });
       setActivities(initialData.activities || []);
+      
+      // Convert hoursWorked to hours and minutes
+      const times = (initialData.activities || []).map(act => {
+        const hours = Math.floor(act.hoursWorked);
+        const minutes = Math.round((act.hoursWorked % 1) * 60);
+        return { hours, minutes };
+      });
+      setActivityTimes(times);
     }
   }, [initialData, form]);
 
@@ -125,7 +137,10 @@ export const TimeLogDialog = ({
   };
 
   const totalDuration = calculateDuration(watchedEntryTime, watchedExitTime);
-  const allocatedHours = activities.reduce((sum, act) => sum + act.hoursWorked, 0);
+  const allocatedHours = activityTimes.reduce(
+    (sum, time) => sum + time.hours + time.minutes / 60,
+    0
+  );
   const remainingHours = totalDuration - allocatedHours;
   const isFullyAllocated = Math.abs(remainingHours) < 0.01;
 
@@ -154,27 +169,42 @@ export const TimeLogDialog = ({
     const newActivity = { activityId: "", hoursWorked: 0 };
     const updatedActivities = [...activities, newActivity];
     setActivities(updatedActivities);
+    setActivityTimes([...activityTimes, { hours: 0, minutes: 0 }]);
     form.setValue("activities", updatedActivities);
   };
 
   const handleRemoveActivity = (index: number) => {
     const updatedActivities = activities.filter((_, i) => i !== index);
+    const updatedTimes = activityTimes.filter((_, i) => i !== index);
     setActivities(updatedActivities);
+    setActivityTimes(updatedTimes);
     form.setValue("activities", updatedActivities);
   };
 
   const handleActivityChange = (
     index: number,
-    field: "activityId" | "hoursWorked",
+    field: "activityId" | "hours" | "minutes",
     value: string | number
   ) => {
     const updatedActivities = [...activities];
-    if (field === "hoursWorked") {
-      updatedActivities[index][field] = Number(value);
-    } else {
-      updatedActivities[index][field] = value as string;
+    const updatedTimes = [...activityTimes];
+    
+    if (field === "activityId") {
+      updatedActivities[index].activityId = value as string;
+    } else if (field === "hours") {
+      updatedTimes[index].hours = Number(value) || 0;
+      // Convert to decimal hours for validation
+      const decimalHours = updatedTimes[index].hours + updatedTimes[index].minutes / 60;
+      updatedActivities[index].hoursWorked = decimalHours;
+    } else if (field === "minutes") {
+      updatedTimes[index].minutes = Number(value) || 0;
+      // Convert to decimal hours for validation
+      const decimalHours = updatedTimes[index].hours + updatedTimes[index].minutes / 60;
+      updatedActivities[index].hoursWorked = decimalHours;
     }
+    
     setActivities(updatedActivities);
+    setActivityTimes(updatedTimes);
     form.setValue("activities", updatedActivities);
   };
 
@@ -337,28 +367,43 @@ export const TimeLogDialog = ({
                         }
                       />
                     </div>
-                    <div className="w-32 space-y-2">
-                      <Label className="text-xs text-muted-foreground">Hours</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max={totalDuration}
-                        value={activity.hoursWorked || ""}
-                        onChange={(e) =>
-                          handleActivityChange(
-                            index,
-                            "hoursWorked",
-                            e.target.value
-                          )
-                        }
-                        placeholder="0.0"
-                        className={
-                          form.formState.errors.activities?.[index]?.hoursWorked
-                            ? "border-destructive"
-                            : ""
-                        }
-                      />
+                    <div className="flex gap-2">
+                      <div className="w-20 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Hours</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={Math.floor(totalDuration)}
+                          value={activityTimes[index]?.hours || ""}
+                          onChange={(e) =>
+                            handleActivityChange(index, "hours", e.target.value)
+                          }
+                          placeholder="0"
+                          className={
+                            form.formState.errors.activities?.[index]?.hoursWorked
+                              ? "border-destructive"
+                              : ""
+                          }
+                        />
+                      </div>
+                      <div className="w-20 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Mins</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={activityTimes[index]?.minutes || ""}
+                          onChange={(e) =>
+                            handleActivityChange(index, "minutes", e.target.value)
+                          }
+                          placeholder="0"
+                          className={
+                            form.formState.errors.activities?.[index]?.hoursWorked
+                              ? "border-destructive"
+                              : ""
+                          }
+                        />
+                      </div>
                     </div>
                     <Button
                       type="button"
