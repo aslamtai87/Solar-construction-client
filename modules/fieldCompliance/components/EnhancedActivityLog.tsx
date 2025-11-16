@@ -95,7 +95,7 @@ export const EnhancedActivityLog = () => {
   );
 
   // Fetch activity crew data when activity is selected
-  const { data: activityCrewData } = useGetActivityCrew(selectedActivityId);
+  const { data: activityCrewData } = useGetActivityCrew(selectedActivityId || "", productionLogId || "");
 
   const form = useForm<ActivityLogFormData>({
     resolver: zodResolver(activityLogSchema),
@@ -139,7 +139,7 @@ export const EnhancedActivityLog = () => {
         setCrewActuals(initActuals);
         form.setValue("crewActuals", initActuals);
       }
-      form.setValue("forecastedUnits", parseFloat(activityCrewData.unitsPerDay || "0"));
+      form.setValue("forecastedUnits", parseFloat(activityCrewData.forecastedUnits || "0"));
     }
   }, [activityCrewData, isCustomActivity, selectedActivityId, dialog.mode]);
 
@@ -491,7 +491,7 @@ export const EnhancedActivityLog = () => {
                   <p className="text-sm font-medium">
                     Forecasted Units/Day:{" "}
                     <span className="text-primary">
-                      {parseFloat(activityCrewData.unitsPerDay || "0").toFixed(1)}
+                      {parseFloat(activityCrewData.forecastedUnits || "0").toFixed(1)}
                     </span>
                   </p>
                 </div>

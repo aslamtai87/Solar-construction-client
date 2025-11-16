@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
-import { useProductionLogs, useProductionLogId } from "@/hooks/ReactQuery/useProductionLog";
+import { useProductionLogs } from "@/hooks/ReactQuery/useProductionLog";
 import { useProjectStore } from "@/store/projectStore";
 import { ViewProductionLogDialog } from "./ViewProductionLogDialog";
 import { DailyProductionLog } from "@/lib/types/dailyProductionLog";
@@ -36,12 +36,7 @@ export const ContractorLogsHistory: React.FC<ContractorLogsHistoryProps> = ({
 
   // Fetch production logs list
   const { data: logsData, isLoading, error } = useProductionLogs(selectedProject?.id || "");
-  
-  // Fetch today's log
-  const { data: todayLogData } = useProductionLogId(selectedProject?.id || "", timeZone);
-
   const logs = logsData?.data?.result || [];
-  const todayLog = todayLogData?.data;
 
   const handleViewLog = (log: DailyProductionLog, logDate: string) => {
     const isToday = logDate === today;

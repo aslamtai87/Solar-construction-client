@@ -201,7 +201,7 @@ interface Crew {
 export interface GetActivityCrew {
   activityId: string;
   activityName: string;
-  unitsPerDay: string;
+  forecastedUnits: string;
   crews: ActivityCrew[];
 }
 

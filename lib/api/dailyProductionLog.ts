@@ -39,11 +39,14 @@ const ENDPOINTS = {
   DAILY_PRODUCTION_SUMMARY: (projectId: string, date: string) => 
     `/production-logs/summary/${projectId}/${date}`,
 
-  // Get production log id
+
   GET_PRODUCTION_LOG_ID: "/production-logs/logs/validate-today-log",
   
   // Get production logs list
   PRODUCTION_LOGS_LIST: "/production-logs/logs",
+
+  //get detailed production log
+  DETAILED_PRODUCTION_LOG: (id: string) => `/production-logs/logs/${id}`
 };
 
 
@@ -88,6 +91,17 @@ export const getProductionLogs = async (
   );
   return response.data;
 };
+
+// ================================== DETAILED PRODUCTION LOG =================
+export const getDetailedProductionLog = async (
+  id: string
+): Promise<DailyProductionLog> => {
+  const response = await api.get<{ data: DailyProductionLog }>(
+    ENDPOINTS.DETAILED_PRODUCTION_LOG(id)
+  );
+  return response.data.data;
+};
+
 
 // ================= LABOURER TIME LOG API =================
 
@@ -233,10 +247,11 @@ export const createActivityProductionLog = async (
 };
 
 export const getCrewAndForecastedDateForActivity = async (
-  activityId: string
+  activityId: string,
+  productionLogId: string
 ): Promise<GetActivityCrew> => {
   const response = await api.get<{ data: GetActivityCrew }>(
-    `/production-logs/activity-logs/activity/${activityId}/crews`
+    `/production-logs/activity-logs/activity/${activityId}/production-log/${productionLogId}/crews`
   );
   return response.data.data;
 }

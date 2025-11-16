@@ -280,10 +280,10 @@ export const useCreateActivityProductionLog = () => {
   });
 };
 
-export const useGetActivityCrew = (activityId: string) => {
+export const useGetActivityCrew = (activityId: string, productionId: string) => {
   return useQuery<GetActivityCrew>({
-    queryKey: ["ActivityPerDay", activityId],
-    queryFn: () => getCrewAndForecastedDateForActivity(activityId),
+    queryKey: ["ActivityPerDay", activityId, productionId],
+    queryFn: () => getCrewAndForecastedDateForActivity(activityId, productionId),
     enabled: !!activityId,
   });
 };
