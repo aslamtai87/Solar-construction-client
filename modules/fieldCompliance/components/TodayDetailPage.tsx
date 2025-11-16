@@ -16,18 +16,6 @@ import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-interface Equipment {
-  id: string;
-  name: string;
-  price: number;
-  pricingPeriod: string;
-}
-
-interface Operator {
-  value: string;
-  label: string;
-}
-
 interface ActivityData {
   id: string;
   name: string;
@@ -69,46 +57,17 @@ interface ActivityLogEntry {
   notes?: string;
 }
 
-interface LabourerTimeLog {
-  id: string;
-  labourerId: string;
-  labourerName: string;
-  labourerType?: string;
-  entryTime: string;
-  exitTime: string;
-}
-
-interface LabourerOption {
-  value: string;
-  label: string;
-}
 
 interface TodayDetailPageProps {
   selectedDate: string;
   userRole: "labourer" | "contractor";
-  currentUserId: string;
-  currentUserName: string;
-  activityLogs: ActivityLogEntry[];
-  activities: ActivityData[];
-  productionConfigs: ProductionConfig[];
-  
-  // Handlers
   onBack: () => void;
-  onAddActivityLog: (log: Omit<ActivityLogEntry, 'id' | 'activityName' | 'totalForecasted' | 'totalActual' | 'variance' | 'variancePercentage'>) => void;
-  onUpdateActivityLog: (id: string, log: Partial<ActivityLogEntry>) => void;
-  onDeleteActivityLog: (id: string) => void;
 }
 
 export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   selectedDate,
   userRole,
-  activityLogs,
-  activities,
-  productionConfigs,
   onBack,
-  onAddActivityLog,
-  onUpdateActivityLog,
-  onDeleteActivityLog,
 }) => {
   const isToday = format(new Date(), "yyyy-MM-dd") === selectedDate;
   const dateDisplay = isToday ? "Today" : 
@@ -118,7 +77,7 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   const { selectedProject } = useProjectStore();
   
   const [displayWeather, setDisplayWeather] = useState<DailyConditions | null>(null);
-  const [currentTab, setCurrentTab] = useState(searchParams.get('tab') || 'labour');
+  const [currentTab, setCurrentTab] = useState(searchParams.get('detailTab') || 'labour');
   
   const productionLogQuery = useProductionLogId(
     selectedProject?.id || "",
@@ -128,12 +87,20 @@ export const TodayDetailPage: React.FC<TodayDetailPageProps> = ({
   const productionLog = productionLogQuery.data?.data;
   const { mutate: updateProductionLog } = useUpdateProductionLog();
 
+  // Sync tab with URL params
+  useEffect(() => {
+    const detailTabParam = searchParams.get('detailTab');
+    if (detailTabParam && ['labour', 'equipment', 'activities'].includes(detailTabParam)) {
+      setCurrentTab(detailTabParam);
+    }
+  }, [searchParams]);
+
   // Handle tab change with URL params
   const handleTabChange = (value: string) => {
     setCurrentTab(value);
     const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    router.push(`?${params.toString()}`);
+    params.set('detailTab', value);
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
   // Helper function to get weather icon

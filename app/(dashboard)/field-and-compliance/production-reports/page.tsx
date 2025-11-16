@@ -1,8 +1,10 @@
-import React from 'react'
+import FieldCompliance from "@/modules/fieldCompliance/DailyReport"
 
 const page = () => {
   return (
-    <div>page</div>
+    <div>
+        <FieldCompliance />
+    </div>
   )
 }
 

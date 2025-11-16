@@ -277,9 +277,17 @@ export const EnhancedActivityLog = () => {
   };
 
   // Activity options for searchable select - filter out already logged activities
+  // BUT include the current activity being edited
   const loggedActivityIds = logs.map(log => log.activityId).filter(Boolean);
   const activityOptions = availableActivities
-    .filter((act) => !loggedActivityIds.includes(act.id))
+    .filter((act) => {
+      // Always include the activity if we're editing it
+      if (dialog.mode === "edit" && dialog.data?.activityId === act.id) {
+        return true;
+      }
+      // Otherwise, exclude already logged activities
+      return !loggedActivityIds.includes(act.id);
+    })
     .map((act) => ({
       value: act.id,
       label: act.name,
