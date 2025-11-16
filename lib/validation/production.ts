@@ -20,7 +20,6 @@ export const createProductionConfigSchema = z.object({
   }),
   crewId: z.string().optional(),
   // All methods auto-calculate their values
-  unitsPerDay: z.number().min(0.1).optional(),
   startUnitsPerDay: z.number().min(0.1).optional(),
   endUnitsPerDay: z.number().min(0.1).optional(),
   peakUnitsPerDay: z.number().min(0.1).optional(),

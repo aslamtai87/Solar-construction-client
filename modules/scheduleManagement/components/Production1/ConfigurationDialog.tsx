@@ -200,9 +200,9 @@ const ConfigurationDialog = ({
               productionMethod: values.method,
               crews: crew,
               equipments: equipment,
-              unitsPerDay: Math.ceil(
-                (data?.targetUnit || 0) / values.duration
-              ),
+              // unitsPerDay: Math.ceil(
+              //   (data?.targetUnit || 0) / values.duration
+              // ),
             };
 
             if (isReconfiguring && data?.productionPlanning?.id) {

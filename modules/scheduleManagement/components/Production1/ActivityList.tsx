@@ -38,7 +38,7 @@ interface ProductionPlanning {
   endDate: null;
   duration: number;
   targetUnits: null;
-  unitsPerDay: string;
+  // unitsPerDay: string;
   action: null;
   description: null;
   createdAt: string;
