@@ -13,7 +13,9 @@ import {
   DailyProductionLogFilters,
   UpdateProductionLogDto,
   DailyProductionLog,
-  GetActivityCrew
+  GetActivityCrew,
+  DetailedProductionLogResponse,
+  DetailedProductionLog
 } from "@/lib/types/dailyProductionLog";
 import { PaginationResponse } from "../types/pagination";
 import { act } from "react";
@@ -95,11 +97,11 @@ export const getProductionLogs = async (
 // ================================== DETAILED PRODUCTION LOG =================
 export const getDetailedProductionLog = async (
   id: string
-): Promise<DailyProductionLog> => {
-  const response = await api.get<{ data: DailyProductionLog }>(
+): Promise<DetailedProductionLogResponse> => {
+  const response = await api.get<{ data: DetailedProductionLog }>(
     ENDPOINTS.DETAILED_PRODUCTION_LOG(id)
   );
-  return response.data.data;
+  return response.data;
 };
 
 

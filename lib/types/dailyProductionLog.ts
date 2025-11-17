@@ -259,3 +259,51 @@ export interface DailyProductionLog {
     equipmentLogs: number;
   };
 }
+
+
+
+export interface DetailedProductionLogResponse {
+  data: DetailedProductionLog;
+}
+
+export interface DetailedProductionLog {
+  date: string;
+  address: string;
+  weather: Weather;
+  equipment: Equipment[];
+  workers: Worker[];
+  workCompleted: WorkCompleted[];
+  progress: number;
+}
+
+interface WorkCompleted {
+  activity: string;
+  completedUnit: number;
+  remainingUnit: number;
+}
+
+interface Worker {
+  name: string;
+  labourerType: string;
+  timeIn: string;
+  timeOut: string;
+  totalHours: number;
+}
+
+interface Equipment {
+  name: string;
+  quantity: number;
+  activities: Activity[];
+}
+
+interface Activity {
+  activity: string;
+  quantity: number;
+}
+
+interface Weather {
+  condition: string;
+  temperature: string;
+  windSpeed: string;
+  humidity: string;
+}

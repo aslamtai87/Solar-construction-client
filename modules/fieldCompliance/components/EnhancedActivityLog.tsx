@@ -240,8 +240,11 @@ export const EnhancedActivityLog = () => {
     }
 
     if (dialog.mode === "edit" && dialog.data) {
+      // For edit mode, remove productionLogId and activityId from payload
+      const { productionLogId: _, activityId: __, ...editPayload } = payload;
+      
       updateActivityLog(
-        { id: dialog.data.id, data: payload },
+        { id: dialog.data.id, data: editPayload },
         {
           onSuccess: () => {
             closeDialog();

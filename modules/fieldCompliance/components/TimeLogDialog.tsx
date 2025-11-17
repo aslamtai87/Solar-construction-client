@@ -81,7 +81,7 @@ export const TimeLogDialog = ({
   const { selectedProject } = useProjectStore();
   const [activities, setActivities] = useState<
     { activityId: string; hoursWorked: number }[]
-  >(initialData?.activities || []);
+  >([]);
   const [activitySearchQuery, setActivitySearchQuery] = useState("");
   // Store hours and minutes separately for each activity
   const [activityTimes, setActivityTimes] = useState<
@@ -104,24 +104,39 @@ export const TimeLogDialog = ({
   });
 
   useEffect(() => {
-    if (initialData) {
-      form.reset({
-        workerId: initialData.workerId || "",
-        entryTime: initialData.entryTime || "",
-        exitTime: initialData.exitTime || "",
-        activities: initialData.activities || [],
-      });
-      setActivities(initialData.activities || []);
-      
-      // Convert hoursWorked to hours and minutes
-      const times = (initialData.activities || []).map(act => {
-        const hours = Math.floor(act.hoursWorked);
-        const minutes = Math.round((act.hoursWorked % 1) * 60);
-        return { hours, minutes };
-      });
-      setActivityTimes(times);
+    if (open) {
+      if (initialData) {
+        // Edit mode - populate with existing data
+        const initActivities = initialData.activities || [];
+        
+        form.reset({
+          workerId: initialData.workerId || "",
+          entryTime: initialData.entryTime || "",
+          exitTime: initialData.exitTime || "",
+          activities: initActivities,
+        });
+        setActivities(initActivities);
+        
+        // Convert hoursWorked to hours and minutes
+        const times = initActivities.map(act => {
+          const hours = Math.floor(act.hoursWorked);
+          const minutes = Math.round((act.hoursWorked % 1) * 60);
+          return { hours, minutes };
+        });
+        setActivityTimes(times);
+      } else {
+        // Create mode - clear all state
+        form.reset({
+          workerId: "",
+          entryTime: "",
+          exitTime: "",
+          activities: [],
+        });
+        setActivities([]);
+        setActivityTimes([]);
+      }
     }
-  }, [initialData, form]);
+  }, [initialData, open, form, mode]);
 
   const watchedEntryTime = form.watch("entryTime");
   const watchedExitTime = form.watch("exitTime");
@@ -352,6 +367,7 @@ export const TimeLogDialog = ({
                       <Label className="text-xs text-muted-foreground">
                         Activity {index + 1}
                       </Label>
+                      
                       <SearchableSelect
                         options={getAvailableActivitiesForIndex(index)}
                         value={activity.activityId}

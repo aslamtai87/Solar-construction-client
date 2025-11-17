@@ -16,6 +16,7 @@ import {
   updateActivityProductionLog,
   deleteActivityProductionLog,
   getCrewAndForecastedDateForActivity,
+  getDetailedProductionLog
 } from "@/lib/api/dailyProductionLog";
 import { useProjectStore } from "@/store/projectStore";
 import {
@@ -28,13 +29,24 @@ import {
   CreateActivityProductionLogDTO,
   GetActivityCrew,
   EquipmentLog,
+  DetailedProductionLogResponse,
 } from "@/lib/types/dailyProductionLog";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
 import { PaginationResponse } from "@/lib/types/pagination";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/types/api";
-import { useGetActivity } from "./useSchedule";
-import { Equipment } from "@/lib/types/production";
+
+
+
+export const useDetailedProductionLog = (id: string) => {
+  return useQuery<DetailedProductionLogResponse>({
+    queryKey: [QUERY_KEYS.DETAILED_PRODUCTION_LOG, id],
+    queryFn: () => getDetailedProductionLog(id),
+    enabled: !!id,
+  });
+}
+
+
 
 export const useProductionLogId = (projectId: string, timeZone: string) => {
   return useQuery<{ data: DailyProductionLog }>({

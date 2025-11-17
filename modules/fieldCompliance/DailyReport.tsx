@@ -9,456 +9,37 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Calendar,
-  Camera,
-  FileText,
-  CheckCircle,
-  AlertTriangle,
   Users,
   Wrench,
   Zap,
-  Upload,
-  Download,
   Eye,
+  Loader2,
+  MapPin,
 } from "lucide-react";
 import { DailyLogDetailsDialog } from "./components/DailyLogDetailDialog";
 import { useState } from "react";
-import { de } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
+import { useProductionLogs, useDetailedProductionLog } from "@/hooks/ReactQuery/useProductionLog";
+import { useProjectStore } from "@/store/projectStore";
 
 const FieldCompliance = () => {
-  const [selectedLogIndex, setSelectedLogIndex] = useState<number | null>(null);
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const dailyLogs = [
-    {
-      date: "2024-01-15",
-      weather: "Sunny, 72°F",
-      crew: "Desert Civil Works - 8 workers",
-      workCompleted: "Foundation Block 2A - 12 foundations poured",
-      photos: 15,
-      safetyIncidents: 0,
-      progress: 85,
-    },
-    {
-      date: "2024-01-14",
-      weather: "Partly Cloudy, 68°F",
-      crew: "Desert Civil Works - 8 workers, Phoenix Electric - 4 workers",
-      workCompleted: "Foundation rebar installation, electrical rough-in",
-      photos: 22,
-      safetyIncidents: 1,
-      progress: 82,
-    },
-    {
-      date: "2024-01-13",
-      weather: "Clear, 70°F",
-      crew: "Desert Civil Works - 6 workers",
-      workCompleted: "Site prep for Block 2B, equipment staging",
-      photos: 8,
-      safetyIncidents: 0,
-      progress: 78,
-    },
-  ];
-  const detailedLogData = [
-    {
-      date: "2024-01-15",
-      siteName: "Desert Solar Farm Phase 1",
-      address: "12345 Desert Valley Road, Phoenix, AZ 85001",
-      weather: {
-        condition: "Sunny",
-        temperature: "72°F",
-        windSpeed: "5 mph",
-        humidity: "35%",
-      },
-      equipment: [
-        {
-          name: "Skid Loader",
-          operator: "Mike Johnson",
-          hours: 8,
-          status: "Operational",
-        },
-        {
-          name: "Crane (25 ton)",
-          operator: "Sarah Martinez",
-          hours: 6,
-          status: "Operational",
-        },
-        {
-          name: "Skid Steer",
-          operator: "David Chen",
-          hours: 7,
-          status: "Operational",
-        },
-        {
-          name: "Telehandler",
-          operator: "Carlos Rodriguez",
-          hours: 8,
-          status: "Maintenance",
-        },
-      ],
-      workers: [
-        {
-          name: "Mike Johnson",
-          role: "Equipment Operator",
-          timeIn: "06:00",
-          timeOut: "14:30",
-          totalHours: 8.5,
-        },
-        {
-          name: "Sarah Martinez",
-          role: "Crane Operator",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "David Chen",
-          role: "Foreman",
-          timeIn: "06:00",
-          timeOut: "15:00",
-          totalHours: 9.0,
-        },
-        {
-          name: "Carlos Rodriguez",
-          role: "Equipment Operator",
-          timeIn: "06:30",
-          timeOut: "14:30",
-          totalHours: 8.0,
-        },
-        {
-          name: "James Wilson",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:30",
-          totalHours: 8.5,
-        },
-        {
-          name: "Lisa Brown",
-          role: "Electrician",
-          timeIn: "08:00",
-          timeOut: "16:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Robert Davis",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Anna Garcia",
-          role: "Safety Coordinator",
-          timeIn: "06:00",
-          timeOut: "14:00",
-          totalHours: 8.0,
-        },
-      ],
-      workCompleted: [
-        {
-          activity: "Piles Installed",
-          quantity: 80,
-          unit: "piles",
-          location: "Block 2A",
-        },
-        {
-          activity: "Panels Installed",
-          quantity: 700,
-          unit: "panels",
-          location: "Block 1B",
-        },
-        {
-          activity: "Tables Installed",
-          quantity: 50,
-          unit: "tables",
-          location: "Block 1B",
-        },
-        {
-          activity: "Trenching",
-          quantity: 300,
-          unit: "feet",
-          location: "AC Collection",
-        },
-        {
-          activity: "Transformer Pad",
-          quantity: 1,
-          unit: "pad",
-          location: "Main Substation",
-        },
-      ],
-      safetyIncidents: 0,
-      photos: 15,
-      progress: 85,
-    },
-    {
-      date: "2024-01-14",
-      siteName: "Desert Solar Farm Phase 1",
-      address: "12345 Desert Valley Road, Phoenix, AZ 85001",
-      weather: {
-        condition: "Partly Cloudy",
-        temperature: "68°F",
-        windSpeed: "8 mph",
-        humidity: "42%",
-      },
-      equipment: [
-        {
-          name: "Skid Loader",
-          operator: "Mike Johnson",
-          hours: 7,
-          status: "Operational",
-        },
-        {
-          name: "Crane (25 ton)",
-          operator: "Sarah Martinez",
-          hours: 8,
-          status: "Operational",
-        },
-        {
-          name: "Skid Steer",
-          operator: "David Chen",
-          hours: 6,
-          status: "Operational",
-        },
-        {
-          name: "Telehandler",
-          operator: "Carlos Rodriguez",
-          hours: 5,
-          status: "Operational",
-        },
-      ],
-      workers: [
-        {
-          name: "Mike Johnson",
-          role: "Equipment Operator",
-          timeIn: "06:00",
-          timeOut: "14:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Sarah Martinez",
-          role: "Crane Operator",
-          timeIn: "07:00",
-          timeOut: "15:30",
-          totalHours: 8.5,
-        },
-        {
-          name: "David Chen",
-          role: "Foreman",
-          timeIn: "06:00",
-          timeOut: "15:00",
-          totalHours: 9.0,
-        },
-        {
-          name: "Carlos Rodriguez",
-          role: "Equipment Operator",
-          timeIn: "07:00",
-          timeOut: "14:00",
-          totalHours: 7.0,
-        },
-        {
-          name: "James Wilson",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Lisa Brown",
-          role: "Electrician",
-          timeIn: "08:00",
-          timeOut: "16:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Robert Davis",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Anna Garcia",
-          role: "Safety Coordinator",
-          timeIn: "06:30",
-          timeOut: "14:30",
-          totalHours: 8.0,
-        },
-        {
-          name: "Tom Anderson",
-          role: "Electrician",
-          timeIn: "08:00",
-          timeOut: "16:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Mark Thompson",
-          role: "Laborer",
-          timeIn: "07:30",
-          timeOut: "15:30",
-          totalHours: 8.0,
-        },
-        {
-          name: "Jennifer Lee",
-          role: "Quality Inspector",
-          timeIn: "09:00",
-          timeOut: "17:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Steve Miller",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-      ],
-      workCompleted: [
-        {
-          activity: "Foundation Rebar",
-          quantity: 45,
-          unit: "foundations",
-          location: "Block 2B",
-        },
-        {
-          activity: "Electrical Rough-in",
-          quantity: 150,
-          unit: "feet",
-          location: "DC Collection",
-        },
-        {
-          activity: "Grounding Installation",
-          quantity: 12,
-          unit: "sections",
-          location: "Block 1A",
-        },
-        {
-          activity: "Conduit Installation",
-          quantity: 200,
-          unit: "feet",
-          location: "AC Collection",
-        },
-      ],
-      safetyIncidents: 1,
-      photos: 22,
-      progress: 82,
-    },
-    {
-      date: "2024-01-13",
-      siteName: "Desert Solar Farm Phase 1",
-      address: "12345 Desert Valley Road, Phoenix, AZ 85001",
-      weather: {
-        condition: "Clear",
-        temperature: "70°F",
-        windSpeed: "3 mph",
-        humidity: "38%",
-      },
-      equipment: [
-        {
-          name: "Skid Loader",
-          operator: "Mike Johnson",
-          hours: 6,
-          status: "Operational",
-        },
-        {
-          name: "Skid Steer",
-          operator: "David Chen",
-          hours: 8,
-          status: "Operational",
-        },
-        {
-          name: "Telehandler",
-          operator: "Carlos Rodriguez",
-          hours: 4,
-          status: "Operational",
-        },
-      ],
-      workers: [
-        {
-          name: "Mike Johnson",
-          role: "Equipment Operator",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "David Chen",
-          role: "Foreman",
-          timeIn: "06:00",
-          timeOut: "15:00",
-          totalHours: 9.0,
-        },
-        {
-          name: "Carlos Rodriguez",
-          role: "Equipment Operator",
-          timeIn: "08:00",
-          timeOut: "14:00",
-          totalHours: 6.0,
-        },
-        {
-          name: "James Wilson",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Robert Davis",
-          role: "Laborer",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-        {
-          name: "Anna Garcia",
-          role: "Safety Coordinator",
-          timeIn: "07:00",
-          timeOut: "15:00",
-          totalHours: 8.0,
-        },
-      ],
-      workCompleted: [
-        {
-          activity: "Site Prep Block 2B",
-          quantity: 1,
-          unit: "section",
-          location: "Block 2B",
-        },
-        {
-          activity: "Equipment Staging",
-          quantity: 1,
-          unit: "area",
-          location: "Staging Area",
-        },
-        {
-          activity: "Material Delivery",
-          quantity: 500,
-          unit: "panels",
-          location: "Laydown Yard",
-        },
-        {
-          activity: "Access Road Maintenance",
-          quantity: 200,
-          unit: "feet",
-          location: "Main Access",
-        },
-      ],
-      safetyIncidents: 0,
-      photos: 8,
-      progress: 78,
-    },
-  ];
+  const { selectedProject } = useProjectStore();
+  const { data: logsData, isLoading, error } = useProductionLogs(selectedProject?.id || "");
+  const { data: detailedData, isLoading: isLoadingDetails } = useDetailedProductionLog(selectedLogId || "");
 
-  const handleViewDetails = (index: number) => {
-    setSelectedLogIndex(index);
+  const dailyLogs = logsData?.data?.result || [];
+
+  // Fetch detailed log for hover preview to get crew names
+  const [previewLogId, setPreviewLogId] = useState<string | null>(null);
+  const { data: previewData } = useDetailedProductionLog(previewLogId || "");
+
+  const handleViewDetails = (logId: string) => {
+    setSelectedLogId(logId);
     setIsDialogOpen(true);
   };
 
@@ -472,86 +53,148 @@ const FieldCompliance = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2">Loading production logs...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center text-red-500 py-8">
+              Failed to load production logs. Please try again.
+            </div>
+          )}
+
+          {!isLoading && !error && dailyLogs.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              No production logs found for this project.
+            </div>
+          )}
+
+          {!isLoading && !error && dailyLogs.length > 0 && (
           <div className="space-y-4">
-            {dailyLogs.map((log, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-blue-500" />
-                    <span className="font-semibold">{log.date}</span>
-                    <Badge variant="outline">{log.weather}</Badge>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Camera className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {log.photos} photos
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">
-                      Crew:{" "}
-                    </span>
-                    <span className="text-sm text-gray-600">{log.crew}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-700">
-                      Safety:{" "}
-                    </span>
-                    {log.safetyIncidents === 0 ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="text-sm text-gray-600">
-                      {log.safetyIncidents} incidents
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    Work Completed:{" "}
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    {log.workCompleted}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 mr-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700">
-                        Progress
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        {log.progress}%
+            {dailyLogs.map((log) => {
+              const totalCrew = log._count?.labourerLogs || 0;
+              const totalEquipment = log._count?.equipmentLogs || 0;
+              const totalActivities = log._count?.activityLogs || 0;
+              
+              return (
+              <div key={log.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                {/* Header Row */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <span className="font-semibold text-base">
+                        {format(parseISO(log.date), "EEEE, MMM dd, yyyy")}
                       </span>
                     </div>
-                    <Progress value={log.progress} className="h-2" />
+                    {log.weatherCondition && log.temperature !== null && (
+                      <div className="flex items-center space-x-1 text-sm text-muted-foreground ml-6">
+                        <span>{log.weatherCondition}</span>
+                        <span>•</span>
+                        <span>{log.temperature}°F</span>
+                        {log.humidity !== null && (
+                          <>
+                            <span>•</span>
+                            <span>{log.humidity}% humidity</span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewDetails(index)}
+                    onClick={() => handleViewDetails(log.id)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    View Details
+                    Details
                   </Button>
                 </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 rounded-md p-2.5">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+                      Workers on Site
+                    </div>
+                    <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                      {totalCrew}
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-950/20 rounded-md p-2.5">
+                    <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
+                      Equipment Used
+                    </div>
+                    <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                      {totalEquipment}
+                    </div>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-950/20 rounded-md p-2.5">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
+                      Activities Logged
+                    </div>
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                      {totalActivities}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                {log.weatherCondition && (
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Daily Progress
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {totalActivities > 0 ? Math.min(100, (totalActivities * 15)) : 0}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={totalActivities > 0 ? Math.min(100, (totalActivities * 15)) : 0} 
+                      className="h-2"
+                    />
+                  </div>
+                )}
+
+                {/* Location */}
+                {log.location && (
+                  <div className="mb-3 pb-3 border-b">
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <span className="text-xs text-muted-foreground line-clamp-1">
+                        {log.location}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {log.notes && (
+                  <div className="bg-muted/50 rounded-md p-2">
+                    <span className="text-xs font-medium text-muted-foreground block mb-1">
+                      Notes
+                    </span>
+                    <p className="text-sm text-foreground line-clamp-2">
+                      {log.notes}
+                    </p>
+                  </div>
+                )}
               </div>
-            ))}
+            )})}
           </div>
+          )}
         </CardContent>
       </Card>
       <DailyLogDetailsDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        logData={
-          selectedLogIndex !== null ? detailedLogData[selectedLogIndex] : null
-        }
+        logData={detailedData?.data}
+        siteName={selectedProject?.projectName}
+        isLoading={isLoadingDetails}
       />
     </div>
   );

@@ -72,6 +72,7 @@ export const API_ENDPOINTS = {
 
   // daily production tracking
   DAILY_PRODUCTION_EXECUTIVE_VIEW: '/schedule-management/daily-production/executive-view',
+  DAILY_PRODUCTION_DETAILED_VIEW: '/schedule-management/daily-production/detailed-view',
 
 };
 
@@ -115,10 +116,12 @@ export const QUERY_KEYS = {
   DAILY_PRODUCTION_SUMMARY: ['production-logging', 'daily-production-summary'],
   PRODUCTION_LOG_ID: ['production-logging', 'production-log-id'],
   PRODUCTION_LOGS: ['production-logging', 'production-logs'],
+  DETAILED_PRODUCTION_LOG: ['production-logging', 'detailed-production-log'],
 
   // schedule tracker
   SCHEDULE_TRACKER: ['schedule-management', 'schedule-tracker'],
 
   // daily production tracking
   DAILY_PRODUCTION_EXECUTIVE_VIEW: ['schedule-management', 'daily-production-executive-view'],
+  DAILY_PRODUCTION_DETAILED_VIEW: ['schedule-management', 'daily-production-detailed-view'],
 };

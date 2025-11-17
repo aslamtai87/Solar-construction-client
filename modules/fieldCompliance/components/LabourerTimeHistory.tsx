@@ -334,7 +334,7 @@ export const LabourerTimeHistory = () => {
                 exitTime: isoToTime(editingLog.exitTime),
                 activities:
                   editingLog.labourerActivities?.map((act) => ({
-                    activityId: act.activityId,
+                    activityId: act.activity?.id || "",
                     hoursWorked: act.hoursWorked,
                   })) || [],
               }

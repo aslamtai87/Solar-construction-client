@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { getDailyProductionExecutiveView } from "@/lib/api/dailyProduction";
+import { getDailyProductionExecutiveView, getDailyProductionDetailedView } from "@/lib/api/dailyProduction";
 import { QUERY_KEYS } from "@/lib/api/endPoints";
-import { DailyProductionExecutiveViewResponse } from "@/modules/scheduleManagement/components/DailyProduction/types";
+import { 
+  DailyProductionExecutiveViewResponse,
+  DetailedProductionViewResponse 
+} from "@/modules/scheduleManagement/components/DailyProduction/types";
 
 export const useDailyProductionExecutiveView = (params: {
   projectId: string;
   phaseId?: string;
   startDate: string;
-  endDate: string;
   enabled?: boolean;
 }) => {
   return useQuery<{ data: DailyProductionExecutiveViewResponse }>({
@@ -16,9 +18,23 @@ export const useDailyProductionExecutiveView = (params: {
       params.projectId,
       params.phaseId,
       params.startDate,
-      params.endDate,
     ],
     queryFn: () => getDailyProductionExecutiveView(params),
-    enabled: params.enabled !== false && !!params.projectId && !!params.startDate && !!params.endDate,
+    enabled: params.enabled !== false && !!params.projectId && !!params.startDate,
   });
 };
+
+export const useDailyProductionDetailedView = (params: {
+  projectId: string;
+  enabled?: boolean;
+}) => {
+  return useQuery<{ data: DetailedProductionViewResponse }>({
+    queryKey: [
+      QUERY_KEYS.DAILY_PRODUCTION_DETAILED_VIEW,
+      params.projectId,
+    ],
+    queryFn: () => getDailyProductionDetailedView(params),
+    enabled: params.enabled !== false && !!params.projectId,
+  });
+};
+

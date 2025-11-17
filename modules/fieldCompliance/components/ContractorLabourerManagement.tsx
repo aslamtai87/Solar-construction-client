@@ -302,7 +302,7 @@ export const ContractorLabourerManagement = () => {
                 entryTime: isoToTime(editingLog.entryTime),
                 exitTime: isoToTime(editingLog.exitTime),
                 activities: editingLog.labourerActivities?.map((act: any) => ({
-                  activityId: act.activityId,
+                  activityId: act.activity.id,
                   hoursWorked: act.hoursWorked,
                 })) || [],
               }

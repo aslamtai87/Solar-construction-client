@@ -28,7 +28,6 @@ import {
 
 interface DailyLogData {
   date: string;
-  siteName: string;
   address: string;
   weather: {
     condition: string;
@@ -38,51 +37,66 @@ interface DailyLogData {
   };
   equipment: {
     name: string;
-    operator: string;
-    hours: number;
-    status: string;
+    quantity: number;
+    activities: {
+      activity: string;
+      quantity: number;
+    }[];
   }[];
   workers: {
     name: string;
-    role: string;
+    labourerType: string;
     timeIn: string;
     timeOut: string;
     totalHours: number;
   }[];
   workCompleted: {
     activity: string;
-    quantity: number;
-    unit: string;
-    location: string;
+    completedUnit: number;
+    remainingUnit: number;
   }[];
-  safetyIncidents: number;
-  photos: number;
-  progress: number;
 }
 
 interface DailyLogDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logData: DailyLogData | null;
+  logData?: DailyLogData | null;
+  siteName?: string;
+  isLoading?: boolean;
 }
 
-export const DailyLogDetailsDialog = ({ open, onOpenChange, logData }: DailyLogDetailsDialogProps) => {
-  if (!logData) return null;
+export const DailyLogDetailsDialog = ({ open, onOpenChange, logData, siteName, isLoading }: DailyLogDetailsDialogProps) => {
+  if (!open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Daily Log Details - {logData.date}</span>
-          </DialogTitle>
-          <DialogDescription>
-            Comprehensive field activity report and documentation
-          </DialogDescription>
-        </DialogHeader>
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-3">Loading details...</span>
+          </div>
+        )}
 
-        <div className="space-y-6">
+        {!isLoading && !logData && (
+          <div className="text-center text-muted-foreground py-12">
+            No data available
+          </div>
+        )}
+
+        {!isLoading && logData && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Daily Log Details - {logData.date}</span>
+              </DialogTitle>
+              <DialogDescription>
+                Comprehensive field activity report and documentation
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
           {/* Site Information */}
           <Card>
             <CardHeader>
@@ -93,10 +107,12 @@ export const DailyLogDetailsDialog = ({ open, onOpenChange, logData }: DailyLogD
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Site Name:</span>
-                  <p className="text-sm text-gray-900">{logData.siteName}</p>
-                </div>
+                {siteName && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Site Name:</span>
+                    <p className="text-sm text-gray-900">{siteName}</p>
+                  </div>
+                )}
                 <div>
                   <span className="text-sm font-medium text-gray-700">Address:</span>
                   <p className="text-sm text-gray-900">{logData.address}</p>
@@ -144,30 +160,47 @@ export const DailyLogDetailsDialog = ({ open, onOpenChange, logData }: DailyLogD
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Equipment</TableHead>
-                    <TableHead>Operator</TableHead>
-                    <TableHead>Hours Operated</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logData.equipment.map((equipment, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{equipment.name}</TableCell>
-                      <TableCell>{equipment.operator}</TableCell>
-                      <TableCell>{equipment.hours} hrs</TableCell>
-                      <TableCell>
-                        <Badge variant={equipment.status === 'Operational' ? 'default' : 'secondary'}>
-                          {equipment.status}
-                        </Badge>
-                      </TableCell>
+              {logData.equipment.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No equipment logged
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Equipment</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Activities</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {logData.equipment.map((equipment, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{equipment.name}</TableCell>
+                        <TableCell>{equipment.quantity}</TableCell>
+                        <TableCell>
+                          {equipment.activities.length > 0 ? (
+                            <div className="space-y-1">
+                              {equipment.activities.map((activity, actIndex) => (
+                                <div key={actIndex} className="text-sm">
+                                  <Badge variant="outline" className="mr-2">
+                                    {activity.activity}
+                                  </Badge>
+                                  <span className="text-muted-foreground">
+                                    Qty: {activity.quantity}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No activities</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
@@ -180,42 +213,50 @@ export const DailyLogDetailsDialog = ({ open, onOpenChange, logData }: DailyLogD
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Worker Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Time In</TableHead>
-                    <TableHead>Time Out</TableHead>
-                    <TableHead>Total Hours</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logData.workers.map((worker, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{worker.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{worker.role}</Badge>
-                      </TableCell>
-                      <TableCell>{worker.timeIn}</TableCell>
-                      <TableCell>{worker.timeOut}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <span>{worker.totalHours} hrs</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Separator className="my-4" />
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Total Man Hours:</span>
-                <span className="text-lg font-bold text-blue-600">
-                  {logData.workers.reduce((total, worker) => total + worker.totalHours, 0)} hours
-                </span>
-              </div>
+              {logData.workers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No workers logged
+                </p>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Worker Name</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Time In</TableHead>
+                        <TableHead>Time Out</TableHead>
+                        <TableHead>Total Hours</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logData.workers.map((worker, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{worker.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{worker.labourerType}</Badge>
+                          </TableCell>
+                          <TableCell>{worker.timeIn}</TableCell>
+                          <TableCell>{worker.timeOut}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span>{worker.totalHours} hrs</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <Separator className="my-4" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Total Man Hours:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {logData.workers.reduce((total, worker) => total + worker.totalHours, 0)} hours
+                    </span>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -228,54 +269,39 @@ export const DailyLogDetailsDialog = ({ open, onOpenChange, logData }: DailyLogD
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Activity</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Location</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logData.workCompleted.map((work, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{work.activity}</TableCell>
-                      <TableCell>
-                        <span className="text-lg font-bold text-green-600">{work.quantity}</span>
-                      </TableCell>
-                      <TableCell>{work.unit}</TableCell>
-                      <TableCell>{work.location}</TableCell>
+              {logData.workCompleted.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No work completed logged
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Activity</TableHead>
+                      <TableHead>Completed</TableHead>
+                      <TableHead>Remaining</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{logData.photos}</div>
-                  <div className="text-sm text-gray-600">Photos Taken</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{logData.safetyIncidents}</div>
-                  <div className="text-sm text-gray-600">Safety Incidents</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{logData.progress}%</div>
-                  <div className="text-sm text-gray-600">Overall Progress</div>
-                </div>
-              </div>
+                  </TableHeader>
+                  <TableBody>
+                    {logData.workCompleted.map((work, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{work.activity}</TableCell>
+                        <TableCell>
+                          <span className="text-lg font-bold text-green-600">{work.completedUnit}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">{work.remainingUnit}</span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
